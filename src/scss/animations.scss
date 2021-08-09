@@ -1,0 +1,14 @@
+@keyframes newEventIn{
+    to {
+        left: 0%;
+    }
+}
+
+@keyframes newEventOut{
+    from {
+        left: 0%;
+    }
+    to {
+        left: 100%;
+    }
+}

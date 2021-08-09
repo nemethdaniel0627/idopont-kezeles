@@ -1,0 +1,22 @@
+:root {
+    --calendar-dark: #053742;
+    --calendar-light: #a2dbfa;
+    --calendar-blue: #39a2db;
+    --calendar-grey: #e8f0f2;
+    --calendar-dark-grey: #8e989b;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    font-size: 62.5%;
+}
+
+body {
+    font-family: Helvetica, Arial, sans-serif;
+    height: 200vh;
+}
