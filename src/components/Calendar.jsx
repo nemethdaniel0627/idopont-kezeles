@@ -314,9 +314,9 @@ export default function Calendar() {
                                         <div className="days-window">
                                             <div className="days-window-style days--info">
                                                 <div className="int-btn--container">
-                                                    <IntervalButton text="5p"/>
-                                                    <IntervalButton text="30p"/>
-                                                    <IntervalButton text="1ó"/>                                                    
+                                                    <IntervalButton text="5p" id={item + "_int_1"}/>
+                                                    <IntervalButton text="30p" id={item + "_int_2"}/>
+                                                    <IntervalButton text="1ó" id={item + "_int_3"}/>                                                    
                                                 </div>
                                                 <span onClick={daysInfoClose} datavalue={item + "_radio"} className="days--info--close">X</span>
                                                 {
