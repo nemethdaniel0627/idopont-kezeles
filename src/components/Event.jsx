@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 
-export default function Event(props) {    
+export default function Event(props) {
 
     useEffect(() => {
 
@@ -19,7 +19,7 @@ export default function Event(props) {
 
             default:
                 break;
-        }        
+        }
         const oneMinuteLength = oneHourLength / 60;
 
         let event = props.id.includes(":") ? document.querySelector(`#${props.id.split(":")[0]}\\:${props.id.split(":")[1]}`) : document.querySelector(`#${props.id}`);
@@ -29,8 +29,8 @@ export default function Event(props) {
         }
     }, [props.eventLength, props.id]);
     return (
-        <span key={props.id} id={props.id} className="event">
-            <label>{props.eventName}</label>
+        <span id={props.id} className="event">
+            <label className="event-name">{props.eventName}</label>
         </span>
     )
 }

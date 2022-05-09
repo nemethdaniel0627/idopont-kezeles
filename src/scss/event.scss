@@ -13,4 +13,8 @@ $event-colors: #222e50, #007991, #996888, #80b9a4, #bcd8c1, #4f000b, #ff9b54;
     z-index: 11;
     border-radius: 15px;
     padding: 0.5rem;
+
+    &-name {
+        pointer-events: none;
+    }
 }

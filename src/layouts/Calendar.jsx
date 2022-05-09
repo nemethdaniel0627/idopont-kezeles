@@ -1,5 +1,3 @@
-import { faArrowLeft } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { useEffect, useState } from "react";
 import { START_HOUR_OF_EVENTS, END_HOUR_OF_EVENTS } from "../constants.js";
 import IntervalButton from "../components/IntervalButton.jsx";
@@ -7,6 +5,7 @@ import Loader from "../components/Loader.jsx";
 import ListItem from "../components/ListItem.jsx";
 import Event from "../components/Event.jsx";
 import IntervalList from "../components/IntervalList.jsx";
+import NewEvent from "../components/NewEvent.jsx";
 
 export default function Calendar() {
   const [year, setYear] = useState(0);
@@ -43,11 +42,11 @@ export default function Calendar() {
   const [hours, setHours] = useState([]);
   const [halfHours, setHalfHours] = useState([]);
   const [minutes, setMinutes] = useState([]);
+  const [whichInterval, setWhichInterval] = useState(60);
   const [eventTime, setEventTime] = useState({
     hour: 8,
     minute: "00",
   });
-  const [whichInterval, setWhichInterval] = useState(60);
 
   let calendar = document.getElementById("calendar");
   let date = new Date();
@@ -272,29 +271,6 @@ export default function Calendar() {
     document.getElementById(radioId).checked = false;
   }
 
-  function newEventInputChange(event) {
-    const { value, name } = event.target;
-
-    setEventTime((prevTime) => {
-      if (value.length !== 3) {
-        return {
-          ...prevTime,
-          [name]: value,
-        };
-      } else {
-        return { ...prevTime };
-      }
-    });
-  }
-
-  function newEventClose(event) {
-    let item = event.target.attributes[0].value.split("_")[0];
-    // console.log(event);
-    // item = item !== "currentColor" ? event.target.attributes[0].value.split("_")[0] : event.target.parentNode.attributes[0].value;
-    console.log(item);
-    document.getElementById(item + "newEvent").style.animation =
-      "slideOutRight .6s ease-out forwards";
-  }
 
   function setNewEvent(event) {
     let item = event.target.attributes[0].value;
@@ -317,10 +293,13 @@ export default function Calendar() {
 
     let selectedHour = selectedTime.split(":")[0];
     let selectedMinutes = selectedTime.split(":")[1] ? Number(selectedTime.split(":")[1]) < 10 ? `0${selectedTime.split(":")[1]}` : selectedTime.split(":")[1] : "00";
+    selectedHour = Number(selectedHour) < 10 ? `0${selectedHour}` : selectedHour
     setEventTime(() => {
       return {
-        hour: Number(selectedHour) < 10 ? `0${selectedHour}` : selectedHour,
-        minute: selectedMinutes,
+        startHour: selectedHour,
+        startMinute: selectedMinutes,
+        endHour: Number(selectedHour) < 10 ? `0${Number(selectedHour) + 1}` : (Number(selectedHour) + 1),
+        endMinute: selectedMinutes
       };
     });
   }
@@ -520,48 +499,13 @@ export default function Calendar() {
                         </span>
                       </div>
                       <div className="interval-list--wrapper">
-                        <IntervalList id={`hour_list_${item}_5`} events={[testEvent, testEvent2]} timeUnits={minutes} item={item} setNewEvent={setNewEvent} />
-                        <IntervalList id={`hour_list_${item}_30`} events={[testEvent, testEvent2]} timeUnits={halfHours} item={item} setNewEvent={setNewEvent} />
-                        <IntervalList id={`hour_list_${item}_60`} events={[testEvent, testEvent2]} timeUnits={hours} item={item} setNewEvent={setNewEvent} />
+                        <IntervalList key={`hour_list_${item}_5`} id={`hour_list_${item}_5`} events={[testEvent, testEvent2]} timeUnits={minutes} item={item} setNewEvent={setNewEvent} />
+                        <IntervalList key={`hour_list_${item}_30`} id={`hour_list_${item}_30`} events={[testEvent, testEvent2]} timeUnits={halfHours} item={item} setNewEvent={setNewEvent} />
+                        <IntervalList key={`hour_list_${item}_60`} id={`hour_list_${item}_60`} events={[testEvent, testEvent2]} timeUnits={hours} item={item} setNewEvent={setNewEvent} />
                       </div>
                     </div>
 
-                    <div
-                      id={item + "newEvent"}
-                      className="days-window-style days--new-event"
-                    >
-                      {/* <input type="number" name="" id="" /> */}
-                      <span
-                        onClick={newEventClose}
-                        datavalue={item + "_newEventClose"}
-                        className="days--info--close newEvent"
-                      >
-                        <FontAwesomeIcon icon={faArrowLeft} />
-                      </span>
-                      <div>
-                        <input
-                          max="24"
-                          type="number"
-                          id={item + " hour"}
-                          name="hour"
-                          onChange={newEventInputChange}
-                          size="1"
-                          maxLength="1"
-                          className="days--new-event--input days--new-event--hour"
-                          value={eventTime.hour}
-                        />
-                        <input
-                          type="number"
-                          id={item + " minute"}
-                          name="minute"
-                          onChange={newEventInputChange}
-                          size="2"
-                          maxLength="2"
-                          className="days--new-event--input days--new-event--minute"
-                          value={eventTime.minute}
-                        />
-                      </div>
-                    </div>
+                    <NewEvent item={item} eventTime={eventTime} />
                   </div>
                 </li>
               );

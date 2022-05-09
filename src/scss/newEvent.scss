@@ -1,0 +1,50 @@
+.days--new-event {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    top: 0;
+    transform: translateX(100%);
+    background: var(--calendar-dark);
+    color: var(--calendar-grey);
+    z-index: 12;
+    // animation: newEventIn 2s ease-out forwards;
+    // transform: translateX(-50rem) !important;
+    &--input {
+        &::-webkit-outer-spin-button,
+        &::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        &[type="number"] {
+            -moz-appearance: textfield;
+        }
+        width: 5rem;
+        font-size: 3rem;
+        text-align: center;
+    }
+
+    &_startTime {
+    }
+
+    &_endTime {
+        margin-top: 2rem;
+    }
+
+    .MuiTextField-root {
+        color: #fefefe;
+
+        .MuiInputLabel-root {
+            color: currentColor;
+        }
+
+        .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline {
+            border-color: #fefefe;
+        }
+
+        .MuiIconButton-root {
+            color: currentColor;
+        }
+    }
+}

@@ -1,5 +1,6 @@
+import React from "react";
 import Home from "./pages/Home";
-import "./styles.scss";
+import "./scss/styles.scss";
 
 export default function App() {
   return (
