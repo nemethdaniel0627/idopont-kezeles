@@ -214,19 +214,23 @@
         grid-template-columns: repeat(12, minmax(3rem, 1fr));
 
         li {
-            a {
+            div {
                 color: var(--calendar-dark-grey);
                 text-align: center;
                 width: 3.2rem;
                 margin-bottom: 3rem;
-                font-size: 1.1rem;
+                font-size: 1.2rem;
+                cursor: pointer;
+                padding: 0.4rem 0;
+                border-radius: 5px;
             }
 
             .selected,
-            a:hover {
+            div:hover {
                 transition: all 0.3s;
                 font-weight: bold;
                 color: var(--calendar-dark);
+                background-color: var(--calendar-light);
             }
         }
     }
@@ -235,14 +239,15 @@
         display: grid;
         grid-template-columns: repeat(7, minmax(3rem, 1fr));
         text-transform: uppercase;
+        transition: opacity 0.5s ease-out;
     }
-    & .months li a,
-    & .weekday li a,
+    & .months li div,
+    & .weekday li div,
     & .days li a {
         display: block;
         color: var(--calendar-dark);
     }
-    & .weekday li a {
+    & .weekday li div {
         width: 55px;
         text-align: center;
         margin-bottom: 20px;
@@ -250,41 +255,46 @@
         cursor: default;
     }
     & .days {
+        .days-window {
+            width: 60%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 50%;
+            border-radius: 1rem;
+            transform: translateX(-50%);
+            background: var(--calendar-dark);
+            overflow: hidden;
+            transform: scale(0) translateX(-50%);
+            transform-origin: left;
+            transition: all 0.5s ease-out;
+            box-shadow: 1.4rem 1.5rem 3rem rgba(0, 0, 0, 0.5);
+
+            &--header {
+                width: 100%;
+                height: 4rem;
+                // background-color: rgba(0, 0, 0, 0.5);
+                box-shadow: 0 0.5rem 3rem rgba(0, 0, 0, 0.3);
+                display: inline-block;
+                position: absolute;
+                top: 0;
+                left: 0;
+                z-index: 10;
+            }
+
+            &-style {
+                width: 100%;
+                height: 100%;
+            }
+        }
+
+        // {
+        //     transform: scale(1) translateX(-50%);
+        // }
+
         li {
             width: 55px;
             // position: relative;
-            .days-window {
-                width: 60%;
-                height: 100%;
-                position: absolute;
-                top: 0;
-                left: 50%;
-                border-radius: 1rem;
-                transform: translateX(-50%);
-                background: var(--calendar-dark);
-                overflow: hidden;
-                transform: scale(0) translateX(-50%);
-                transform-origin: left;
-                transition: all 0.5s ease-out;
-                box-shadow: 1.4rem 1.5rem 3rem rgba(0, 0, 0, 0.5);
-
-                &--header {
-                    width: 100%;
-                    height: 4rem;
-                    // background-color: rgba(0, 0, 0, 0.5);
-                    box-shadow: 0 0.5rem 3rem rgba(0, 0, 0, 0.3);
-                    display: inline-block;
-                    position: absolute;
-                    top: 0;
-                    left: 0;
-                    z-index: 10;
-                }
-
-                &-style {
-                    width: 100%;
-                    height: 100%;
-                }
-            }
             > label {
                 transition: all 0.3s;
                 display: block;
@@ -301,14 +311,13 @@
                 & + input {
                     display: none;
                 }
-                & + input:checked + .days-window {
-                    transform: scale(1) translateX(-50%);
-                }
+
                 &:hover,
                 &:focus {
                     background-color: var(--calendar-dark-grey);
                 }
             }
+
             .empty {
                 display: block;
                 width: 36px;

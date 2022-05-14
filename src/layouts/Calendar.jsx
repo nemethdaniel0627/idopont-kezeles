@@ -8,9 +8,9 @@ import IntervalList from "../components/IntervalList.jsx";
 import NewEvent from "../components/NewEvent.jsx";
 
 export default function Calendar() {
-  const [year, setYear] = useState(0);
+  const [year, setYear] = useState(new Date().getFullYear());
   const [monthName, setMonthName] = useState("");
-  const [month, setMonth] = useState(0);
+  const [month, setMonth] = useState(new Date().getMonth());
   const [day, setDay] = useState(0);
   const [dayName, setDayName] = useState("");
   const monthNames = [
@@ -36,69 +36,79 @@ export default function Calendar() {
     "Szombat",
     "Vasárnap",
   ];
-  const testEvent = { eventStart: "0:0", eventLength: 120 };
-  const testEvent2 = { eventStart: "3:0", eventLength: 120 };
+  const [events, setEvents] = useState([
+    { eventStart: "0:30", eventLength: 90, eventDate: new Date() },
+    { eventStart: "3:0", eventLength: 120, eventDate: new Date() }
+  ])
   const [years, setYears] = useState([]);
   const [hours, setHours] = useState([]);
   const [halfHours, setHalfHours] = useState([]);
   const [minutes, setMinutes] = useState([]);
   const [whichInterval, setWhichInterval] = useState(60);
-  const [eventTime, setEventTime] = useState({
-    hour: 8,
-    minute: "00",
-  });
+  const [eventTime, setEventTime] = useState({});
+  const [numberOfDaysArray, setNumberOfDaysArray] = useState([]);
+  const [daysWindowItem, setDaysWindowItem] = useState(-1);
 
   let calendar = document.getElementById("calendar");
   let date = new Date();
 
-  let numberOfDaysArray = numberOfDays();
+  // let numberOfDaysArray = numberOfDays();
 
   useEffect(() => {
-    console.time();
-    let dateArr = date.toString().split(" ");
+    // setNumberOfDaysArray(numberOfDays());
+    if (numberOfDaysArray.length !== 0) {
+      console.time();
+      let dateArr = date.toString().split(" ");
 
-    let setmonth = dateArr[1];
-    let setday = dateArr[2];
+      let setmonth = dateArr[1];
+      let setday = dateArr[2];
 
-    setYear(Number(dateArr[3]));
-    setMonthName(monthNames[date.getMonth()]);
-    setMonth(date.getMonth());
-    setDay(date.getDate());
-    setDayName(dayNames[date.getDay() !== 0 ? date.getDay() - 1 : 6]);
-    let months = document.getElementById("months");
-    let days = document.getElementById("days");
-    if (years.length === 0) {
-      for (let i = Number(dateArr[3]); i <= Number(dateArr[3]) + 11; i++) {
-        setYears((prevState) => {
-          return [...prevState, i];
+      setYear(Number(dateArr[3]));
+      setMonthName(monthNames[date.getMonth()]);
+      setMonth(date.getMonth());
+      setDay(date.getDate());
+      setDayName(dayNames[date.getDay() !== 0 ? date.getDay() - 1 : 6]);
+      let months = document.getElementById("months");
+      let days = document.getElementById("days");
+      if (years.length === 0) {
+        for (let i = Number(dateArr[3]); i <= Number(dateArr[3]) + 11; i++) {
+          setYears((prevState) => {
+            return [...prevState, i];
+          });
+        }
+      }
+
+      // honap beallitas
+      if (months) {
+        months.childNodes.forEach((li) => {
+          if (li.firstChild.attributes[1].value === (date.getMonth() + 1).toString()) {
+            li.firstChild.className = "selected";
+          }
         });
       }
+
+      // nap beállitasa
+      if (days) {
+        console.log(setday);
+        days.childNodes.forEach((li, index) => {
+          if (index !== days.childNodes.length - 1 && li.firstChild.attributes[1].value === setday) {
+            li.firstChild.className = "selected";
+          }
+        });
+      }
+
+
+      setInterval();
+      console.timeEnd();
     }
-
-    // honap beallitas
-    if (months) {
-      months.childNodes.forEach((li) => {
-        if (li.firstChild.attributes[1].value === setmonth) {
-          li.firstChild.className = "selected";
-        }
-      });
-    }
-
-    // nap beállitasa
-    if (days) {
-      days.childNodes.forEach((li) => {
-        if (li.firstChild.attributes[1].value === setday) {
-          li.firstChild.className = "selected";
-        }
-      });
-    }
-
-
-    setInterval();
-    console.timeEnd();
     // console.timeLog();
     //eslint-disable-next-line
   }, [calendar]);
+
+  useEffect(() => {
+    console.log("egész");
+    setNumberOfDaysArray(numberOfDays());
+  }, [])
 
   async function setInterval() {
 
@@ -178,11 +188,12 @@ export default function Calendar() {
   function monthSelected(event) {
     let months = document.getElementById("months");
     let days = document.getElementById("days");
+    console.log(event.target.attributes);
 
     let pastMonth = new Date(year, month, day);
     let newMonth = new Date(
       year,
-      Number(event.target.attributes[2].value) - 1,
+      Number(event.target.attributes[1].value) - 1,
       1
     );
     let thisMonth = new Date();
@@ -194,54 +205,62 @@ export default function Calendar() {
 
     if (months) {
       months.childNodes.forEach((li) => {
-        if (li.firstChild.attributes[1].value === newMonthShort) {
+        if (li.firstChild.attributes[1].value === (newMonth.getMonth() + 1).toString()) {
           li.firstChild.className = "selected";
-        } else if (li.firstChild.attributes[1].value === pastMonthShort) {
+        } else if (li.firstChild.attributes[1].value === (pastMonth.getMonth() + 1).toString()) {
           li.firstChild.className = "";
         }
       });
     }
     if (days) {
-      days.childNodes.forEach((li) => {
-        if (
-          newMonth.getMonth() === thisMonth.getMonth() &&
-          li.firstChild.attributes[1].value === thisMonth.getDate().toString()
-        ) {
-          li.firstChild.className = "selected";
-          setDay(thisMonth.getDate());
-          setDayName(
-            thisMonth.getDay() === 0
-              ? "Sunday"
-              : dayNames[thisMonth.getDay() - 1]
-          );
-        } else if (
-          newMonth.getMonth() !== thisMonth.getMonth() &&
-          li.firstChild.attributes[1].value === newDayShort
-        ) {
-          li.firstChild.className = "selected";
-          setDay(newMonth.getDate());
-          setDayName(
-            newMonth.getDay() === 0 ? "Sunday" : dayNames[newMonth.getDay() - 1]
-          );
-        } else if (li.firstChild.attributes[1].value === pastDayShort) {
-          li.firstChild.className = "";
+      days.childNodes.forEach((li, index) => {
+        if (index !== days.childNodes.length - 1) {
+          if (
+            newMonth.getMonth() === thisMonth.getMonth() &&
+            li.firstChild.attributes[1].value === thisMonth.getDate().toString()
+          ) {
+            li.firstChild.className = "selected";
+            setDay(thisMonth.getDate());
+            setDayName(
+              thisMonth.getDay() === 0
+                ? "Sunday"
+                : dayNames[thisMonth.getDay() - 1]
+            );
+          } else if (
+            newMonth.getMonth() !== thisMonth.getMonth() &&
+            li.firstChild.attributes[1].value === newDayShort
+          ) {
+            li.firstChild.className = "selected";
+            setDay(newMonth.getDate());
+            setDayName(
+              newMonth.getDay() === 0 ? "Sunday" : dayNames[newMonth.getDay() - 1]
+            );
+          } else if (
+            (newMonth.getMonth() === thisMonth.getMonth() && index === 0)
+            || li.firstChild.attributes[1].value === pastDayShort) {
+            li.firstChild.className = "";
+          }
         }
       });
     }
 
     setMonthName(monthNames[newMonth.getMonth()]);
     setMonth(newMonth.getMonth());
-    numberOfDays();
+    // setNumberOfDaysArray(numberOfDays());
   }
 
   function yearSelected(event) {
     console.log(event.target.attributes[0].value);
     let selectedYear = Number(event.target.attributes[0].value);
     setYear(selectedYear);
-    numberOfDays();
+    // numberOfDays();
   }
 
   function numberOfDays() {
+
+    console.log("numberOfDays");
+    console.time();
+
     const BigMonths = [1, 3, 5, 7, 8, 10, 12];
     const SmallMonths = [4, 6, 9, 11];
     let localdate = new Date(year, month);
@@ -250,8 +269,6 @@ export default function Calendar() {
       firstDay = 6;
     }
 
-    let localDays = [];
-
     let numberOfdays;
 
     if (BigMonths.includes(localdate.getMonth() + 1)) numberOfdays = 31;
@@ -259,16 +276,55 @@ export default function Calendar() {
     else if (leapyear(localdate.getFullYear())) numberOfdays = 29;
     else numberOfdays = 28;
 
+    // let localDays = Array.from({ length: (numberOfdays - (1 - firstDay)) + 1 }, (_, i) => (1 - firstDay) + i);
+    let localDays = [];
+
     for (var i = 1 - firstDay; i <= numberOfdays; i += 1) {
       localDays.push(i);
     }
 
+    console.timeEnd();
+
+    console.log(localDays);
+
     return localDays;
+
   }
 
-  function daysInfoClose(event) {
-    const radioId = event.target.attributes[0].value;
-    document.getElementById(radioId).checked = false;
+  function daysAnimate(animateIn) {
+    let days = document.getElementById("days");
+    console.log("animate" + animateIn);
+    if (days) {
+      days.style.opacity = animateIn === true ? "1" : "0";
+    }
+  }
+
+  function daysInfoClose() {
+    const daysWindow = document.querySelector(".days-window");
+    if (daysWindow) {
+      daysWindow.style.transform = "scale(0) translateX(-50%)";
+    }
+  }
+
+  useEffect(() => {
+    daysAnimate(false);
+    setTimeout(() => {
+      setNumberOfDaysArray(numberOfDays());
+    }, 200);
+  }, [year, month])
+
+  useEffect(() => {
+    daysAnimate(true);
+    console.log(numberOfDaysArray);
+
+  }, [numberOfDaysArray])
+
+  function radioChange(event) {
+    const daysWindow = document.querySelector(".days-window");
+    if (daysWindow) {
+      daysWindow.style.transform = "scale(1) translateX(-50%)";
+    }
+    setDaysWindowItem(event.target.attributes[2].value.split("_")[0].split("-")[2]);
   }
 
 
@@ -286,7 +342,7 @@ export default function Calendar() {
     item = item.split("_")[1];
     console.log(item);
 
-    document.getElementById(item + "newEvent").style.animation =
+    document.getElementById(item + "_newEvent").style.animation =
       "slideInRight .6s ease-out forwards";
 
     console.log(`item ${selectedTime}`);
@@ -302,6 +358,16 @@ export default function Calendar() {
         endMinute: selectedMinutes
       };
     });
+  }
+
+  function addNewEvent(startTime, endTime) {
+    const eventStart = `${startTime.getHours()}:${startTime.getMinutes()}`;
+    const eventLength = Math.abs(endTime - startTime) / 60000;
+    setEvents(prevEvents => {
+      return [...prevEvents, { eventStart: eventStart, eventLength: eventLength, eventDate: startTime }]
+    })
+    console.log(eventStart);
+
   }
 
   function intervalChange(event) {
@@ -340,6 +406,11 @@ export default function Calendar() {
       event.style.height = `${oneMinuteLength * eventLength}%`;
     }
   }
+
+  // useEffect(() => {
+
+
+  // }, [numberOfDays])
 
   return (
     <div id="calendar" className="calendar">
@@ -426,25 +497,25 @@ export default function Calendar() {
           <ul className="days" id="days">
             {numberOfDaysArray.map((item) => {
               let addClass = "";
-              switch (item) {
-                case 8:
-                case 10:
-                case 27:
-                  addClass = "full";
-                  break;
-                default:
-                  break;
-              }
+              // switch (item) {
+              //   case 8:
+              //   case 10:
+              //   case 27:
+              //     addClass = "full";
+              //     break;
+              //   default:
+              //     break;
+              // }
 
-              switch (item) {
-                case 3:
-                case 17:
-                case 23:
-                  addClass = "notfull";
-                  break;
-                default:
-                  break;
-              }
+              // switch (item) {
+              //   case 3:
+              //   case 17:
+              //   case 23:
+              //     addClass = "notfull";
+              //     break;
+              //   default:
+              //     break;
+              // }
 
               if (item < 1)
                 return (
@@ -461,7 +532,7 @@ export default function Calendar() {
                 <li key={item}>
                   {/* eslint-disable-next-line */}
                   <label
-                    htmlFor={item + "_radio"}
+                    htmlFor={`${year}-${month + 1}-${item}_radio`}
                     onClick={daySelected}
                     value={item < 10 ? "0" + item : item}
                     className={addClass}
@@ -469,47 +540,47 @@ export default function Calendar() {
                   >
                     {item}
                   </label>
-                  <input type="radio" name="days" id={item + "_radio"} />
-                  <div className="days-window">
-                    <div className="days-window-style days--info">
-                      <div className="days-window--header">
-                        <div className="int-btn--container">
-                          <IntervalButton
-                            intChange={intervalChange}
-                            text="5p"
-                            id={`int_${item}_5`}
-                          />
-                          <IntervalButton
-                            intChange={intervalChange}
-                            text="30p"
-                            id={`int_${item}_30`}
-                          />
-                          <IntervalButton
-                            intChange={intervalChange}
-                            text="1ó"
-                            id={`int_${item}_60`}
-                          />
-                        </div>
-                        <span
-                          onClick={daysInfoClose}
-                          datavalue={item + "_radio"}
-                          className="days--info--close"
-                        >
-                          X
-                        </span>
-                      </div>
-                      <div className="interval-list--wrapper">
-                        <IntervalList key={`hour_list_${item}_5`} id={`hour_list_${item}_5`} events={[testEvent, testEvent2]} timeUnits={minutes} item={item} setNewEvent={setNewEvent} />
-                        <IntervalList key={`hour_list_${item}_30`} id={`hour_list_${item}_30`} events={[testEvent, testEvent2]} timeUnits={halfHours} item={item} setNewEvent={setNewEvent} />
-                        <IntervalList key={`hour_list_${item}_60`} id={`hour_list_${item}_60`} events={[testEvent, testEvent2]} timeUnits={hours} item={item} setNewEvent={setNewEvent} />
-                      </div>
-                    </div>
-
-                    <NewEvent item={item} eventTime={eventTime} />
-                  </div>
+                  <input onClick={radioChange} type="radio" name="days" id={`${year}-${month + 1}-${item}_radio`} />
                 </li>
               );
             })}
+            <div className="days-window">
+              <div className="days-window-style days--info">
+                <div className="days-window--header">
+                  <div className="int-btn--container">
+                    <IntervalButton
+                      intChange={intervalChange}
+                      text="5p"
+                      id={`int_${daysWindowItem}_5`}
+                    />
+                    <IntervalButton
+                      intChange={intervalChange}
+                      text="30p"
+                      id={`int_${daysWindowItem}_30`}
+                    />
+                    <IntervalButton
+                      intChange={intervalChange}
+                      text="1ó"
+                      id={`int_${daysWindowItem}_60`}
+                    />
+                  </div>
+                  <span
+                    onClick={daysInfoClose}
+                    datavalue={1 + "_radio"}
+                    className="days--info--close"
+                  >
+                    X
+                  </span>
+                </div>
+                <div className="interval-list--wrapper">
+                  <IntervalList key={`hour_list_${daysWindowItem}_5`} id={`hour_list_${daysWindowItem}_5`} prefix={`${year}-${month + 1}`} events={events} timeUnits={minutes} item={daysWindowItem} setNewEvent={setNewEvent} />
+                  <IntervalList key={`hour_list_${daysWindowItem}_30`} id={`hour_list_${daysWindowItem}_30`} prefix={`${year}-${month + 1}`} events={events} timeUnits={halfHours} item={daysWindowItem} setNewEvent={setNewEvent} />
+                  <IntervalList key={`hour_list_${daysWindowItem}_60`} id={`hour_list_${daysWindowItem}_60`} prefix={`${year}-${month + 1}`} events={events} timeUnits={hours} item={daysWindowItem} setNewEvent={setNewEvent} />
+                </div>
+              </div>
+
+              <NewEvent item={`${year}-${month + 1}-${daysWindowItem}`} eventTime={eventTime} addNewEvent={addNewEvent} />
+            </div>
           </ul>
           <div className="clearfix"></div>
         </div>

@@ -5,49 +5,58 @@ import TextField from '@mui/material/TextField';
 import AdapterDateFns from '@mui/lab/AdapterDateFns';
 import LocalizationProvider from '@mui/lab/LocalizationProvider';
 import TimePicker from '@mui/lab/TimePicker';
+import { Button } from "@mui/material";
 
 export default function NewEvent(props) {
-    const [eventTime, setEventTime] = useState({
-        startHour: 8,
-        startMinute: "00",
-        endHour: 8,
-        endMinute: "00",
-        startTime: "7:00",
-        endTime: "8:00"
-    });
-    const [value, setValue] = useState(null);
+    // const [eventTime, setEventTime] = useState({
+    //     startHour: 8,
+    //     startMinute: "00",
+    //     endHour: 8,
+    //     endMinute: "00",
+    //     startTime: "7:00",
+    //     endTime: "8:00"
+    // });
+    const [startTime, setStartTime] = useState(null);
+    const [endTime, setEndTime] = useState(null);
+    const [onceOpen, setOnceOpen] = useState(false);
+    const [startTimeIsClosed, setStartTimeIsClosed] = useState(null);
 
-    function newEventInputChange(event) {
-        const { value, name } = event.target;
-
-        setEventTime((prevTime) => {
-            if (value.length !== 3) {
-                return {
-                    ...prevTime,
-                    [name]: value,
-                };
-            } else {
-                return { ...prevTime };
-            }
-        });
+    function addNewEvent(id) {
+        props.addNewEvent(startTime, endTime);
+        newEventClose("event", id);
     }
 
-    function newEventClose(event) {
-        let item = event.target.attributes[0].value.split("_")[0];
-        // console.log(event);
+    function newEventClose(event, tmpItem = undefined) {
+        setOnceOpen(false);
+        let item = tmpItem === undefined ? event.target.attributes[0].value.split("_")[0] : tmpItem;
+        console.log(item);
         // item = item !== "currentColor" ? event.target.attributes[0].value.split("_")[0] : event.target.parentNode.attributes[0].value;
         console.log(item);
-        document.getElementById(item + "newEvent").style.animation =
+        document.getElementById(item + "_newEvent").style.animation =
             "slideOutRight .6s ease-out forwards";
     }
 
     useEffect(() => {
-        setEventTime(props.eventTime);
+        let tmpStartTime = new Date(props.item);
+        tmpStartTime.setHours(props.eventTime.startHour, props.eventTime.startMinute);
+        setStartTime(tmpStartTime);
+        let tmpEndTime = new Date(props.item);
+        tmpEndTime.setHours(props.eventTime.endHour, props.eventTime.endMinute);
+        setEndTime(tmpEndTime)
     }, [props.eventTime])
+
+    useEffect(() => {
+        if (startTime !== null && onceOpen !== true && startTimeIsClosed === true) {
+            const tmpEnd = new Date(startTime);
+            tmpEnd.setHours(Number(tmpEnd.getHours()) + 1, tmpEnd.getMinutes());
+            setEndTime(tmpEnd);
+        }
+    }, [startTime])
+
 
     return (
         <div
-            id={props.item + "newEvent"}
+            id={props.item + "_newEvent"}
             className="days-window-style days--new-event"
         >
             {/* <input type="number" name="" id="" /> */}
@@ -59,62 +68,44 @@ export default function NewEvent(props) {
                 <FontAwesomeIcon icon={faArrowLeft} />
             </span>
             <div className="days--new-event_startTime">
-                <input
-                    max="24"
-                    type="number"
-                    id={props.item + " hour"}
-                    name="startHour"
-                    onChange={newEventInputChange}
-                    size="1"
-                    maxLength="1"
-                    className="days--new-event--input days--new-event--hour"
-                    value={eventTime.startHour}
-                />
-                <input
-                    type="number"
-                    id={props.item + " minute"}
-                    name="startMinute"
-                    onChange={newEventInputChange}
-                    size="2"
-                    maxLength="2"
-                    className="days--new-event--input days--new-event--minute"
-                    value={eventTime.startMinute}
-                />
+                <LocalizationProvider dateAdapter={AdapterDateFns}>
+                    <TimePicker
+                        label="Időpont kezdés"
+                        value={startTime}
+                        onChange={(newStart) => {
+                            setStartTime(newStart);
+                        }}
+                        onClose={() => { setStartTimeIsClosed(true) }}
+                        onOpen={() => { setStartTimeIsClosed(false) }}
+                        ampm={false}
+                        renderInput={(params) =>
+                            <TextField
+                                {...params}
+                                error={!(startTime <= endTime)}
+                                helperText={(startTime <= endTime) === false ? "Az időpont vége nem lehet később mint az eleje" : ""} />
+                        }
+                    />
+                </LocalizationProvider>
             </div>
             <div className="days--new-event_endTime">
                 <LocalizationProvider dateAdapter={AdapterDateFns}>
                     <TimePicker
-                        label="Basic example"
-                        value={value}
-                        onChange={(newValue) => {
-                            setValue(newValue);
+                        label="Időpont vége"
+                        value={endTime}
+                        onChange={(newEnd) => {
+                            setEndTime(newEnd);
                         }}
+                        onOpen={() => { setOnceOpen(true) }}
+                        ampm={false}
                         renderInput={(params) => <TextField {...params} />}
                     />
                 </LocalizationProvider>
-
-                <input
-                    max="24"
-                    type="number"
-                    id={props.item + " hour"}
-                    name="endHour"
-                    onChange={newEventInputChange}
-                    size="1"
-                    maxLength="1"
-                    className="days--new-event--input days--new-event--hour"
-                    value={eventTime.endHour}
-                />
-                <input
-                    type="number"
-                    id={props.item + " minute"}
-                    name="endMinute"
-                    onChange={newEventInputChange}
-                    size="2"
-                    maxLength="2"
-                    className="days--new-event--input days--new-event--minute"
-                    value={eventTime.endMinute}
-                />
             </div>
+            <Button
+                variant="outlined"
+                onClick={() => { addNewEvent(props.item) }}>
+                Létrehozás
+            </Button>
         </div>
     )
 }

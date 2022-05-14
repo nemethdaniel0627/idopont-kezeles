@@ -1,4 +1,5 @@
 import React, { useEffect } from "react";
+import Calendar from "../modules/Calendar";
 
 export default function Event(props) {
 
@@ -8,13 +9,13 @@ export default function Event(props) {
         let oneHourLength;
         switch (props.id.split("_")[3]) {
             case "60":
-                oneHourLength = document.querySelector("#timeUnit_20_1_60").offsetTop - document.querySelector("#timeUnit_20_0_60").offsetTop;
+                oneHourLength = document.querySelector(`#timeUnit_${props.prefix}_1_60`).offsetTop - document.querySelector(`#timeUnit_${props.prefix}_0_60`).offsetTop;
                 break;
             case "30":
-                oneHourLength = document.querySelector("#timeUnit_20_1\\:0_30").offsetTop - document.querySelector("#timeUnit_20_0\\:0_30").offsetTop;
+                oneHourLength = document.querySelector(`#timeUnit_${props.prefix}_1\\:0_30`).offsetTop - document.querySelector(`#timeUnit_${props.prefix}_0\\:0_30`).offsetTop;
                 break;
             case "5":
-                oneHourLength = document.querySelector("#timeUnit_20_1\\:0_5").offsetTop - document.querySelector("#timeUnit_20_0\\:0_5").offsetTop;
+                oneHourLength = document.querySelector(`#timeUnit_${props.prefix}_1\\:0_5`).offsetTop - document.querySelector(`#timeUnit_${props.prefix}_0\\:0_5`).offsetTop;
                 break;
 
             default:
@@ -26,6 +27,9 @@ export default function Event(props) {
 
         if (event) {
             event.style.height = `${oneMinuteLength * eventLength}px`;
+            if (props.eventNotRound !== undefined) {
+                event.style.marginTop = `${oneMinuteLength * props.eventNotRound}px`;
+            }
         }
     }, [props.eventLength, props.id]);
     return (
