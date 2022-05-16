@@ -1,0 +1,98 @@
+.days--new-event {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    top: 0;
+    transform: translateX(100%);
+    background: var(--calendar-dark);
+    color: var(--calendar-grey);
+    z-index: 12;
+    // animation: newEventIn 2s ease-out forwards;
+    // transform: translateX(-50rem) !important;
+    &--input {
+        &::-webkit-outer-spin-button,
+        &::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        &[type="number"] {
+            -moz-appearance: textfield;
+        }
+        width: 5rem;
+        font-size: 3rem;
+        text-align: center;
+    }
+
+    &_startTime {
+    }
+
+    &_endTime {
+        margin-top: 4rem;
+    }
+
+    .MuiTextField-root {
+        color: #fefefe;
+        font-size: 1.3rem;
+
+        .MuiInputLabel-root,
+        .MuiOutlinedInput-input,
+        .MuiIconButton-root {
+            color: #fefefe;
+            font-size: 1.3rem;
+        }
+
+        .MuiInputLabel-root.Mui-error {
+            color: #d32f2f;
+        }
+
+        .MuiSvgIcon-root {
+            font-size: 2rem;
+        }
+
+        .MuiOutlinedInput-root {
+            .MuiOutlinedInput-notchedOutline {
+                border-color: #fefefe;
+                legend {
+                    font-size: 0.95rem;
+                }
+            }
+
+            &.Mui-error {
+                .MuiOutlinedInput-notchedOutline {
+                    border-color: #d32f2f;
+                }
+
+                .MuiOutlinedInput-input,
+                .MuiIconButton-root {
+                    color: #d32f2f;
+                }
+            }
+        }
+
+        .MuiFormHelperText-root {
+            margin-right: 0;
+            margin-left: 0;
+            position: absolute;
+            bottom: -2rem;
+            width: max-content;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.9rem;
+            font-weight: bold;
+        }
+    }
+}
+
+.MuiClockPicker-root {
+    font-size: 1.3rem;
+
+    .MuiSvgIcon-root {
+        font-size: 2rem;
+    }
+
+    .MuiTypography-root {
+        font-size: 1.3rem;
+    }
+}

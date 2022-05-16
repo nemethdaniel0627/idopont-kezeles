@@ -1,0 +1,17 @@
+.event {
+    width: 86%;
+    height: 300%;
+    font-size: 2rem;
+    position: absolute;
+    left: 2.9rem;
+    top: 50%;
+    z-index: 11;
+    border-radius: 15px;
+    padding: 0.5rem;
+    overflow: hidden;
+
+    &-name {
+        pointer-events: none;
+        word-break: break-all;
+    }
+}

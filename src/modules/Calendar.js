@@ -32,6 +32,10 @@ class Calendar {
         }
 
     }
+
+    getPrefix(date) {
+        return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
+    }
 }
 
 export default new Calendar();
