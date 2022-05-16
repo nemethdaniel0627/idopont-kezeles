@@ -1,9 +1,4 @@
-@use "sass:list";
-
-$event-colors: #222e50, #007991, #996888, #80b9a4, #bcd8c1, #4f000b, #ff9b54;
-
 .event {
-    background-color: nth($event-colors, random($limit: 6));
     width: 86%;
     height: 300%;
     font-size: 2rem;
@@ -13,8 +8,10 @@ $event-colors: #222e50, #007991, #996888, #80b9a4, #bcd8c1, #4f000b, #ff9b54;
     z-index: 11;
     border-radius: 15px;
     padding: 0.5rem;
+    overflow: hidden;
 
     &-name {
         pointer-events: none;
+        word-break: break-all;
     }
 }

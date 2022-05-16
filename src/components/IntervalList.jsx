@@ -26,7 +26,7 @@ export default function IntervalList(props) {
                                         return Number(event.eventStart.split(":")[0]) === timeUnit && `${props.prefix}-${props.item}` === Calendar.getPrefix(event.eventDate) ?
                                             <Event
                                                 key={`event_${index}`}
-                                                id={`event_${props.prefix}-${props.item}_${timeUnit}_${props.id.split("_")[3]}`}
+                                                id={`event_${props.prefix}-${props.item}_${timeUnit}_${props.id.split("_")[3]}_${index}`}
                                                 eventName="Esemény"
                                                 eventLength={event.eventLength}
                                                 prefix={`${props.prefix}-${props.item}`}
@@ -50,7 +50,7 @@ export default function IntervalList(props) {
                                         return event.eventStart === timeUnit && `${props.prefix}-${props.item}` === Calendar.getPrefix(event.eventDate) ?
                                             <Event
                                                 key={`event_${index}`}
-                                                id={`event_${props.prefix}-${props.item}_${timeUnit}_${props.id.split("_")[3]}`}
+                                                id={`event_${props.prefix}-${props.item}_${timeUnit}_${props.id.split("_")[3]}_${index}`}
                                                 eventName="Esemény"
                                                 prefix={`${props.prefix}-${props.item}`}
                                                 eventLength={event.eventLength} />
@@ -71,7 +71,7 @@ export default function IntervalList(props) {
                                         return Number(event.eventStart.split(":")[0]) === timeUnit && `${props.prefix}-${props.item}` === Calendar.getPrefix(event.eventDate) ?
                                             <Event
                                                 key={`event_${index}`}
-                                                id={`event_${props.prefix}-${props.item}_${timeUnit}_${props.id.split("_")[3]}`}
+                                                id={`event_${props.prefix}-${props.item}_${timeUnit}_${props.id.split("_")[3]}_${index}`}
                                                 eventName="Esemény"
                                                 eventLength={event.eventLength}
                                                 prefix={`${props.prefix}-${props.item}`}

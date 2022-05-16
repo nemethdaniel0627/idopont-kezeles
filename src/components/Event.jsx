@@ -27,13 +27,26 @@ export default function Event(props) {
 
         if (event) {
             event.style.height = `${oneMinuteLength * eventLength}px`;
+            let eventColors = getComputedStyle(document.documentElement).getPropertyValue("--event-colors").toString().trim().split(",");
+            const r = Math.floor(Math.random() * 7);
+            event.style.backgroundColor = eventColors[r];
+            const sameStartEvents = props.id.includes(":")
+                ? document.querySelectorAll(`.${props.id.slice(0, -2).split(":")[0]}\\:${props.id.slice(0, -2).split(":")[1]}`)
+                : document.querySelectorAll(`.${props.id.slice(0, -2)}`);
+            console.log(sameStartEvents);
+            const eventMaxWidth = document.querySelector(".days--info--hour").clientWidth + 1;
+            sameStartEvents.forEach((event, index) => {
+                let eventWidth = eventMaxWidth / sameStartEvents.length;
+                event.style.width = eventWidth + "px";
+                event.style.left = `calc(2.9rem + ${index * eventWidth}px)`;
+            })
             if (props.eventNotRound !== undefined) {
                 event.style.marginTop = `${oneMinuteLength * props.eventNotRound}px`;
             }
         }
     }, [props.eventLength, props.id]);
     return (
-        <span id={props.id} className="event">
+        <span id={props.id} className={`event ${props.id.slice(0, -2)}`}>
             <label className="event-name">{props.eventName}</label>
         </span>
     )
