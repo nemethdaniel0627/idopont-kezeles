@@ -7,7 +7,7 @@ import Event from "../components/Event.jsx";
 import IntervalList from "../components/IntervalList.jsx";
 import NewEvent from "../components/NewEvent.jsx";
 
-export default function Calendar() {
+export default function Calendar(props) {
   const [year, setYear] = useState(new Date().getFullYear());
   const [monthName, setMonthName] = useState("");
   const [month, setMonth] = useState(new Date().getMonth());
@@ -413,7 +413,7 @@ export default function Calendar() {
   // }, [numberOfDays])
 
   return (
-    <div id="calendar" className="calendar">
+    <div id="calendar" className={`calendar ${props.open ? '' : 'hidden'}`}>
       <div className="col leftCol">
         <div className="content">
           <h1 className="date">
