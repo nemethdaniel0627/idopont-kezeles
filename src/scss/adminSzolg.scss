@@ -1,0 +1,16 @@
+.admin-szolg {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: grid;
+    column-gap: 1rem;
+    row-gap: 2rem;
+    grid-template-columns: repeat(auto-fit, minmax(60rem, 1fr));
+    width: 100vw;
+    justify-items: center;
+
+    @media only screen and (max-width: 1100px) {
+        grid-template-columns: repeat(auto-fit, minmax(50rem, 1fr));
+    }
+}

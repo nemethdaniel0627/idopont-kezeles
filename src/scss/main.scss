@@ -6,6 +6,8 @@
     --calendar-grey: #e8f0f2;
     --calendar-dark-grey: #8e989b;
     --event-colors: #222e50, #007991, #996888, #80b9a4, #bcd8c1, #4f000b, #ff9b54;
+    --dropDownWidth: 0px;
+    --editTitleInputWidth: 0ch;
 }
 
 * {
@@ -20,7 +22,21 @@ html {
 
 body {
     font-family: Helvetica, Arial, sans-serif;
-    height: 200vh;
+    // height: 200vh;
+}
+
+iframe {
+    display: none;
+}
+
+input::-webkit-inner-spin-button,
+input::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+input[type="number"] {
+    -moz-appearance: textfield;
 }
 
 .hidden {

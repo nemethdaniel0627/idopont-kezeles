@@ -1,13 +1,14 @@
 .szolg {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+    position: relative;
     border: 2px solid #555;
     border-radius: 10px;
     box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.3);
-    width: 40vw;
+    width: 60rem;
     cursor: pointer;
+
+    @media only screen and (max-width: 1100px) {
+        width: 50rem;
+    }
 
     &:hover &_img {
         opacity: 0;
@@ -24,11 +25,20 @@
         transform: translate(-50%, -50%);
         opacity: 0;
         transition: opacity 0.6s ease-out;
+        font-size: 3rem;
+
+        button {
+            vertical-align: middle;
+            font-size: 1.2rem;
+        }
     }
 
-    &_img {
+    &_img,
+    &_add {
+        position: relative;
         width: 100%;
-        height: 100%;
+        height: 30rem;
         transition: opacity 0.5s ease-out;
+        pointer-events: none;
     }
 }

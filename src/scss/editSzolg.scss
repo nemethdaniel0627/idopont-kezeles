@@ -1,0 +1,196 @@
+.editSzolg {
+    width: 60rem;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    transition: all 0.5s;
+    opacity: 0;
+    height: var(--modalHeight);
+    border-radius: 10px;
+    border: 2px solid #555;
+    cursor: initial;
+    padding: 1rem;
+    gap: 1rem;
+    z-index: 1;
+
+    & &_close {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+
+        .MuiSvgIcon-root {
+            font-size: 2rem;
+        }
+    }
+
+    &[open] {
+        animation: editSzolgOpen 0.5s ease-out forwards;
+        display: flex;
+        flex-direction: column;
+        grid-template-columns: repeat(2, 1fr);
+        grid-template-rows: max-content repeat(2, 1fr);
+    }
+
+    &[closing] {
+        animation: editSzolgClose 0.5s ease-out forwards;
+    }
+
+    &_title,
+    &_edit-title {
+        font-size: 2rem;
+        justify-self: center;
+        align-self: center;
+        cursor: pointer;
+    }
+
+    &_edit-title {
+        width: var(--editTitleInputWidth);
+
+        .MuiFilledInput-root {
+            font-size: 2rem;
+        }
+
+        .MuiFilledInput-input {
+            padding-top: 10px;
+        }
+    }
+
+    &_date-time-pickers {
+        display: flex;
+        gap: 1rem;
+        width: 40rem;
+    }
+
+    &_repeat-container {
+        p {
+            margin-bottom: 0.5rem;
+        }
+    }
+
+    & &_number {
+        width: 4rem;
+        margin-right: 0.5rem;
+        input {
+            text-align: center;
+        }
+    }
+
+    .MuiInputLabel-root {
+        font-size: 1.2rem;
+    }
+
+    .MuiFormHelperText-root {
+        font-size: 0.9rem;
+    }
+
+    hr {
+        border: none;
+        border-top: 1px solid #555;
+    }
+
+    p {
+        color: rgba(0, 0, 0, 0.6);
+        font-family: "Roboto", "Helvetica", "Arial", sans-serif;
+        font-weight: 400;
+        font-size: 1rem;
+        line-height: 1.4375em;
+        letter-spacing: 0.00938em;
+    }
+
+    &_repeat-end {
+        hr {
+            margin-bottom: 1rem;
+        }
+        .MuiFormControl-root {
+            .MuiFormGroup-root {
+                label:not(:nth-of-type(2n + 1)) {
+                    margin-right: 0;
+                }
+            }
+
+            .MuiFilledInput-input {
+                padding: 1rem;
+                width: 6rem;
+            }
+        }
+
+        &_date-picker {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-right: 1.5rem;
+            cursor: pointer !important;
+        }
+
+        &_occurrence {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer !important;
+        }
+    }
+
+    &_week-days {
+        align-self: baseline;
+        justify-content: space-between;
+        gap: 0.5rem;
+
+        &_container {
+            hr {
+                margin-bottom: 1rem;
+            }
+
+            p {
+                margin-bottom: 0.5rem;
+            }
+        }
+
+        .MuiButtonBase-root.MuiToggleButton-root {
+            border-radius: 10px !important;
+            border: 1px solid rgba(0, 0, 0, 0.12) !important;
+            padding: 0.7rem;
+            font-size: 1rem;
+        }
+
+        .MuiToggleButton-root.Mui-selected {
+            font-weight: bold;
+        }
+    }
+
+    .MuiSelect-select,
+    .editSzolg_repeat-container .MuiFilledInput-input {
+        padding-top: 1rem;
+    }
+
+    &_menu-item.MuiMenuItem-root {
+        font-size: 1.5rem;
+    }
+}
+
+.MuiPopover-root .MuiPaper-root {
+    min-width: var(--dropDownWidth) !important;
+}
+
+.MuiTabs-root .MuiSvgIcon-root {
+    font-size: 2.2rem;
+}
+
+.MuiCalendarPicker-root {
+    .MuiYearPicker-root button {
+        font-size: 1.3rem;
+    }
+
+    .MuiButtonBase-root,
+    .MuiTypography-root {
+        font-size: 1.2rem;
+
+        .MuiSvgIcon-root {
+            font-size: 2rem;
+        }
+    }
+
+    div[role="presentation"] {
+        font-size: 1.5rem;
+    }
+}

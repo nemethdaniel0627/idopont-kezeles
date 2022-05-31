@@ -1,4 +1,4 @@
-@keyframes slideInRight{
+@keyframes slideInRight {
     from {
         transform: translateX(100%);
     }
@@ -7,7 +7,7 @@
     }
 }
 
-@keyframes slideInLeft{
+@keyframes slideInLeft {
     from {
         transform: translateX(-100%);
     }
@@ -16,7 +16,7 @@
     }
 }
 
-@keyframes slideOutRight{
+@keyframes slideOutRight {
     from {
         transform: translateX(0);
     }
@@ -25,11 +25,33 @@
     }
 }
 
-@keyframes slideOutLeft{
+@keyframes slideOutLeft {
     from {
         transform: translateX(0);
     }
     to {
         transform: translateX(-100%);
+    }
+}
+
+@keyframes editSzolgOpen {
+    from {
+        transform: translate(-50%, -50%);
+        opacity: 0;
+    }
+    to {
+        transform: translate(-50%, -50%) scale(1.5);
+        opacity: 1;
+    }
+}
+
+@keyframes editSzolgClose {
+    from {
+        transform: translate(-50%, -50%) scale(1.5);
+        opacity: 1;
+    }
+    to {
+        transform: translate(-50%, -50%);
+        opacity: 0;
     }
 }
