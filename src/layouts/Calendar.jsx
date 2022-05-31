@@ -3,7 +3,6 @@ import { START_HOUR_OF_EVENTS, END_HOUR_OF_EVENTS } from "../constants.js";
 import IntervalButton from "../components/IntervalButton.jsx";
 import Loader from "../components/Loader.jsx";
 import ListItem from "../components/ListItem.jsx";
-import Event from "../components/Event.jsx";
 import IntervalList from "../components/IntervalList.jsx";
 import NewEvent from "../components/NewEvent.jsx";
 
@@ -44,7 +43,6 @@ export default function Calendar(props) {
   const [hours, setHours] = useState([]);
   const [halfHours, setHalfHours] = useState([]);
   const [minutes, setMinutes] = useState([]);
-  const [whichInterval, setWhichInterval] = useState(60);
   const [eventTime, setEventTime] = useState({});
   const [numberOfDaysArray, setNumberOfDaysArray] = useState([]);
   const [daysWindowItem, setDaysWindowItem] = useState(-1);
@@ -60,7 +58,6 @@ export default function Calendar(props) {
       console.time();
       let dateArr = date.toString().split(" ");
 
-      let setmonth = dateArr[1];
       let setday = dateArr[2];
 
       setYear(Number(dateArr[3]));
@@ -108,6 +105,7 @@ export default function Calendar(props) {
   useEffect(() => {
     console.log("egész");
     setNumberOfDaysArray(numberOfDays());
+    // eslint-disable-next-line
   }, [])
 
   async function setInterval() {
@@ -198,8 +196,6 @@ export default function Calendar(props) {
     );
     let thisMonth = new Date();
 
-    let newMonthShort = newMonth.toString().split(" ")[1];
-    let pastMonthShort = pastMonth.toString().split(" ")[1];
     let pastDayShort = pastMonth.toString().split(" ")[2];
     let newDayShort = newMonth.toString().split(" ")[2];
 
@@ -395,22 +391,6 @@ export default function Calendar(props) {
         break;
     }
   }
-
-  function setEventHeight() {
-    const eventLength = 180;
-    const oneHourLength = 300;
-    const oneMinuteLength = oneHourLength / 60;
-
-    let event = document.querySelector(`#event_23_0`);
-    if (event) {
-      event.style.height = `${oneMinuteLength * eventLength}%`;
-    }
-  }
-
-  // useEffect(() => {
-
-
-  // }, [numberOfDays])
 
   return (
     <div id="calendar" className={`calendar ${props.open ? '' : 'hidden'}`}>
