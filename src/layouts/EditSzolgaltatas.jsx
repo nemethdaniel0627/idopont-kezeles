@@ -71,14 +71,14 @@ export default function EditSzolgaltatas(props) {
     };
 
     const closeDialog = (event) => {
-        const editSzolgContainer = document.querySelector(`#editSzolgaltatas_${props.id}`);
-        if (editSzolgContainer) {
+        const editServiceContainer = document.querySelector(`#editService_${props.id}`);
+        if (editServiceContainer) {
 
-            editSzolgContainer.setAttribute("closing", "");
-            editSzolgContainer.addEventListener("animationend", () => {
-                editSzolgContainer.close();
-                editSzolgContainer.removeAttribute("closing");
-                editSzolgContainer.removeAttribute("open");
+            editServiceContainer.setAttribute("closing", "");
+            editServiceContainer.addEventListener("animationend", () => {
+                editServiceContainer.close();
+                editServiceContainer.removeAttribute("closing");
+                editServiceContainer.removeAttribute("open");
             }, { once: true });
 
         }
@@ -95,7 +95,7 @@ export default function EditSzolgaltatas(props) {
     }
 
     const titleChange = (event) => {
-        const editTileInput = document.querySelector(".editSzolg_edit-title");
+        const editTileInput = document.querySelector(".editService_edit-title");
         setTitle(event.target.value);
 
         if (editTileInput) {
@@ -117,14 +117,21 @@ export default function EditSzolgaltatas(props) {
         setTitle(props.title);
     }, [props.title])
 
+    useEffect(() => {
+        if (props.serviceDatas) {
+            setStartInputValue(props.serviceDatas.date.start);
+            setEndInputValue(props.serviceDatas.date.end);
+        }
+    }, [props.serviceDatas])
+
     return (
-        <dialog id={`editSzolgaltatas_${props.id}`} className="editSzolg">
-            <IconButton onClick={closeDialog} size="large" className="editSzolg_close">
+        <dialog id={`editService_${props.id}`} className="editService">
+            <IconButton onClick={closeDialog} size="large" className="editService_close">
                 <CloseIcon />
             </IconButton>
             {
                 editTile === true ?
-                    <FormControl variant="filled" className="editSzolg_edit-title">
+                    <FormControl variant="filled" className="editService_edit-title">
                         <FilledInput
                             id="filled-adornment-password"
                             type="text"
@@ -145,12 +152,12 @@ export default function EditSzolgaltatas(props) {
                         />
                     </FormControl>
                     :
-                    <h2 onClick={() => setEditTile(true)} className="editSzolg_title">
+                    <h2 onClick={() => setEditTile(true)} className="editService_title">
                         {title}
                         <EditIcon />
                     </h2>
             }
-            <div className="editSzolg_date-time-pickers">
+            <div className="editService_date-time-pickers">
                 <LocalizationProvider dateAdapter={AdapterDateFns}>
                     <DateTimePicker
                         label="Erőforrás kezdő időpontja"
@@ -174,7 +181,7 @@ export default function EditSzolgaltatas(props) {
                     />
                 </LocalizationProvider>
             </div>
-            <div className="editSzolg_repeat-container">
+            <div className="editService_repeat-container">
                 <p>
                     {
                         regularity === "never" ? "Ismétlődjön?"
@@ -188,7 +195,7 @@ export default function EditSzolgaltatas(props) {
                     regularity === "never" ? <></> :
                         <TextField
                             type="number"
-                            className="editSzolg_number"
+                            className="editService_number"
                             onChange={repeatsEveryChange}
                             value={repeatsEvery}
                             variant="filled"
@@ -197,13 +204,13 @@ export default function EditSzolgaltatas(props) {
                 <TextField
                     id="filled-select-currency"
                     select
-                    className="editSzolg_select"
+                    className="editService_select"
                     value={regularity}
                     onChange={selectionChanged}
                     variant="filled"
                 >
                     {regularityOptions.map((option) => (
-                        <MenuItem className="editSzolg_menu-item" key={option.value} value={option.value}>
+                        <MenuItem className="editService_menu-item" key={option.value} value={option.value}>
                             {option.label}
                         </MenuItem>
                     ))}
@@ -211,13 +218,13 @@ export default function EditSzolgaltatas(props) {
             </div>
             {
                 regularity === 'week' ?
-                    <div className="editSzolg_week-days_container">
+                    <div className="editService_week-days_container">
                         <hr />
                         <p>A kiválaszott napok minden hétre lefoglalhatóak lesznek</p>
                         <ToggleButtonGroup
                             color="primary"
                             value={daySelected}
-                            className="editSzolg_week-days"
+                            className="editService_week-days"
                             onChange={daySelectionChanged}
                         >
                             <ToggleButton value="Hé">Hé</ToggleButton>
@@ -235,7 +242,7 @@ export default function EditSzolgaltatas(props) {
 
             {
                 regularity !== "never" ?
-                    <div className="editSzolg_repeat-end">
+                    <div className="editService_repeat-end">
                         <hr />
                         <FormControl>
                             <FormLabel id="demo-row-radio-buttons-group-label">Ismétlődés vége</FormLabel>
@@ -247,7 +254,7 @@ export default function EditSzolgaltatas(props) {
                             >
                                 <FormControlLabel value="never" control={<Radio />} checked={repeatEnd === "never"} label="Soha" />
                                 <FormControlLabel value="onDate" control={<Radio />} checked={repeatEnd === "onDate"} />
-                                <label onClick={() => setRepeatEnd("onDate")} className="editSzolg_repeat-end_date-picker">
+                                <label onClick={() => setRepeatEnd("onDate")} className="editService_repeat-end_date-picker">
                                     <LocalizationProvider dateAdapter={AdapterDateFns}>
                                         <DatePicker
                                             disabled={repeatEnd !== "onDate"}
@@ -262,11 +269,11 @@ export default function EditSzolgaltatas(props) {
                                     </LocalizationProvider>
                                 </label>
                                 <FormControlLabel value="occurrence" control={<Radio />} checked={repeatEnd === "occurrence"} />
-                                <label onClick={() => setRepeatEnd("occurrence")} className="editSzolg_repeat-end_occurrence">
+                                <label onClick={() => setRepeatEnd("occurrence")} className="editService_repeat-end_occurrence">
                                     <TextField
                                         disabled={repeatEnd !== "occurrence"}
                                         type="number"
-                                        className="editSzolg_number"
+                                        className="editService_number"
                                         onChange={occurrenceChange}
                                         value={occurrence}
                                         variant="filled"

@@ -1,12 +1,16 @@
 import React from "react";
 import Szolgaltatas from "../components/Szolgaltatas";
 
-export default function AdminSzolgaltatas() {
+export default function AdminSzolgaltatas(props) {
 
     return (
-        <div className="admin-szolg">
-            <Szolgaltatas id="szolg_1" title="Tárgyaló foglalás" isAdmin={true} />
-            <Szolgaltatas id="szolg_add" title="Erőforrás neve" isAdmin={true} addNew={true} />
+        <div className="admin-service">
+            {
+                props.services.map((item, index) => {
+                    return <Szolgaltatas key={""} id={`service_${index}`} title={item.title} isAdmin={true} serviceDatas={item} />
+                })
+            }
+            <Szolgaltatas id="service_add" title="Erőforrás neve" isAdmin={true} addNew={true} />
         </div>
     )
 }

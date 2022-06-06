@@ -34,7 +34,7 @@
     }
 }
 
-@keyframes editSzolgOpen {
+@keyframes editServiceOpen {
     from {
         transform: translate(-50%, -50%);
         opacity: 0;
@@ -45,7 +45,7 @@
     }
 }
 
-@keyframes editSzolgClose {
+@keyframes editServiceClose {
     from {
         transform: translate(-50%, -50%) scale(1.5);
         opacity: 1;

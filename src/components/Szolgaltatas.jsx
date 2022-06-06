@@ -12,18 +12,18 @@ export default function Szolgaltatas(props) {
     }
 
     function editElement() {
-        const editSzolgContainer = document.querySelector(`#editSzolgaltatas_${props.id}`);
+        const editServiceContainer = document.querySelector(`#editService_${props.id}`);
 
-        if (editSzolgContainer) {
-            editSzolgContainer.show();
+        if (editServiceContainer) {
+            editServiceContainer.show();
         }
     }
 
     useEffect(() => {
         const root = document.querySelector(":root");
-        const szolg = document.querySelector("#szolg_1");
-        if (root && szolg) {
-            root.style.setProperty("--modalHeight", `${szolg.clientHeight}px`);
+        const service = document.querySelector("#service_add");
+        if (root && service) {
+            root.style.setProperty("--modalHeight", `${service.clientHeight}px`);
             root.style.setProperty("--editTitleInputWidth", `${props.title.length + 3}ch`);
         }
         // eslint-disable-next-line
@@ -31,11 +31,11 @@ export default function Szolgaltatas(props) {
 
     return (
         <>
-            <div id={props.id} onClick={props.addNew ? editElement : props.isAdmin ? () => { } : openCalendar} className="szolg">
+            <div id={props.id} onClick={props.addNew ? editElement : props.isAdmin ? () => { } : openCalendar} className="service">
                 <SzolgTitle title={props.isAdmin ? "" : props.title} edit={props.isAdmin} onClick={editElement} />
                 {
                     props.addNew ?
-                        <svg className="szolg_add" xmlns="http://www.w3.org/2000/svg" data-name="Layer 1" width="782.04441" height="505.29587" viewBox="0 0 782.04441 701.88002" xmlnsXlink="http://www.w3.org/1999/xlink">
+                        <svg className="service_add" xmlns="http://www.w3.org/2000/svg" data-name="Layer 1" width="782.04441" height="505.29587" viewBox="0 0 782.04441 701.88002" xmlnsXlink="http://www.w3.org/1999/xlink">
                             <path d="M609.48783,100.59015l-25.44631,6.56209L270.53735,187.9987,245.091,194.56079A48.17927,48.17927,0,0,0,210.508,253.17865L320.849,681.05606a48.17924,48.17924,0,0,0,58.61776,34.58317l.06572-.01695,364.26536-93.93675.06572-.01695a48.17923,48.17923,0,0,0,34.58309-58.6178l-110.341-427.87741A48.17928,48.17928,0,0,0,609.48783,100.59015Z" transform="translate(-208.9778 -99.05999)" fill="#f2f2f2" />
                             <path d="M612.94784,114.00532l-30.13945,7.77236L278.68955,200.20385l-30.139,7.77223a34.30949,34.30949,0,0,0-24.6275,41.74308l110.341,427.87741a34.30946,34.30946,0,0,0,41.7431,24.62736l.06572-.01695,364.26536-93.93674.06619-.01707a34.30935,34.30935,0,0,0,24.627-41.7429l-110.341-427.87741A34.30938,34.30938,0,0,0,612.94784,114.00532Z" transform="translate(-208.9778 -99.05999)" fill="#fff" />
                             <path d="M590.19,252.56327,405.917,300.08359a8.01411,8.01411,0,0,1-4.00241-15.52046l184.273-47.52033A8.01412,8.01412,0,0,1,590.19,252.56327Z" transform="translate(-208.9778 -99.05999)" fill="#f2f2f2" />
@@ -62,7 +62,7 @@ export default function Szolgaltatas(props) {
                             <path d="M635.85911,390.6071H506.51316a3.847,3.847,0,0,1-3.84277-3.84277V285.81706a3.847,3.847,0,0,1,3.84277-3.84277H635.85911a3.847,3.847,0,0,1,3.84277,3.84277V386.76433A3.847,3.847,0,0,1,635.85911,390.6071Z" transform="translate(-208.9778 -99.05999)" fill="var(--calendar-blue)" />
                         </svg>
                         :
-                        <svg className="szolg_img" xmlns="http://www.w3.org/2000/svg" data-name="Layer 1" width="936.13137" height="505.29587" viewBox="0 0 936.13137 505.29587" xmlnsXlink="http://www.w3.org/1999/xlink">
+                        <svg className="service_img" xmlns="http://www.w3.org/2000/svg" data-name="Layer 1" width="936.13137" height="505.29587" viewBox="0 0 936.13137 505.29587" xmlnsXlink="http://www.w3.org/1999/xlink">
                             <path d="M191.22942,619.35948l-2.92,14.65c-.22,1.12-.45,2.26-.7,3.39a14.28772,14.28772,0,0,0-7.34.41,68.511,68.511,0,0,1,5.04,8.43c-1.84,5.67-4.54,10.91-9.06,14.7a22.71964,22.71964,0,0,1-21.95,3.86l.13-.58c-4.86-9.43-2.22-21.32,3.82-30.03a58.3846,58.3846,0,0,1,10.85-11.47c4.07995-3.4,8.49-6.45,12.86-9.46A5.99007,5.99007,0,0,1,191.22942,619.35948Z" transform="translate(-131.93432 -197.35206)" fill="#e4e4e4" />
                             <path id="b311a411-101b-4365-a37b-2cdfec47a637-2482" data-name="a4b268fa-75d0-4ac1-9d87-14bdca948464-2189" d="M155.33929,700.04932c-1.229-8.953-2.493-18.02-1.631-27.069.766-8.036,3.217-15.885,8.209-22.321a37.13173,37.13173,0,0,1,9.527-8.633c.953-.6,1.829.909.881,1.507a35.29987,35.29987,0,0,0-13.963,16.847c-3.04,7.732-3.528,16.161-3,24.374.317,4.967.988,9.9,1.665,14.83a.9.9,0,0,1-.61,1.074.878.878,0,0,1-1.074-.61Z" transform="translate(-131.93432 -197.35206)" fill="#f2f2f2" />
                             <path d="M165.88665,250.986q64.2559-1.1173,128.52565-.321,64.26043.801,128.47773,3.52415,36.035,1.5282,72.04082,3.66151c1.92853.11411,1.92189-2.88628,0-3q-64.15339-3.79623-128.40043-5.6811-64.23792-1.8798-128.51292-1.83728-36.06741.024-72.13085.65375c-1.92833.03353-1.93442,3.03363,0,3Z" transform="translate(-131.93432 -197.35206)" fill="#e6e6e6" />
@@ -220,7 +220,7 @@ export default function Szolgaltatas(props) {
                 }
 
             </div>
-            <EditSzolgaltatas id={props.id} title={props.title} open={setElementOpen} />
+            <EditSzolgaltatas serviceDatas={props.serviceDatas} id={props.id} title={props.title} open={setElementOpen} />
         </>
     )
 }
