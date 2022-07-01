@@ -27,7 +27,7 @@ export default function IntervalList(props) {
                                             <Event
                                                 key={`event_${index}`}
                                                 id={`event_${props.prefix}-${props.item}_${timeUnit}_${props.id.split("_")[3]}_${index}`}
-                                                eventName="Esemény"
+                                                eventName={event.name}
                                                 eventLength={event.eventLength}
                                                 prefix={`${props.prefix}-${props.item}`}
                                                 eventNotRound={Number(event.eventStart.split(":")[1]) !== 0 ? Number(event.eventStart.split(":")[1]) : undefined} />
@@ -51,7 +51,7 @@ export default function IntervalList(props) {
                                             <Event
                                                 key={`event_${index}`}
                                                 id={`event_${props.prefix}-${props.item}_${timeUnit}_${props.id.split("_")[3]}_${index}`}
-                                                eventName="Esemény"
+                                                eventName={event.name}
                                                 prefix={`${props.prefix}-${props.item}`}
                                                 eventLength={event.eventLength} />
                                             : <i key={`event_${index}`}></i>
@@ -72,7 +72,7 @@ export default function IntervalList(props) {
                                             <Event
                                                 key={`event_${index}`}
                                                 id={`event_${props.prefix}-${props.item}_${timeUnit}_${props.id.split("_")[3]}_${index}`}
-                                                eventName="Esemény"
+                                                eventName={event.name}
                                                 eventLength={event.eventLength}
                                                 prefix={`${props.prefix}-${props.item}`}
                                                 eventNotRound={Number(event.eventStart.split(":")[1]) !== 0 ? Number(event.eventStart.split(":")[1]) : undefined} />

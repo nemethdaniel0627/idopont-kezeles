@@ -1,0 +1,120 @@
+.fullscreen-calendar {
+    position: absolute;
+    max-width: 800px;
+    width: 80vw;
+    min-height: 45rem;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    background-color: var(--calendar-grey);
+    color: #333333;
+    display: inline-flex;
+    transition: all 0.4s;
+    align-items: center;
+    justify-content: center;
+
+    &[open] {
+        animation: fullscreenCalendar 500ms ease-out forwards;
+        max-width: initial;
+    }
+
+    &[closing] {
+        animation: exitFullscreenCalendar 500ms ease-out forwards;
+        max-width: initial;
+    }
+
+    &_right-col {
+        height: 100%;
+        width: 30rem;
+        background-color: var(--calendar-dark);
+        border-top-right-radius: 1rem;
+        border-bottom-right-radius: 1rem;
+    }
+
+    &_left-col {
+        height: 100%;
+        width: calc(100% - 30rem);
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        overflow: hidden;
+    }
+
+    &_header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        box-shadow: 0 0.1rem 1rem rgb(0 0 0 / 20%);
+    }
+
+    &_exit-fullscreen {
+        svg {
+            font-size: 3rem;
+        }
+    }
+
+    &_month-switch {
+        svg {
+            font-size: 2rem;
+            pointer-events: none;
+        }
+    }
+
+    &_days {
+        display: grid;
+        gap: 0.1rem;
+        background-color: #aaa;
+        grid-template-columns: repeat(7, 1fr);
+        grid-template-rows: repeat(5, 1fr);
+        height: calc(100% - 54px);
+        position: absolute;
+        top: 54px;
+        width: 100%;
+        left: 0;
+        transform: translateX(0);
+        &_day {
+            background-color: var(--calendar-grey);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            list-style: none;
+            font-size: 1.3rem;
+            h3 {
+                font-size: 1.2rem;
+                margin-bottom: 0.5rem;
+                margin-top: 0.2rem;
+            }
+            p {
+                border-radius: 50%;
+                padding: 0.5rem;
+            }
+        }
+    }
+    &_event {
+        width: 90%;
+        padding: 0.5rem 0.2rem;
+        color: #eee;
+        background-color: red;
+        border-radius: 5px;
+        align-self: flex-start;
+        cursor: pointer;
+
+        &_long-start {
+            width: 101%;
+            border-radius: 5px 0 0 5px;
+        }
+
+        &_long-middle {
+            width: 101%;
+            border-radius: 0;
+        }
+
+        &_long-end {
+            border-radius: 0 5px 5px 0;
+        }
+    }
+}
+
+.days-change {
+    animation: fullDaysChange 1s ease-in-out;
+}

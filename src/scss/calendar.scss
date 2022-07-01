@@ -30,6 +30,16 @@
         width: 60%;
     }
 
+    &[open] {
+        animation: fullscreenCalendar 500ms ease-out forwards;
+        max-width: initial;
+    }
+
+    &[closing] {
+        animation: exitFullscreenCalendar 500ms ease-out forwards;
+        max-width: initial;
+    }
+
     .date {
         @media only screen and (max-width: 1000px) {
             font-size: 1.9rem;
@@ -99,6 +109,9 @@
             color: var(--calendar-dark);
             text-align: right;
             margin-bottom: 5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
     }
     & .noteList li {
@@ -326,9 +339,6 @@
                 margin-bottom: 10px;
                 padding-top: 10px;
             }
-            .selected {
-                background-color: var(--calendar-light) !important;
-            }
             .full {
                 color: #fa2e32;
             }
@@ -428,6 +438,18 @@
             }
         }
     }
+
+    &_fullscreen {
+        svg {
+            font-size: 3rem;
+        }
+    }
+}
+.greyDay {
+    color: #aaa;
+}
+.selected {
+    background-color: var(--calendar-light) !important;
 }
 .interval-list {
     position: relative;

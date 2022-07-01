@@ -5,6 +5,8 @@ import Loader from "../components/Loader.jsx";
 import ListItem from "../components/ListItem.jsx";
 import IntervalList from "../components/IntervalList.jsx";
 import NewEvent from "../components/NewEvent.jsx";
+import { Fullscreen } from "@mui/icons-material";
+import { IconButton } from "@mui/material";
 
 export default function Calendar(props) {
   const [year, setYear] = useState(new Date().getFullYear());
@@ -12,33 +14,9 @@ export default function Calendar(props) {
   const [month, setMonth] = useState(new Date().getMonth());
   const [day, setDay] = useState(0);
   const [dayName, setDayName] = useState("");
-  const monthNames = [
-    "Január",
-    "Február",
-    "Március",
-    "Április",
-    "Május",
-    "Június",
-    "Július",
-    "Augusztus",
-    "Szeptember",
-    "Október",
-    "November",
-    "December",
-  ];
-  const dayNames = [
-    "Hétfő",
-    "Kedd",
-    "Szerda",
-    "Csütörtök",
-    "Péntek",
-    "Szombat",
-    "Vasárnap",
-  ];
-  const [events, setEvents] = useState([
-    { eventStart: "0:30", eventLength: 90, eventDate: new Date() },
-    { eventStart: "3:0", eventLength: 120, eventDate: new Date() }
-  ])
+  const monthNames = props.monthName;
+  const dayNames = props.dayNames;
+  const [services, setServices] = useState([]);
   const [years, setYears] = useState([]);
   const [hours, setHours] = useState([]);
   const [halfHours, setHalfHours] = useState([]);
@@ -50,63 +28,25 @@ export default function Calendar(props) {
   let calendar = document.getElementById("calendar");
   let date = new Date();
 
-  // let numberOfDaysArray = numberOfDays();
+  // let numberOfDaysArray = numberOfDays();  
 
   useEffect(() => {
     // setNumberOfDaysArray(numberOfDays());
-    if (numberOfDaysArray.length !== 0) {
-      console.time();
-      let dateArr = date.toString().split(" ");
-
-      let setday = dateArr[2];
-
-      setYear(Number(dateArr[3]));
-      setMonthName(monthNames[date.getMonth()]);
-      setMonth(date.getMonth());
-      setDay(date.getDate());
-      setDayName(dayNames[date.getDay() !== 0 ? date.getDay() - 1 : 6]);
-      let months = document.getElementById("months");
-      let days = document.getElementById("days");
-      if (years.length === 0) {
-        for (let i = Number(dateArr[3]); i <= Number(dateArr[3]) + 11; i++) {
-          setYears((prevState) => {
-            return [...prevState, i];
-          });
-        }
-      }
-
-      // honap beallitas
-      if (months) {
-        months.childNodes.forEach((li) => {
-          if (li.firstChild.attributes[1].value === (date.getMonth() + 1).toString()) {
-            li.firstChild.className = "selected";
-          }
-        });
-      }
-
-      // nap beállitasa
-      if (days) {
-        console.log(setday);
-        days.childNodes.forEach((li, index) => {
-          if (index !== days.childNodes.length - 1 && li.firstChild.attributes[1].value === setday) {
-            li.firstChild.className = "selected";
-          }
-        });
-      }
-
-
-      setInterval();
-      console.timeEnd();
+    if (props.numberOfDaysArray) {
+      setNumberOfDaysArray(props.numberOfDaysArray)
     }
-    // console.timeLog();
-    //eslint-disable-next-line
-  }, [calendar]);
-
-  useEffect(() => {
-    console.log("egész");
-    setNumberOfDaysArray(numberOfDays());
+    if (props.year && props.monthName && props.month && props.day && props.dayName && props.years && props.services) {
+      setYear(props.year);
+      setMonthName(props.monthName);
+      setMonth(props.month);
+      setDay(props.day);
+      setDayName(props.dayName);
+      setYears(props.years);
+      setServices(props.services);
+    }
+    setInterval();
     // eslint-disable-next-line
-  }, [])
+  }, [props])
 
   async function setInterval() {
 
@@ -196,6 +136,11 @@ export default function Calendar(props) {
     );
     let thisMonth = new Date();
 
+    setMonthName(monthNames[newMonth.getMonth()]);
+    props.setProps("monthName", monthNames[newMonth.getMonth()]);
+    setMonth(newMonth.getMonth());
+    props.setProps("month", newMonth.getMonth());
+
     let pastDayShort = pastMonth.toString().split(" ")[2];
     let newDayShort = newMonth.toString().split(" ")[2];
 
@@ -215,7 +160,6 @@ export default function Calendar(props) {
             newMonth.getMonth() === thisMonth.getMonth() &&
             li.firstChild.attributes[1].value === thisMonth.getDate().toString()
           ) {
-            li.firstChild.className = "selected";
             setDay(thisMonth.getDate());
             setDayName(
               thisMonth.getDay() === 0
@@ -226,70 +170,28 @@ export default function Calendar(props) {
             newMonth.getMonth() !== thisMonth.getMonth() &&
             li.firstChild.attributes[1].value === newDayShort
           ) {
-            li.firstChild.className = "selected";
             setDay(newMonth.getDate());
             setDayName(
               newMonth.getDay() === 0 ? "Sunday" : dayNames[newMonth.getDay() - 1]
             );
           } else if (
-            (newMonth.getMonth() === thisMonth.getMonth() && index === 0)
+            (newMonth.getMonth() === thisMonth.getMonth() && li.firstChild.attributes[2].value === "1")
             || li.firstChild.attributes[1].value === pastDayShort) {
-            li.firstChild.className = "";
           }
         }
       });
     }
-
-    setMonthName(monthNames[newMonth.getMonth()]);
-    setMonth(newMonth.getMonth());
     // setNumberOfDaysArray(numberOfDays());
   }
 
   function yearSelected(event) {
-    console.log(event.target.attributes[0].value);
     let selectedYear = Number(event.target.attributes[0].value);
     setYear(selectedYear);
     // numberOfDays();
   }
 
-  function numberOfDays() {
-
-    console.log("numberOfDays");
-    console.time();
-
-    const BigMonths = [1, 3, 5, 7, 8, 10, 12];
-    const SmallMonths = [4, 6, 9, 11];
-    let localdate = new Date(year, month);
-    let firstDay = new Date(Number(year), Number(month), 1).getDay() - 1;
-    if (firstDay === -1) {
-      firstDay = 6;
-    }
-
-    let numberOfdays;
-
-    if (BigMonths.includes(localdate.getMonth() + 1)) numberOfdays = 31;
-    else if (SmallMonths.includes(localdate.getMonth() + 1)) numberOfdays = 30;
-    else if (leapyear(localdate.getFullYear())) numberOfdays = 29;
-    else numberOfdays = 28;
-
-    // let localDays = Array.from({ length: (numberOfdays - (1 - firstDay)) + 1 }, (_, i) => (1 - firstDay) + i);
-    let localDays = [];
-
-    for (var i = 1 - firstDay; i <= numberOfdays; i += 1) {
-      localDays.push(i);
-    }
-
-    console.timeEnd();
-
-    console.log(localDays);
-
-    return localDays;
-
-  }
-
   function daysAnimate(animateIn) {
     let days = document.getElementById("days");
-    console.log("animate" + animateIn);
     if (days) {
       days.style.opacity = animateIn === true ? "1" : "0";
     }
@@ -305,15 +207,29 @@ export default function Calendar(props) {
   useEffect(() => {
     daysAnimate(false);
     setTimeout(() => {
-      setNumberOfDaysArray(numberOfDays());
+      setNumberOfDaysArray(props.numberOfDays());
     }, 200);
   }, [year, month])
 
   useEffect(() => {
     daysAnimate(true);
-    console.log(numberOfDaysArray);
-
   }, [numberOfDaysArray])
+
+  useEffect(() => {
+    // const days = document.querySelector("#days");
+    // if (days) {
+    //   const tmpEvent = {
+    //     target: {
+    //       attributes: [
+    //         -1,
+    //         { value: 6 }
+    //       ]
+    //     }
+    //   }
+    //   monthSelected(tmpEvent)
+    // }
+    openFullScreen();
+  }, [])
 
   function radioChange(event) {
     const daysWindow = document.querySelector(".days-window");
@@ -359,7 +275,7 @@ export default function Calendar(props) {
   function addNewEvent(startTime, endTime) {
     const eventStart = `${startTime.getHours()}:${startTime.getMinutes()}`;
     const eventLength = Math.abs(endTime - startTime) / 60000;
-    setEvents(prevEvents => {
+    setServices(prevEvents => {
       return [...prevEvents, { eventStart: eventStart, eventLength: eventLength, eventDate: startTime }]
     })
     console.log(eventStart);
@@ -389,6 +305,17 @@ export default function Calendar(props) {
 
       default:
         break;
+    }
+  }
+
+  function openFullScreen() {
+    const fullscreen = document.querySelector(".fullscreen-calendar");
+    const calendar = document.querySelector("#calendar");
+
+    if (fullscreen && calendar) {
+      fullscreen.setAttribute("open", "");
+      fullscreen.classList.remove("hidden");
+      calendar.setAttribute("open", "");
     }
   }
 
@@ -431,6 +358,9 @@ export default function Calendar(props) {
             <label htmlFor="year--check">
               <span className="year">{year}</span>
             </label>
+            <IconButton className="calendar_fullscreen" size="large" onClick={openFullScreen}>
+              <Fullscreen />
+            </IconButton>
           </h2>
 
           <div className="year--block">
@@ -465,17 +395,15 @@ export default function Calendar(props) {
           </ul>
           <div className="clearfix"></div>
           <ul className="weekday">
-            <ListItem itemContent="Hé" datavalue="1" isWeekDay={true} />
-            <ListItem itemContent="Ke" datavalue="2" isWeekDay={true} />
-            <ListItem itemContent="Sze" datavalue="3" isWeekDay={true} />
-            <ListItem itemContent="Csü" datavalue="4" isWeekDay={true} />
-            <ListItem itemContent="Pé" datavalue="5" isWeekDay={true} />
-            <ListItem itemContent="Szo" datavalue="6" isWeekDay={true} />
-            <ListItem itemContent="Va" datavalue="7" isWeekDay={true} />
+            {
+              props.shortDayNames.map((item, index) => {
+                return <ListItem key={`${item}_${index}`} itemContent={item} datavalue="1" isWeekDay={true} />
+              })
+            }
           </ul>
           <div className="clearfix"></div>
           <ul className="days" id="days">
-            {numberOfDaysArray.map((item) => {
+            {numberOfDaysArray.map((item, index) => {
               let addClass = "";
               // switch (item) {
               //   case 8:
@@ -495,32 +423,30 @@ export default function Calendar(props) {
               //     break;
               //   default:
               //     break;
-              // }
-
-              if (item < 1)
-                return (
-                  <li key={item}>
-                    <span
-                      className="empty"
-                      value={item}
-                      datavalue={item}
-                    ></span>
-                  </li>
-                );
+              // }              
+              const tmpDate = month === new Date().getMonth() ? new Date().getDate() : undefined;
+              let notThisMonthDay = false;
+              if (index < 8 && item.getDate() > 8) notThisMonthDay = true;
+              if (index > 20 && item.getDate() < 8) notThisMonthDay = true;
               // eslint-disable-next-line
               return (
-                <li key={item}>
+                <li key={`calendar_${item.getDate()}_${index}`}>
                   {/* eslint-disable-next-line */}
                   <label
-                    htmlFor={`${year}-${month + 1}-${item}_radio`}
+                    htmlFor={`${year}-${month + 1}-${item.getDate()}_radio`}
                     onClick={daySelected}
-                    value={item < 10 ? "0" + item : item}
-                    className={addClass}
-                    datavalue={item}
+                    value={item.getDate() < 10 ? "0" + item.getDate() : item.getDate()}
+                    datavalue={item.getDate()}
+                    className={
+                      `${addClass} ${tmpDate !== undefined && item.getDate().toString() === tmpDate.toString()
+                        ? "selected"
+                        : ""
+                      } ${notThisMonthDay === true ? "greyDay" : ""}`
+                    }
                   >
-                    {item}
+                    {item.getDate()}
                   </label>
-                  <input onClick={radioChange} type="radio" name="days" id={`${year}-${month + 1}-${item}_radio`} />
+                  <input onClick={radioChange} type="radio" name="days" id={`${year}-${month + 1}-${item.getDate()}_radio`} />
                 </li>
               );
             })}
@@ -553,9 +479,9 @@ export default function Calendar(props) {
                   </span>
                 </div>
                 <div className="interval-list--wrapper">
-                  <IntervalList key={`hour_list_${daysWindowItem}_5`} id={`hour_list_${daysWindowItem}_5`} prefix={`${year}-${month + 1}`} events={events} timeUnits={minutes} item={daysWindowItem} setNewEvent={setNewEvent} />
-                  <IntervalList key={`hour_list_${daysWindowItem}_30`} id={`hour_list_${daysWindowItem}_30`} prefix={`${year}-${month + 1}`} events={events} timeUnits={halfHours} item={daysWindowItem} setNewEvent={setNewEvent} />
-                  <IntervalList key={`hour_list_${daysWindowItem}_60`} id={`hour_list_${daysWindowItem}_60`} prefix={`${year}-${month + 1}`} events={events} timeUnits={hours} item={daysWindowItem} setNewEvent={setNewEvent} />
+                  <IntervalList key={`hour_list_${daysWindowItem}_5`} id={`hour_list_${daysWindowItem}_5`} prefix={`${year}-${month + 1}`} events={[]} timeUnits={minutes} item={daysWindowItem} setNewEvent={setNewEvent} />
+                  <IntervalList key={`hour_list_${daysWindowItem}_30`} id={`hour_list_${daysWindowItem}_30`} prefix={`${year}-${month + 1}`} events={[]} timeUnits={halfHours} item={daysWindowItem} setNewEvent={setNewEvent} />
+                  <IntervalList key={`hour_list_${daysWindowItem}_60`} id={`hour_list_${daysWindowItem}_60`} prefix={`${year}-${month + 1}`} events={[]} timeUnits={hours} item={daysWindowItem} setNewEvent={setNewEvent} />
                 </div>
               </div>
 

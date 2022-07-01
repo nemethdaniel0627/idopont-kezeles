@@ -1,8 +1,10 @@
-@use "./adminSzolg";
+@use "./adminService";
 @use "./animations";
 @use "./calendar";
-@use "./editSzolg";
+@use "./editService";
 @use "./event";
+@use "./eventDetails";
+@use "./fullscreenCalendar";
 @use "./intervalbtn";
 @use "./loader";
 @use "./main";

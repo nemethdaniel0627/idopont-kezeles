@@ -9,23 +9,36 @@ export default function App() {
 
   const tempDatas = [
     {
+      id: 1,
       date: {
         start: new Date("2022-06-01"),
-        end: new Date("2022-06-03")
+        end: new Date("2022-06-04")
       },
       title: "Tárgyaló 1",
-      regularity: "never"
+      regularity: {
+        measure: "day",
+        repeatNumber: 5,
+        endsOn: {
+          type: "onDate",
+          date: new Date("2022-06-13 0:0:0")
+        }
+      }
     },
     {
+      id: 2,
       date: {
         start: new Date(),
         end: new Date()
       },
       title: "Tárgyaló 2",
       regularity: {
-        measre: "week",
+        measure: "week",
         repeatNumber: 2,
-        days: []
+        days: ["Hé", "Sze"],
+        endsOn: {
+          type: "occurrence",
+          occurrence: 1,
+        }
       }
     },
   ]
@@ -34,7 +47,7 @@ export default function App() {
     <>
       <Nav />
       <Routes>
-        <Route path="/" element={<Home />} />
+        <Route path="/" element={<Home services={tempDatas} />} />
         <Route path="/admin" element={<AdminSzolgaltatas services={tempDatas} />} />
       </Routes>
     </>

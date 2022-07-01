@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
+    Checkbox,
     FilledInput,
     FormControl,
     FormControlLabel,
@@ -18,6 +19,7 @@ import { DatePicker, DateTimePicker, LocalizationProvider } from "@mui/lab";
 import AdapterDateFns from '@mui/lab/AdapterDateFns';
 import EditIcon from '@mui/icons-material/Edit';
 import DoneIcon from '@mui/icons-material/Done';
+import Calendar from "../modules/Calendar";
 
 const regularityOptions = [
     {
@@ -48,12 +50,57 @@ export default function EditSzolgaltatas(props) {
     const [repeatsEvery, setRepeatsEvery] = useState("1");
     const [daySelected, setDaySelected] = useState(['']);
     const [startInputValue, setStartInputValue] = useState(new Date());
-    const [endInputValue, setEndInputValue] = useState(new Date().setHours(new Date().getHours() + 1));
+    const [endInputValue, setEndInputValue] = useState(new Date(new Date().setHours(new Date().getHours() + 1)));
     const [repeatEndDate, setRepeatEndDate] = useState(new Date());
     const [repeatEnd, setRepeatEnd] = useState();
     const [occurrence, setOccurrence] = useState("1");
-    const [editTile, setEditTile] = useState(false);
+    const [editTile, setEditTile] = useState(true);
     const [title, setTitle] = useState("");
+    const [allDayService, setAllDayService] = useState(false);
+    const regularityText = useMemo(() => {
+        let returnText = "";
+        switch (regularity) {
+            case "never":
+                returnText = `Ismétlődjön?`;
+                break;
+            case "day":
+                if (Calendar.getPrefix(startInputValue) === Calendar.getPrefix(endInputValue)) {
+                    returnText = `Ismétlődjön minden ${repeatsEvery !== "1" ? `${repeatsEvery}. ` : ""}napon`;
+                }
+                else {
+                    const tmpRepeatsEvery = (Math.abs((startInputValue.getDate() - endInputValue.getDate())).toString());
+                    if (tmpRepeatsEvery < repeatsEvery) {
+                        returnText = `Ismétlődjön minden ${repeatsEvery}. napon`;
+                    }
+                    else {
+                        returnText = `Ismétlődjön minden ${tmpRepeatsEvery}. napon`;
+                        setRepeatsEvery(tmpRepeatsEvery)
+                    }
+                }
+                // returnText = `Ismétlődjön minden ${repeatsEvery !== (
+                //     Calendar.getPrefix(startInputValue) === Calendar.getPrefix(endInputValue)
+                //         ? "1"
+                //         : 
+                // )
+                //     ? `${repeatsEvery}. `
+                //     : ""}napon`;
+                break;
+            case "month":
+                returnText = `Ismétlődjön minden ${repeatsEvery !== "1" ? `${repeatsEvery}. ` : ""}hónap, ${startInputValue.getDate()}. napján`;
+                break;
+            case "year":
+                returnText = `Ismétlődjön minden ${repeatsEvery !== "1" ? `${repeatsEvery}. ` : ""}évben`;
+                break;
+            case "week":
+                returnText = `Ismétlődjön minden ${repeatsEvery !== "1" ? `${repeatsEvery}. ` : ""} héten: ${daySelected.toString()}`;
+                break;
+
+            default:
+                returnText = "";
+                break;
+        }
+        return returnText;
+    }, [regularity, startInputValue, endInputValue])
 
 
     const selectionChanged = (event) => {
@@ -95,11 +142,12 @@ export default function EditSzolgaltatas(props) {
     }
 
     const titleChange = (event) => {
-        const editTileInput = document.querySelector(".editService_edit-title");
+        const editTileInput = document.querySelector(`.editService_edit-title_${props.id}`);
         setTitle(event.target.value);
+        console.log(event.target.value);
 
         if (editTileInput) {
-            editTileInput.style.width = event.target.value.length + 3 + "ch";
+            editTileInput.style.width = event.target.value.length + 5 + "ch";
         }
     }
 
@@ -110,17 +158,38 @@ export default function EditSzolgaltatas(props) {
     const finishEditTitle = () => {
         setEditTile(false);
         const root = document.querySelector(":root");
-        root.style.setProperty("--editTitleInputWidth", `${title.length + 3}ch`);
+        root.style.setProperty("--editTitleInputWidth", `${title.length + 5}ch`);
     }
 
     useEffect(() => {
-        setTitle(props.title);
-    }, [props.title])
-
-    useEffect(() => {
         if (props.serviceDatas) {
-            setStartInputValue(props.serviceDatas.date.start);
-            setEndInputValue(props.serviceDatas.date.end);
+            setEditTile(false);
+            setTitle(props.title);
+            const serviceDatas = props.serviceDatas;
+            setStartInputValue(serviceDatas.date.start);
+            setEndInputValue(serviceDatas.date.end);
+            if (serviceDatas.regularity !== "never") {
+                setRegularity(serviceDatas.regularity.measure);
+                setRepeatsEvery(serviceDatas.regularity.repeatNumber)
+                if (serviceDatas.regularity.measure === "week")
+                    setDaySelected(serviceDatas.regularity.days);
+                switch (serviceDatas.regularity.endsOn.type) {
+                    case "never":
+                        setRepeatEnd(serviceDatas.regularity.endsOn.type);
+                        break;
+                    case "onDate":
+                        setRepeatEnd(serviceDatas.regularity.endsOn.type);
+                        setRepeatEndDate(serviceDatas.regularity.endsOn.date);
+                        break;
+                    case "occurrence":
+                        setRepeatEnd(serviceDatas.regularity.endsOn.type);
+                        setOccurrence(serviceDatas.regularity.endsOn.occurrence);
+                        break;
+
+                    default:
+                        break;
+                }
+            }
         }
     }, [props.serviceDatas])
 
@@ -131,12 +200,13 @@ export default function EditSzolgaltatas(props) {
             </IconButton>
             {
                 editTile === true ?
-                    <FormControl variant="filled" className="editService_edit-title">
+                    <FormControl variant="filled" className={`editService_edit-title editService_edit-title_${props.id}`}>
                         <FilledInput
                             id="filled-adornment-password"
                             type="text"
                             value={title}
                             onChange={titleChange}
+                            placeholder="Erőforrás neve"
                             endAdornment={
                                 <InputAdornment position="end">
                                     <IconButton
@@ -159,38 +229,72 @@ export default function EditSzolgaltatas(props) {
             }
             <div className="editService_date-time-pickers">
                 <LocalizationProvider dateAdapter={AdapterDateFns}>
-                    <DateTimePicker
-                        label="Erőforrás kezdő időpontja"
-                        value={startInputValue}
-                        ampm={false}
-                        inputFormat="yyyy-MM-dd HH:mm"
-                        onChange={(newValue) => {
-                            setStartInputValue(newValue);
-                        }}
-                        renderInput={(params) => <TextField {...params} variant="filled" />}
-                    />
-                    <DateTimePicker
-                        label="Erőforrás záró időpontja"
-                        value={endInputValue}
-                        ampm={false}
-                        inputFormat="yyyy-MM-dd HH:mm"
-                        onChange={(newValue) => {
-                            setEndInputValue(newValue);
-                        }}
-                        renderInput={(params) => <TextField {...params} variant="filled" />}
-                    />
+                    {allDayService === true ?
+                        <>
+                            <DatePicker
+                                label="Erőforrás kezdő időpontja"
+                                value={startInputValue}
+                                inputFormat="yyyy-MM-dd"
+                                onChange={(newValue) => {
+                                    setStartInputValue(newValue);
+                                }}
+                                renderInput={(params) =>
+                                    <TextField
+                                        {...params}
+                                        error={startInputValue > endInputValue}
+                                        variant="filled" />}
+                            />
+                            <DatePicker
+                                label="Erőforrás záró időpontja"
+                                value={endInputValue}
+                                inputFormat="yyyy-MM-dd"
+                                onChange={(newValue) => {
+                                    setEndInputValue(newValue);
+                                }}
+                                renderInput={(params) =>
+                                    <TextField
+                                        {...params}
+                                        error={startInputValue > endInputValue}
+                                        variant="filled" />}
+                            />
+                        </>
+                        :
+                        <>
+                            <DateTimePicker
+                                label="Erőforrás kezdő időpontja"
+                                value={startInputValue}
+                                ampm={false}
+                                inputFormat="yyyy-MM-dd HH:mm"
+                                onChange={(newValue) => {
+                                    setStartInputValue(newValue);
+                                }}
+                                renderInput={(params) =>
+                                    <TextField
+                                        {...params}
+                                        error={startInputValue > endInputValue}
+                                        variant="filled" />}
+                            />
+                            <DateTimePicker
+                                label="Erőforrás záró időpontja"
+                                value={endInputValue}
+                                ampm={false}
+                                inputFormat="yyyy-MM-dd HH:mm"
+                                onChange={(newValue) => {
+                                    setEndInputValue(newValue);
+                                }}
+                                renderInput={(params) =>
+                                    <TextField
+                                        {...params}
+                                        error={startInputValue > endInputValue}
+                                        variant="filled" />}
+                            />
+                        </>
+                    }
                 </LocalizationProvider>
             </div>
+            <FormControlLabel control={<Checkbox onChange={() => { setAllDayService(!allDayService) }} value={allDayService} />} label="Egész nap?" />
             <div className="editService_repeat-container">
-                <p>
-                    {
-                        regularity === "never" ? "Ismétlődjön?"
-                            : regularity === "day" ? `Ismétlődjön minden ${repeatsEvery !== "1" ? `${repeatsEvery}. ` : ""}napon`
-                                : regularity === "month" ? `Ismétlődjön minden ${repeatsEvery !== "1" ? `${repeatsEvery}. ` : ""}hónap, ${startInputValue.getDate()}. napján`
-                                    : regularity === "year" ? `Ismétlődjön minden ${repeatsEvery !== "1" ? `${repeatsEvery}. ` : ""}évben`
-                                        : regularity === "week" ? `Ismétlődjön minden ${repeatsEvery !== "1" ? `${repeatsEvery}. ` : ""} héten: ${daySelected.toString().substring(1)}` : ""
-                    }
-                </p>
+                <p>{regularityText}</p>
                 {
                     regularity === "never" ? <></> :
                         <TextField
@@ -199,6 +303,7 @@ export default function EditSzolgaltatas(props) {
                             onChange={repeatsEveryChange}
                             value={repeatsEvery}
                             variant="filled"
+                            error={(Math.abs((startInputValue.getDate() - endInputValue.getDate()))) > repeatsEvery}
                         />
                 }
                 <TextField
@@ -215,6 +320,13 @@ export default function EditSzolgaltatas(props) {
                         </MenuItem>
                     ))}
                 </TextField>
+                <p className="text-error">
+                    {
+                        (Math.abs((startInputValue.getDate() - endInputValue.getDate()))) > repeatsEvery && regularity === "day"
+                            ? "Az ismétlődő szám nem lehet kisebb mint a napok különbsége"
+                            : ""
+                    }
+                </p>
             </div>
             {
                 regularity === 'week' ?
