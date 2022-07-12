@@ -12,6 +12,7 @@
     transition: all 0.4s;
     align-items: center;
     justify-content: center;
+    overflow: hidden;
 
     &[open] {
         animation: fullscreenCalendar 500ms ease-out forwards;
@@ -65,7 +66,6 @@
         gap: 0.1rem;
         background-color: #aaa;
         grid-template-columns: repeat(7, 1fr);
-        grid-template-rows: repeat(5, 1fr);
         height: calc(100% - 54px);
         position: absolute;
         top: 54px;
@@ -87,6 +87,12 @@
             p {
                 border-radius: 50%;
                 padding: 0.5rem;
+                aspect-ratio: 1;
+                text-align: center;
+
+                &.no-ar {
+                    aspect-ratio: unset;
+                }
             }
         }
     }
@@ -99,17 +105,17 @@
         align-self: flex-start;
         cursor: pointer;
 
-        &_long-start {
-            width: 101%;
+        &_start-long {
+            width: 110%;
             border-radius: 5px 0 0 5px;
         }
 
-        &_long-middle {
-            width: 101%;
+        &_middle-long {
+            width: 110%;
             border-radius: 0;
         }
 
-        &_long-end {
+        &_end-long {
             border-radius: 0 5px 5px 0;
         }
     }

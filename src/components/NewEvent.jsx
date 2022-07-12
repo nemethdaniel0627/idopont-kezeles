@@ -42,7 +42,8 @@ export default function NewEvent(props) {
         setStartTime(tmpStartTime);
         let tmpEndTime = new Date(props.item);
         tmpEndTime.setHours(props.eventTime.endHour, props.eventTime.endMinute);
-        setEndTime(tmpEndTime)
+        setEndTime(tmpEndTime);
+        // eslint-disable-next-line
     }, [props.eventTime])
 
     useEffect(() => {
@@ -51,6 +52,7 @@ export default function NewEvent(props) {
             tmpEnd.setHours(Number(tmpEnd.getHours()) + 1, tmpEnd.getMinutes());
             setEndTime(tmpEnd);
         }
+        // eslint-disable-next-line
     }, [startTime])
 
 

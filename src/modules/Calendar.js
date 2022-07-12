@@ -36,6 +36,24 @@ class Calendar {
     getPrefix(date) {
         return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
     }
+
+    getDateWithFormat(date, withTime = false) {
+        return withTime
+            ? `${date.getFullYear()}-${date.getMonth() + 1 < 10 ? `0${date.getMonth() + 1}` : date.getMonth() + 1}-${date.getDate() < 10 ? `0${date.getDate()}` : date.getDate()} ${date.getHours() < 10 ? `0${date.getHours()}` : date.getHours()}:${date.getMinutes() < 10 ? `0${date.getMinutes()}` : date.getMinutes()}`
+            : `${date.getFullYear()}-${date.getMonth() + 1 < 10 ? `0${date.getMonth() + 1}` : date.getMonth() + 1}-${date.getDate() < 10 ? `0${date.getDate()}` : date.getDate()}`;
+    }
+
+    convertDuration(duration) {
+        // { years: 0, months: 0, days: 0, hours: 0, minutes: 0, seconds: 0 }
+        const yearsInMin = duration.years * 525949.2;
+        const monthsInMin = duration.months * 43829.06;
+        const daysInMin = duration.days * 1440;
+        const hoursInMin = duration.hours * 60;
+        const minutesInMin = duration.minutes;
+        const secondsInMin = duration.seconds / 60;
+
+        return Math.round(yearsInMin + monthsInMin + daysInMin + hoursInMin + minutesInMin + secondsInMin);
+    }
 }
 
 export default new Calendar();

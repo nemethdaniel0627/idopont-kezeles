@@ -1,18 +1,27 @@
 import React, { useEffect, useState } from "react";
 import { IconButton } from "@mui/material";
 import CloseIcon from '@mui/icons-material/Close';
+import Calendar from "../modules/Calendar";
 
-export default function EventDetails(props) {
+export default function ServiceDetails(props) {
     const [name, setName] = useState();
+    const [serviceDef, setServiceDef] = useState();
+    const [serviceStart, setServiceStart] = useState(new Date());
+    const [serviceEnd, setServiceEnd] = useState(new Date());
+    const [serviceAllDay, setServiceAllDay] = useState(new Date());
 
     useEffect(() => {
         const eventDetails = document.querySelector(".event-details_container");
-        if (props.eventDetails && eventDetails) {
+        if (props.serviceDetails && eventDetails) {
             eventDetails.classList.add("event-details_hidden");
             eventDetails.addEventListener("animationend", (event) => {
                 console.log(event.animationName);
                 if (event.animationName === "detailsHidden") {
-                    setName(props.eventDetails.name);
+                    setName(props.serviceDetails.name);
+                    setServiceDef(props.serviceDetails.serviceDefiner);
+                    setServiceStart(props.serviceDetails.serviceStart);
+                    setServiceEnd(props.serviceDetails.serviceEnd);
+                    setServiceAllDay(props.serviceDetails.allDay);
                     eventDetails.classList.add("event-details_appear");
                 }
             }, { once: true });
@@ -23,7 +32,7 @@ export default function EventDetails(props) {
                 }
             })
         }
-    }, [props.eventDetails])
+    }, [props.serviceDetails])
 
     const closeEventDetails = () => {
         const tmpEventDetails = document.querySelector(".event-details");
@@ -84,9 +93,11 @@ export default function EventDetails(props) {
                 </div>
                 <div className="event-details_content">
                     <h3>{name}</h3>
+                    <p>Időtartam: {Calendar.getDateWithFormat(serviceStart, !serviceAllDay)} - {Calendar.getDateWithFormat(serviceEnd, !serviceAllDay)}</p>
                     <p>Munkaszüneti nap</p>
                     <p>Ünnep</p>
                     <p>Nyilvános</p>
+                    <p>{serviceDef}</p>
                 </div>
             </div>
         </dialog>

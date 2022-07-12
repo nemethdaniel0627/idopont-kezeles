@@ -22,15 +22,15 @@ export default function IntervalList(props) {
                                 >
                                     {"0" + timeUnit}
                                     <span key={`span_${props.prefix}-${props.item}_${timeUnit}_${props.id.split("_")[3]}`} className="days--info--hour"></span>
-                                    {props.events.map((event, index) => {
-                                        return Number(event.eventStart.split(":")[0]) === timeUnit && `${props.prefix}-${props.item}` === Calendar.getPrefix(event.eventDate) ?
+                                    {props.services.map((service, index) => {
+                                        return Number(service.serviceStart.split(":")[0]) === timeUnit && `${props.prefix}-${props.item}` === Calendar.getPrefix(service.serviceDate) ?
                                             <Event
                                                 key={`event_${index}`}
                                                 id={`event_${props.prefix}-${props.item}_${timeUnit}_${props.id.split("_")[3]}_${index}`}
-                                                eventName={event.name}
-                                                eventLength={event.eventLength}
+                                                eventName={service.name}
+                                                serviceLength={service.serviceLength}
                                                 prefix={`${props.prefix}-${props.item}`}
-                                                eventNotRound={Number(event.eventStart.split(":")[1]) !== 0 ? Number(event.eventStart.split(":")[1]) : undefined} />
+                                                eventNotRound={Number(service.serviceStart.split(":")[1]) !== 0 ? Number(service.serviceStart.split(":")[1]) : undefined} />
                                             : <i key={`event_${index}`}></i>
                                     })}
                                     {/* {timeUnit === 3 ? <Event id={`event_${props.prefix}-${props.item}_${timeUnit}_${props.id.split("_")[3]}`} eventName="Próba" /> : <i />} */}
@@ -46,14 +46,14 @@ export default function IntervalList(props) {
                                     {Number(timeUnit.split(":")[0]) < 10 ? "0" + timeUnit.split(":")[0] : timeUnit.split(":")[0]}:
                                     {Number(timeUnit.split(":")[1]) < 10 ? "0" + timeUnit.split(":")[1] : timeUnit.split(":")[1]}
                                     <span key={`span_${props.prefix}-${props.item}_${timeUnit}_${props.id.split("_")[3]}`} className="days--info--hour"></span>
-                                    {props.events.map((event, index) => {
-                                        return event.eventStart === timeUnit && `${props.prefix}-${props.item}` === Calendar.getPrefix(event.eventDate) ?
+                                    {props.services.map((event, index) => {
+                                        return event.serviceStart === timeUnit && `${props.prefix}-${props.item}` === Calendar.getPrefix(event.serviceDate) ?
                                             <Event
                                                 key={`event_${index}`}
                                                 id={`event_${props.prefix}-${props.item}_${timeUnit}_${props.id.split("_")[3]}_${index}`}
                                                 eventName={event.name}
                                                 prefix={`${props.prefix}-${props.item}`}
-                                                eventLength={event.eventLength} />
+                                                serviceLength={event.serviceLength} />
                                             : <i key={`event_${index}`}></i>
                                     })}
                                 </p>
@@ -67,15 +67,15 @@ export default function IntervalList(props) {
                                 >
                                     {timeUnit}
                                     <span key={`span_${props.prefix}-${props.item}_${timeUnit}_${props.id.split("_")[3]}`} className="days--info--hour"></span>
-                                    {props.events.map((event, index) => {
-                                        return Number(event.eventStart.split(":")[0]) === timeUnit && `${props.prefix}-${props.item}` === Calendar.getPrefix(event.eventDate) ?
+                                    {props.services.map((event, index) => {
+                                        return Number(event.serviceStart.split(":")[0]) === timeUnit && `${props.prefix}-${props.item}` === Calendar.getPrefix(event.serviceDate) ?
                                             <Event
                                                 key={`event_${index}`}
                                                 id={`event_${props.prefix}-${props.item}_${timeUnit}_${props.id.split("_")[3]}_${index}`}
                                                 eventName={event.name}
-                                                eventLength={event.eventLength}
+                                                serviceLength={event.serviceLength}
                                                 prefix={`${props.prefix}-${props.item}`}
-                                                eventNotRound={Number(event.eventStart.split(":")[1]) !== 0 ? Number(event.eventStart.split(":")[1]) : undefined} />
+                                                eventNotRound={Number(event.serviceStart.split(":")[1]) !== 0 ? Number(event.serviceStart.split(":")[1]) : undefined} />
                                             : <i key={`event_${index}`}></i>
                                     })}
                                 </p>

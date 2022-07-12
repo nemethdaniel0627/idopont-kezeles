@@ -123,14 +123,14 @@
 
     to {
         height: 100vh;
-        width: 100vw;
+        width: 100%;
     }
 }
 
 @keyframes exitFullscreenCalendar {
     from {
         height: 100vh;
-        width: 100vw;
+        width: 100%;
     }
     to {
         width: min(80vw, 800px);

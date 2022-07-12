@@ -4,7 +4,7 @@ import { IconButton } from "@mui/material";
 import { ArrowBackIosNew, ArrowForwardIos } from "@mui/icons-material";
 import ListItem from "../components/ListItem";
 import FullscreenEvent from "../components/FullscreenEvent";
-import EventDetails from "../components/EventDetails";
+import ServiceDetails from "../components/ServiceDetails";
 import Calendar from "../modules/Calendar";
 
 export default function FullscreenCalendar(props) {
@@ -15,7 +15,7 @@ export default function FullscreenCalendar(props) {
     const [dayName, setDayName] = useState("");
     const [years, setYears] = useState([]);
     const [numberOfDaysArray, setNumberOfDaysArray] = useState([]);
-    const [eventDetails, setEventDetails] = useState();
+    const [serviceDetails, setServiceDetails] = useState();
     const [services, setServices] = useState([]);
     const monthNames = props.monthNames;
     const dayNames = props.dayNames;
@@ -88,17 +88,30 @@ export default function FullscreenCalendar(props) {
 
         }
 
+    }, [props])
+
+    useEffect(() => {
+        setNumberOfDaysArray(props.numberOfDays());
+        // eslint-disable-next-line
+    }, [year, month])
+
+    useEffect(() => {
         if (props.services) {
             let thisMonthServices = [];
-            console.log(props.services);
             props.services.map(service => {
                 let serviceStarted = false;
                 let regularityNumber = service.regularity.repeatNumber;
                 let regularityCycleChange = false;
                 let tmpSerivceStart = service.date.start;
                 let tmpSerivceEnd = service.date.end;
+                const tmpSerivceStartTime = [service.date.start.getHours(), service.date.start.getMinutes()];
+                const tmpSerivceEndTime = [service.date.end.getHours(), service.date.end.getMinutes()];
+                const allDay = service.allDay;
                 const regularityMeasure = service.regularity.measure;
+                const regularityEndType = service.regularity.endsOn.type;
                 const intervalLength = Math.abs((tmpSerivceStart.getDate() - tmpSerivceEnd.getDate()))
+                let weekDayOccurred = false;
+                let occurrenceCounter = 0;
                 numberOfDaysArray.forEach(date => {
                     switch (regularityMeasure) {
                         case "day":
@@ -106,52 +119,175 @@ export default function FullscreenCalendar(props) {
                                 if (regularityNumber === (intervalLength + 1) && Calendar.getPrefix(date) !== Calendar.getPrefix(service.regularity.endsOn.date)) {
                                     tmpSerivceStart = date;
 
-                                    tmpSerivceEnd = new Date(year, month, (tmpSerivceStart.getDate() + intervalLength), 0, 0, 0) >= service.regularity.endsOn.date
-                                        ? service.regularity.endsOn.date
-                                        : new Date(year, month, (tmpSerivceStart.getDate() + intervalLength), 0, 0, 0);
+                                    switch (regularityEndType) {
+                                        case "onDate":
+                                            tmpSerivceEnd = new Date(props.year, props.month, (tmpSerivceStart.getDate() + intervalLength), 0, 0, 0) >= service.regularity.endsOn.date
+                                                ? service.regularity.endsOn.date
+                                                : new Date(props.year, props.month, (tmpSerivceStart.getDate() + intervalLength), 0, 0, 0);
+                                            break;
+
+                                        case "never":
+                                            tmpSerivceEnd = numberOfDaysArray[numberOfDaysArray.length - 1];
+                                            break;
+
+                                        default:
+                                            break;
+                                    }
 
                                     regularityCycleChange = false;
                                     regularityNumber = service.regularity.repeatNumber;
                                 }
                                 else if (date >= service.regularity.endsOn.date) {
                                     regularityCycleChange = false;
-                                    if (Calendar.getPrefix(date) === Calendar.getPrefix(service.regularity.endsOn.date))
-                                        thisMonthServices.push({
-                                            serviceDate: new Date(date),
-                                            name: service.title
-                                        })
+                                    if (Calendar.getPrefix(date) === Calendar.getPrefix(service.regularity.endsOn.date) && intervalLength > 0)
+                                        if ((regularityEndType === "occurrence" && thisMonthServices.length < service.regularity.endsOn.occurrence) || regularityEndType !== "occurrence") {
+                                            thisMonthServices.push({
+                                                serviceDate: new Date(date),
+                                                name: service.title,
+                                                type: intervalLength > 0 ? "start" : "not",
+                                                serviceDefiner: occurrenceCounter,
+                                                start: tmpSerivceStart,
+                                                end: tmpSerivceEnd,
+                                                allDay: allDay
+                                            });
+                                        }
                                 }
                                 else {
                                     regularityNumber--;
                                 }
                             }
+
                             if (Calendar.getPrefix(date) === Calendar.getPrefix(tmpSerivceStart)) {
                                 serviceStarted = true;
-                                thisMonthServices.push({
-                                    serviceDate: new Date(date),
-                                    name: service.title,
-                                    type: "start"
-                                })
+                                if ((regularityEndType === "occurrence" && thisMonthServices.length < service.regularity.endsOn.occurrence) || regularityEndType !== "occurrence") {
+                                    thisMonthServices.push({
+                                        serviceDate: new Date(date),
+                                        name: service.title,
+                                        type: intervalLength > 0 ? "start" : "not",
+                                        serviceDefiner: occurrenceCounter,
+                                        start: tmpSerivceStart,
+                                        end: tmpSerivceEnd,
+                                        allDay: allDay
+                                    })
+                                }
+                                if (intervalLength === 0) {
+                                    serviceStarted = false;
+                                    regularityCycleChange = true;
+                                }
                             }
                             else if (serviceStarted && Calendar.getPrefix(date) === Calendar.getPrefix(tmpSerivceEnd)) {
                                 serviceStarted = false;
                                 regularityCycleChange = true;
-                                thisMonthServices.push({
-                                    serviceDate: new Date(date),
-                                    name: service.title,
-                                    type: "end"
-                                })
+                                if ((regularityEndType === "occurrence" && thisMonthServices.length < service.regularity.endsOn.occurrence) || regularityEndType !== "occurrence") {
+                                    thisMonthServices.push({
+                                        serviceDate: new Date(date),
+                                        name: service.title,
+                                        type: "end",
+                                        serviceDefiner: occurrenceCounter,
+                                        start: tmpSerivceStart,
+                                        end: tmpSerivceEnd,
+                                        allDay: allDay
+                                    })
+                                }
                             }
                             else if (serviceStarted) {
-                                thisMonthServices.push({
-                                    serviceDate: new Date(date),
-                                    name: service.title,
-                                    type: "middle"
-                                })
+                                if ((regularityEndType === "occurrence" && thisMonthServices.length < service.regularity.endsOn.occurrence) || regularityEndType !== "occurrence") {
+                                    thisMonthServices.push({
+                                        serviceDate: new Date(date),
+                                        name: service.title,
+                                        type: "middle",
+                                        serviceDefiner: occurrenceCounter,
+                                        start: tmpSerivceStart,
+                                        end: tmpSerivceEnd,
+                                        allDay: allDay
+                                    })
+                                }
                             }
                             break;
                         case "week":
+                            const tmpDayName = props.getDayName(date, "hu-HU");
+                            const selectedDays = service.regularity.days;
+                            let skipMiddleDay = false;
+                            if (selectedDays.includes(tmpDayName) && date > tmpSerivceStart) {
+                                if ((regularityEndType === "occurrence" && occurrenceCounter < service.regularity.endsOn.occurrence) || regularityEndType !== "occurrence") {
+                                    tmpSerivceStart = date;
+                                    tmpSerivceStart.setHours(tmpSerivceStartTime[0], tmpSerivceStartTime[1]);
+                                    const tmpCompareDate = new Date(date);
+                                    const addedDate = tmpCompareDate.getDate() + intervalLength;
+                                    const changedCompareDate = tmpCompareDate.setDate(addedDate);
 
+                                    switch (regularityEndType) {
+                                        case "onDate":
+                                            tmpSerivceEnd = new Date(changedCompareDate) >= service.regularity.endsOn.date
+                                                ? service.regularity.endsOn.date
+                                                : new Date(changedCompareDate);
+                                            break;
+
+                                        case "occurrence":
+                                            tmpSerivceEnd = new Date(changedCompareDate);
+                                            break;
+
+                                        case "never":
+                                            tmpSerivceEnd = new Date(changedCompareDate) >= numberOfDaysArray[numberOfDaysArray.length - 1]
+                                                ? numberOfDaysArray[numberOfDaysArray.length - 1]
+                                                : new Date(changedCompareDate);
+                                            break;
+
+                                        default:
+                                            break;
+                                    }
+                                    tmpSerivceEnd.setHours(tmpSerivceEndTime[0], tmpSerivceEndTime[1]);
+                                    if (tmpSerivceEnd !== service.regularity.endsOn.date) {
+                                        thisMonthServices.push({
+                                            serviceDate: new Date(date),
+                                            name: service.title,
+                                            type: intervalLength > 0 ? "start" : "not",
+                                            serviceDefiner: occurrenceCounter,
+                                            start: tmpSerivceStart,
+                                            end: tmpSerivceEnd,
+                                            allDay: allDay
+                                        })
+                                        serviceStarted = true;
+                                        skipMiddleDay = true;
+                                        if (intervalLength === 0) weekDayOccurred = true;
+                                    }
+                                }
+                            }
+                            if (serviceStarted && Calendar.getPrefix(date) === Calendar.getPrefix(tmpSerivceEnd) && intervalLength > 0) {
+                                serviceStarted = false;
+                                regularityCycleChange = true;
+                                if ((regularityEndType === "occurrence" && occurrenceCounter < service.regularity.endsOn.occurrence) || regularityEndType !== "occurrence") {
+                                    thisMonthServices.push({
+                                        serviceDate: new Date(date),
+                                        name: service.title,
+                                        type: "end",
+                                        serviceDefiner: occurrenceCounter,
+                                        start: tmpSerivceStart,
+                                        end: tmpSerivceEnd,
+                                        allDay: allDay
+                                    })
+                                }
+                                weekDayOccurred = true;
+                            }
+                            else if (serviceStarted && !skipMiddleDay && intervalLength > 0) {
+                                if ((regularityEndType === "occurrence" && occurrenceCounter < service.regularity.endsOn.occurrence) || regularityEndType !== "occurrence") {
+                                    thisMonthServices.push({
+                                        serviceDate: new Date(date),
+                                        name: service.title,
+                                        type: "middle",
+                                        serviceDefiner: occurrenceCounter,
+                                        start: tmpSerivceStart,
+                                        end: tmpSerivceEnd,
+                                        allDay: allDay
+                                    })
+                                }
+                                skipMiddleDay = false;
+                            }
+
+                            if (weekDayOccurred) {
+                                occurrenceCounter++;
+                                weekDayOccurred = false;
+                            }
                             break;
                         case "month":
 
@@ -163,27 +299,21 @@ export default function FullscreenCalendar(props) {
                         default:
                             break;
                     }
-
-
-
                 });
             })
             console.log(thisMonthServices.sort((a, b) => new Date(a.serviceDate) - new Date(b.serviceDate)));
 
             setServices(thisMonthServices.sort((a, b) => new Date(a.serviceDate) - new Date(b.serviceDate)));
         }
-    }, [props])
-
-    useEffect(() => {
-        setNumberOfDaysArray(props.numberOfDays());
-    }, [year, month])
+        // eslint-disable-next-line
+    }, [numberOfDaysArray, props.service])
 
     const openDetails = (props) => {
         const tmpEventDetails = document.querySelector(".event-details");
 
         if (tmpEventDetails) {
             tmpEventDetails.setAttribute("open", "");
-            setEventDetails(props);
+            setServiceDetails(props);
         }
     }
 
@@ -212,12 +342,12 @@ export default function FullscreenCalendar(props) {
                             const tmpDate = month === new Date().getMonth() ? new Date().getDate() : undefined;
 
                             let notThisMonthDay = false;
-                            if (index < 8 && item.getDate() > 8) notThisMonthDay = true;
-                            if (index > 20 && item.getDate() < 8) notThisMonthDay = true;
+                            if (index < 8 && item.date.getDate() > 8) notThisMonthDay = true;
+                            if (index > 20 && item.date.getDate() < 8) notThisMonthDay = true;
                             return (
                                 <div
-                                    key={`fullscreen_${item.getDate()}_${index}`}
-                                    id={`fullscreen_${item.getDate()}_${index}`}
+                                    key={`fullscreen_${item.date.getDate()}_${index}`}
+                                    id={`fullscreen_${item.date.getDate()}_${index}`}
                                     className="fullscreen-calendar_days_day"
                                 >
                                     <h3>
@@ -233,26 +363,29 @@ export default function FullscreenCalendar(props) {
                                         }
                                     </h3>
                                     <p className={
-                                        `${tmpDate !== undefined && item.getDate().toString() === tmpDate.toString()
+                                        `${tmpDate !== undefined && item.date.getDate().toString() === tmpDate.toString()
                                             ? "selected"
                                             : ""
-                                        }${notThisMonthDay === true ? "greyDay" : ""}`
+                                        }${notThisMonthDay === true ? "greyDay" : ""} ${item.date.getDate() === 1 ? " no-ar" : ""}`
                                     }>
-                                        {item.getDate()}
+                                        {item.date.getDate() === 1 ? `${monthNames[item.date.getMonth()].slice(0, (item.date.getMonth() === 8 ? 5 : 3))}. ${item.date.getDate()}.` : item.date.getDate()}
                                     </p>
                                     {
                                         services.map((service, index) => {
                                             return (
                                                 Calendar.getPrefix(service.serviceDate) === Calendar.getPrefix(item) ?
                                                     <FullscreenEvent
+                                                        key={`${service.name}_${index}`}
                                                         name={service.name}
                                                         date={service.serviceDate}
-                                                        eventStart={service.eventStart}
-                                                        eventLength={service.eventLength}
+                                                        serviceStart={service.start}
+                                                        serviceEnd={service.end}
                                                         openDetails={openDetails}
                                                         type={service.type}
+                                                        serviceDefiner={service.serviceDefiner}
+                                                        allDay={service.allDay}
                                                     />
-                                                    : <React.Fragment />
+                                                    : <React.Fragment key={`${service.name}_${index}`} />
                                             )
                                         })
                                     }
@@ -267,7 +400,7 @@ export default function FullscreenCalendar(props) {
                     }
                 </div>
             </div>
-            <EventDetails eventDetails={eventDetails} />
+            <ServiceDetails serviceDetails={serviceDetails} />
         </div>
     )
 }

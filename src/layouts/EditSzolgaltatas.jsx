@@ -100,6 +100,7 @@ export default function EditSzolgaltatas(props) {
                 break;
         }
         return returnText;
+        // eslint-disable-next-line
     }, [regularity, startInputValue, endInputValue])
 
 
@@ -191,6 +192,7 @@ export default function EditSzolgaltatas(props) {
                 }
             }
         }
+        // eslint-disable-next-line
     }, [props.serviceDatas])
 
     return (
@@ -339,13 +341,13 @@ export default function EditSzolgaltatas(props) {
                             className="editService_week-days"
                             onChange={daySelectionChanged}
                         >
-                            <ToggleButton value="Hé">Hé</ToggleButton>
-                            <ToggleButton value="Ke">Ke</ToggleButton>
-                            <ToggleButton value="Sze">Sze</ToggleButton>
-                            <ToggleButton value="Csü">Csü</ToggleButton>
-                            <ToggleButton value="Pé">Pé</ToggleButton>
-                            <ToggleButton value="Szo">Szo</ToggleButton>
-                            <ToggleButton value="Va">Va</ToggleButton>
+                            <ToggleButton value="hétfő">Hé</ToggleButton>
+                            <ToggleButton value="kedd">Ke</ToggleButton>
+                            <ToggleButton value="szerda">Sze</ToggleButton>
+                            <ToggleButton value="csütörtök">Csü</ToggleButton>
+                            <ToggleButton value="péntek">Pé</ToggleButton>
+                            <ToggleButton value="szombat">Szo</ToggleButton>
+                            <ToggleButton value="vasárnap">Va</ToggleButton>
                         </ToggleButtonGroup>
                     </div>
                     :
