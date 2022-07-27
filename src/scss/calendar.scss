@@ -283,6 +283,10 @@
             transition: all 0.5s ease-out;
             box-shadow: 1.4rem 1.5rem 3rem rgba(0, 0, 0, 0.5);
 
+            @media only screen and (max-width: 1000px) {
+                width: 30rem;
+            }
+
             &--header {
                 width: 100%;
                 height: 4rem;
@@ -387,7 +391,6 @@
 
                 p {
                     position: relative;
-                    cursor: pointer;
                     font-weight: bold;
                     margin: 2.1rem 0;
                     &::before {
@@ -470,7 +473,11 @@
         overflow-y: scroll;
         overflow-x: hidden;
         transition: all 0.5s ease-out;
-        transform: translateX(-54rem);
+        transform: translateX(var(--intervallistWidth));
+
+        @media only screen and (max-width: 1000px) {
+            --intervallistWidth: -56rem;
+        }
 
         &::-webkit-scrollbar {
             width: 15px;

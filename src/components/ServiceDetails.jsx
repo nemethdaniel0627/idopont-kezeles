@@ -19,8 +19,8 @@ export default function ServiceDetails(props) {
                 if (event.animationName === "detailsHidden") {
                     setName(props.serviceDetails.name);
                     setServiceDef(props.serviceDetails.serviceDefiner);
-                    setServiceStart(props.serviceDetails.serviceStart);
-                    setServiceEnd(props.serviceDetails.serviceEnd);
+                    setServiceStart(props.serviceDetails.start);
+                    setServiceEnd(props.serviceDetails.end);
                     setServiceAllDay(props.serviceDetails.allDay);
                     eventDetails.classList.add("event-details_appear");
                 }

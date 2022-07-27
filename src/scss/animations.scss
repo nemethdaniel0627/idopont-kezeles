@@ -74,18 +74,26 @@
     }
 }
 
-@keyframes fullDaysChange {
+@keyframes fullDaysChangeOut {
     0% {
         position: absolute;
         transform: translateX(0);
         opacity: 1;
     }
-    50% {
+    100% {
         position: absolute;
         transform: translateX(3rem);
         opacity: 0;
     }
-    51% {
+}
+
+@keyframes fullDaysChangeIn {
+    0% {
+        position: absolute;
+        transform: translateX(3rem);
+        opacity: 0;
+    }
+    1% {
         position: absolute;
         transform: translateX(-2rem);
         opacity: 0;
@@ -122,14 +130,14 @@
     }
 
     to {
-        height: 100vh;
+        height: calc(var(--mobileBrowserBar, 1vh) * 100);
         width: 100%;
     }
 }
 
 @keyframes exitFullscreenCalendar {
     from {
-        height: 100vh;
+        height: calc(var(--mobileBrowserBar, 1vh) * 100);
         width: 100%;
     }
     to {

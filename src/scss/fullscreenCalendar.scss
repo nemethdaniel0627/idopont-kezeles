@@ -30,6 +30,29 @@
         background-color: var(--calendar-dark);
         border-top-right-radius: 1rem;
         border-bottom-right-radius: 1rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+
+        .MuiFormGroup-root {
+            display: inline-flex;
+            align-items: center;
+
+            .MuiFormControlLabel-root {
+                margin-left: 1.5rem;
+                flex-direction: row-reverse;
+                color: #ddd;
+
+                .MuiSvgIcon-root {
+                    font-size: 2.5rem;
+                }
+                .MuiTypography-root {
+                    font-size: 1.5rem;
+                    font-weight: bold;
+                    width: 15rem;
+                }
+            }
+        }
     }
 
     &_left-col {
@@ -46,6 +69,7 @@
         align-items: center;
         justify-content: space-between;
         box-shadow: 0 0.1rem 1rem rgb(0 0 0 / 20%);
+        font-size: 1.5rem;
     }
 
     &_exit-fullscreen {
@@ -100,27 +124,45 @@
         width: 90%;
         padding: 0.5rem 0.2rem;
         color: #eee;
-        background-color: red;
         border-radius: 5px;
         align-self: flex-start;
         cursor: pointer;
+        position: relative;
+        margin-bottom: 0.2rem;
 
         &_start-long {
-            width: 110%;
+            width: 102%;
             border-radius: 5px 0 0 5px;
         }
 
+        &:not([class="fullscreen-calendar_event fullscreen-calendar_event_start-long"]) {
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -khtml-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+
         &_middle-long {
-            width: 110%;
+            width: 102%;
             border-radius: 0;
         }
 
         &_end-long {
             border-radius: 0 5px 5px 0;
         }
+
+        &.ghost_event {
+            cursor: unset;
+        }
     }
 }
 
-.days-change {
-    animation: fullDaysChange 1s ease-in-out;
+.days-change-out {
+    animation: fullDaysChangeOut 0.5s ease-in-out forwards;
+}
+
+.days-change-in {
+    animation: fullDaysChangeIn 0.5s ease-in-out forwards;
 }

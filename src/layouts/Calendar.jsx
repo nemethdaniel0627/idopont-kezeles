@@ -6,7 +6,9 @@ import ListItem from "../components/ListItem.jsx";
 import IntervalList from "../components/IntervalList.jsx";
 import NewEvent from "../components/NewEvent.jsx";
 import { Fullscreen } from "@mui/icons-material";
+import CloseIcon from '@mui/icons-material/Close';
 import { IconButton } from "@mui/material";
+import ServiceDetails from "../components/ServiceDetails.jsx";
 
 
 export default function Calendar(props) {
@@ -17,10 +19,10 @@ export default function Calendar(props) {
   const [dayName, setDayName] = useState("");
   const monthNames = props.monthNames;
   const dayNames = props.dayNames;
-  const [services, setServices] = useState([
-    { serviceStart: "0:30", serviceLength: 90, serviceDate: new Date() },
-    { serviceStart: "3:0", serviceLength: 120, serviceDate: new Date() }
-  ]);
+  const [services, setServices] = useState();
+  //   { serviceStart: "0:30", serviceLength: 90, serviceDate: new Date() },
+  //   { serviceStart: "3:0", serviceLength: 120, serviceDate: new Date() }
+  // ]);
   const [serviceDates, setServiceDates] = useState([]);
   const [years, setYears] = useState([]);
   const [hours, setHours] = useState([]);
@@ -29,6 +31,9 @@ export default function Calendar(props) {
   const [eventTime, setEventTime] = useState({});
   const [numberOfDaysArray, setNumberOfDaysArray] = useState([]);
   const [daysWindowItem, setDaysWindowItem] = useState(-1);
+  const [selectedService, setSelectedService] = useState({});
+  const [showOthers, setShowOthers] = useState();
+  const [serviceDetails, setServiceDetails] = useState();
 
   let calendar = document.getElementById("calendar");
   let date = new Date();
@@ -40,13 +45,15 @@ export default function Calendar(props) {
     if (props.numberOfDaysArray) {
       setNumberOfDaysArray(props.numberOfDaysArray)
     }
-    if (props.year && props.monthName && props.month && props.day && props.dayName && props.years && props.services) {
+    if (props) {
       setYear(props.year);
       setMonthName(props.monthName);
       setMonth(props.month);
       setDay(props.day);
       setDayName(props.dayName);
       setYears(props.years);
+      setSelectedService(props.selectedService);
+      setShowOthers(props.showOthers);
     }
     setInterval();
     // eslint-disable-next-line
@@ -190,188 +197,6 @@ export default function Calendar(props) {
 
   useEffect(() => {
     daysAnimate(true);
-    if (props.services) {
-      let thisMonthServices = [];
-      props.services.map(service => {
-        let serviceStarted = false;
-        let regularityNumber = service.regularity.repeatNumber;
-        let regularityCycleChange = false;
-        let tmpSerivceStart = service.date.start;
-        let tmpSerivceEnd = service.date.end;
-        const allDay = service.allDay;
-        const tmpSerivceStartTime = [service.date.start.getHours(), service.date.start.getMinutes()];
-        const tmpSerivceEndTime = [service.date.end.getHours(), service.date.end.getMinutes()];
-        let serviceDuration = intervalToDuration({
-          start: tmpSerivceStart,
-          end: tmpSerivceEnd
-        })
-        serviceDuration = CalendarModule.convertDuration(serviceDuration);
-        serviceDuration += allDay ? 1440 : 0;
-        let serviceDurationCounter = serviceDuration;
-        const regularityMeasure = service.regularity.measure;
-        const regularityEndType = service.regularity.endsOn.type;
-        const intervalLength = Math.abs((tmpSerivceStart.getDate() - tmpSerivceEnd.getDate()))
-        let weekDayOccurred = false;
-        let occurrenceCounter = 0;
-        numberOfDaysArray.forEach(date => {
-          switch (regularityMeasure) {
-            case "day":
-              if (regularityCycleChange) {
-                if (regularityNumber === (intervalLength + 1) && CalendarModule.getPrefix(date.date) !== CalendarModule.getPrefix(service.regularity.endsOn.date.date)) {
-                  tmpSerivceStart = date.date;
-                  serviceDurationCounter = serviceDuration;
-
-                  switch (regularityEndType) {
-                    case "onDate":
-                      tmpSerivceEnd = new Date(props.year, props.month, (tmpSerivceStart.getDate() + intervalLength), 0, 0, 0) >= service.regularity.endsOn.date.date
-                        ? service.regularity.endsOn.date.date
-                        : new Date(props.year, props.month, (tmpSerivceStart.getDate() + intervalLength), 0, 0, 0);
-                      break;
-
-                    case "never":
-                      tmpSerivceEnd = numberOfDaysArray[numberOfDaysArray.length - 1];
-                      break;
-
-                    default:
-                      break;
-                  }
-
-                  regularityCycleChange = false;
-                  regularityNumber = service.regularity.repeatNumber;
-                }
-                else if (date.date >= service.regularity.endsOn.date.date) {
-                  regularityCycleChange = false;
-                  if (CalendarModule.getPrefix(date.date) === CalendarModule.getPrefix(service.regularity.endsOn.date.date) && intervalLength > 0)
-                    if ((regularityEndType === "occurrence" && thisMonthServices.length < service.regularity.endsOn.occurrence) || regularityEndType !== "occurrence") {
-                      thisMonthServices.push({
-                        serviceDate: new Date(date.date),
-                        name: service.title,
-                        type: "end",
-                        serviceDefiner: occurrenceCounter,
-                        serviceStart: `0:0`,
-                        serviceLength: serviceDurationCounter,
-                        end: tmpSerivceEnd,
-                        allDay: allDay
-                      });
-                    }
-                }
-                else {
-                  regularityNumber--;
-                }
-              }
-
-              if (CalendarModule.getPrefix(date.date) === CalendarModule.getPrefix(tmpSerivceStart)) {
-                serviceStarted = true;
-                if ((regularityEndType === "occurrence" && thisMonthServices.length < service.regularity.endsOn.occurrence) || regularityEndType !== "occurrence") {
-                  let dayDuration;
-                  if (intervalLength > 0) {
-                    const tmpDayEnd = new Date(tmpSerivceStart);
-                    tmpDayEnd.setHours(23, 59, 59);
-                    dayDuration = CalendarModule.convertDuration(
-                      intervalToDuration({
-                        start: tmpSerivceStart,
-                        end: tmpDayEnd
-                      })
-                    );
-                  }
-                  else dayDuration = serviceDurationCounter;
-                  console.log(serviceDurationCounter);
-                  console.log(dayDuration);
-                  serviceDurationCounter -= dayDuration;
-                  console.log(serviceDurationCounter);
-                  thisMonthServices.push({
-                    serviceDate: new Date(date.date),
-                    name: service.title,
-                    type: "start",
-                    serviceDefiner: occurrenceCounter,
-                    serviceStart: `${tmpSerivceStartTime[0]}:${tmpSerivceStartTime[1]}`,
-                    serviceLength: dayDuration,
-                    end: tmpSerivceEnd,
-                    allDay: allDay
-                  })
-
-                  if (intervalLength === 0) {
-                    serviceStarted = false;
-                    regularityCycleChange = true;
-                  }
-                }
-              }
-              else if (serviceStarted && CalendarModule.getPrefix(date.date) === CalendarModule.getPrefix(tmpSerivceEnd)) {
-                serviceStarted = false;
-                regularityCycleChange = true;
-
-                // const tmpDayStart = new Date(tmpSerivceEnd);
-                // tmpDayStart.setHours(0, 0, 0);
-                // const dayDuration = CalendarModule.convertDuration(
-                //   intervalToDuration({
-                //     start: tmpDayStart,
-                //     end: tmpSerivceEnd
-                //   })
-                // );
-                // serviceDurationCounter -= dayDuration;
-                // console.log(serviceDurationCounter);
-
-                if ((regularityEndType === "occurrence" && thisMonthServices.length < service.regularity.endsOn.occurrence) || regularityEndType !== "occurrence") {
-                  thisMonthServices.push({
-                    serviceDate: new Date(date.date),
-                    name: service.title,
-                    type: "end",
-                    serviceDefiner: occurrenceCounter,
-                    serviceStart: `0:0`,
-                    serviceLength: serviceDurationCounter,
-                    end: tmpSerivceEnd,
-                    allDay: allDay
-                  })
-                }
-              }
-              else if (serviceStarted) {
-                if ((regularityEndType === "occurrence" && thisMonthServices.length < service.regularity.endsOn.occurrence) || regularityEndType !== "occurrence") {
-
-                  const tmpDayStart = new Date(date.date);
-                  const tmpDayEnd = new Date(date.date);
-                  tmpDayStart.setHours(0, 0, 0);
-                  tmpDayEnd.setHours(23, 59, 59);
-                  const dayDuration = CalendarModule.convertDuration(
-                    intervalToDuration({
-                      start: tmpDayStart,
-                      end: tmpDayEnd
-                    })
-                  );
-                  serviceDurationCounter -= dayDuration;
-                  // console.log(serviceDurationCounter);
-
-                  thisMonthServices.push({
-                    serviceDate: new Date(date.date),
-                    name: service.title,
-                    type: "middle",
-                    serviceDefiner: occurrenceCounter,
-                    serviceStart: `0:0`,
-                    serviceLength: dayDuration,
-                    end: tmpSerivceEnd,
-                    allDay: allDay
-                  })
-                }
-              }
-              break;
-            case "week":
-
-              break;
-            case "month":
-
-              break;
-            case "year":
-
-              break;
-
-            default:
-              break;
-          }
-        });
-      });
-      console.log(thisMonthServices.sort((a, b) => new Date(a.serviceDate) - new Date(b.serviceDate)));
-
-      setServices(thisMonthServices.sort((a, b) => new Date(a.serviceDate) - new Date(b.serviceDate)));
-    }
   }, [numberOfDaysArray, props.services])
 
   useEffect(() => {
@@ -388,7 +213,7 @@ export default function Calendar(props) {
     //   monthSelected(tmpEvent)
     // }
     // openFullScreen();
-    // console.log("asdCa");
+    console.log("cal");
   }, [])
 
   function radioChange(event) {
@@ -445,7 +270,6 @@ export default function Calendar(props) {
   function intervalChange(event) {
     const item = Number(event.target.attributes[0].value.split("_")[1]);
     const whichButton = Number(event.target.attributes[0].value.split("_")[2]);
-    console.log(`btn ${whichButton}`);
     switch (whichButton) {
       case 5:
         document.getElementById(`hour_list_${item}_5`).style.transform = "translateX(0)";
@@ -453,14 +277,14 @@ export default function Calendar(props) {
         document.getElementById(`hour_list_${item}_60`).style.transform = "translateX(0)";
         break;
       case 30:
-        document.getElementById(`hour_list_${item}_5`).style.transform = "translateX(-27rem)";
-        document.getElementById(`hour_list_${item}_30`).style.transform = "translateX(-27rem)";
-        document.getElementById(`hour_list_${item}_60`).style.transform = "translateX(-27rem)";
+        document.getElementById(`hour_list_${item}_5`).style.transform = "translateX(calc(var(--intervallistWidth) / 2))";
+        document.getElementById(`hour_list_${item}_30`).style.transform = "translateX(calc(var(--intervallistWidth) / 2))";
+        document.getElementById(`hour_list_${item}_60`).style.transform = "translateX(calc(var(--intervallistWidth) / 2))";
         break;
       case 60:
-        document.getElementById(`hour_list_${item}_5`).style.transform = "translateX(-54rem)";
-        document.getElementById(`hour_list_${item}_30`).style.transform = "translateX(-54rem)";
-        document.getElementById(`hour_list_${item}_60`).style.transform = "translateX(-54rem)";
+        document.getElementById(`hour_list_${item}_5`).style.transform = "translateX(var(--intervallistWidth))";
+        document.getElementById(`hour_list_${item}_30`).style.transform = "translateX(var(--intervallistWidth))";
+        document.getElementById(`hour_list_${item}_60`).style.transform = "translateX(var(--intervallistWidth))";
         break;
 
       default:
@@ -471,11 +295,27 @@ export default function Calendar(props) {
   function openFullScreen() {
     const fullscreen = document.querySelector(".fullscreen-calendar");
     const calendar = document.querySelector("#calendar");
+    const body = document.querySelector("body");
 
-    if (fullscreen && calendar) {
+    if (fullscreen && calendar && body) {
+      body.style.overflow = "hidden";
       fullscreen.setAttribute("open", "");
       fullscreen.classList.remove("hidden");
       calendar.setAttribute("open", "");
+    }
+  }
+
+  function closeCalendar() {
+    props.setProps("open", false);
+  }
+
+  const openDetails = (passedProps) => {
+    const tmpEventDetails = document.querySelector(".event-details");
+    console.log("opened");
+    console.log(passedProps);
+    if (tmpEventDetails) {
+      tmpEventDetails.setAttribute("open", "");
+      props.setProps("serviceDetails", passedProps);
     }
   }
 
@@ -518,9 +358,14 @@ export default function Calendar(props) {
             <label htmlFor="year--check">
               <span className="year">{year}</span>
             </label>
-            <IconButton className="calendar_fullscreen" size="large" onClick={openFullScreen}>
-              <Fullscreen />
-            </IconButton>
+            <div>
+              <IconButton className="calendar_fullscreen" size="large" onClick={openFullScreen}>
+                <Fullscreen />
+              </IconButton>
+              <IconButton className="calendar_fullscreen" size="large" onClick={closeCalendar}>
+                <CloseIcon />
+              </IconButton>
+            </div>
           </h2>
 
           <div className="year--block">
@@ -565,25 +410,22 @@ export default function Calendar(props) {
           <ul className="days" id="days">
             {numberOfDaysArray.map((item, index) => {
               let addClass = "";
-              // switch (item) {
-              //   case 8:
-              //   case 10:
-              //   case 27:
-              //     addClass = "full";
-              //     break;
-              //   default:
-              //     break;
-              // }
-
-              // switch (item) {
-              //   case 3:
-              //   case 17:
-              //   case 23:
-              //     addClass = "notfull";
-              //     break;
-              //   default:
-              //     break;
-              // }                          
+              if (item.services.length !== 0) {
+                item.services.map(sameDate => {
+                  if (sameDate.id === selectedService.id || props.showOthers) {
+                    switch (sameDate.allDay) {
+                      case true:
+                        addClass = "full";
+                        break;
+                      case false:
+                        addClass = addClass === "full" ? "full" : "notfull";
+                        break;
+                      default:
+                        break;
+                    }
+                  }
+                })
+              }
               const tmpDate = month === new Date().getMonth() ? new Date().getDate() : undefined;
               let notThisMonthDay = false;
               if (index < 8 && item.date.getDate() > 8) notThisMonthDay = true;
@@ -639,13 +481,46 @@ export default function Calendar(props) {
                   </span>
                 </div>
                 <div className="interval-list--wrapper">
-                  <IntervalList key={`hour_list_${daysWindowItem}_5`} id={`hour_list_${daysWindowItem}_5`} prefix={`${year}-${month + 1}`} services={services} timeUnits={minutes} item={daysWindowItem} setNewEvent={setNewEvent} />
-                  <IntervalList key={`hour_list_${daysWindowItem}_30`} id={`hour_list_${daysWindowItem}_30`} prefix={`${year}-${month + 1}`} services={services} timeUnits={halfHours} item={daysWindowItem} setNewEvent={setNewEvent} />
-                  <IntervalList key={`hour_list_${daysWindowItem}_60`} id={`hour_list_${daysWindowItem}_60`} prefix={`${year}-${month + 1}`} services={services} timeUnits={hours} item={daysWindowItem} setNewEvent={setNewEvent} />
+                  <IntervalList
+                    key={`hour_list_${daysWindowItem}_5`}
+                    id={`hour_list_${daysWindowItem}_5`}
+                    prefix={`${year}-${month + 1}`}
+                    services={numberOfDaysArray}
+                    timeUnits={minutes}
+                    item={daysWindowItem}
+                    setNewEvent={setNewEvent}
+                    selectedService={selectedService}
+                    showOthers={showOthers}
+                    openDetails={openDetails}
+                  />
+                  <IntervalList
+                    key={`hour_list_${daysWindowItem}_30`}
+                    id={`hour_list_${daysWindowItem}_30`}
+                    prefix={`${year}-${month + 1}`}
+                    services={numberOfDaysArray}
+                    timeUnits={halfHours}
+                    item={daysWindowItem}
+                    setNewEvent={setNewEvent}
+                    selectedService={selectedService}
+                    showOthers={showOthers}
+                    openDetails={openDetails}
+                  />
+                  <IntervalList
+                    key={`hour_list_${daysWindowItem}_60`}
+                    id={`hour_list_${daysWindowItem}_60`}
+                    prefix={`${year}-${month + 1}`}
+                    services={numberOfDaysArray}
+                    timeUnits={hours}
+                    item={daysWindowItem}
+                    setNewEvent={setNewEvent}
+                    selectedService={selectedService}
+                    showOthers={showOthers}
+                    openDetails={openDetails}
+                  />
                 </div>
               </div>
-
-              <NewEvent item={`${year}-${month + 1}-${daysWindowItem}`} eventTime={eventTime} addNewEvent={addNewEvent} />
+              {/* <ServiceDetails serviceDetails={serviceDetails} /> */}
+              {/* <NewEvent item={`${year}-${month + 1}-${daysWindowItem}`} eventTime={eventTime} addNewEvent={addNewEvent} /> */}
             </div>
           </ul>
           <div className="clearfix"></div>
