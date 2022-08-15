@@ -112,10 +112,12 @@ export default function Home(props) {
         if (props.services) {
             props.services.map(service => {
                 let serviceStarted = false;
-                let regularityNumber = service.regularity.repeatNumber;
-                let regularityCycleChange = false;
                 let tmpSerivceStart = service.date.start;
                 let tmpSerivceEnd = service.date.end;
+                const regularityMeasure = service.regularity.measure;
+                let regularityNumber = service.regularity.repeatNumber;
+                regularityNumber = service.regularity.repeatNumber;
+                let regularityCycleChange = false;
                 const tmpSerivceStartTime = [service.date.start.getHours(), service.date.start.getMinutes()];
                 const tmpSerivceEndTime = [service.date.end.getHours(), service.date.end.getMinutes()];
                 const allDay = service.allDay;
@@ -126,28 +128,37 @@ export default function Home(props) {
                 serviceDuration = CalendarModule.convertDuration(serviceDuration);
                 serviceDuration += allDay ? 1440 : 0;
                 let serviceDurationCounter = serviceDuration;
-                const regularityMeasure = service.regularity.measure;
                 const regularityEndType = service.regularity.endsOn.type;
                 const intervalLength = Math.abs((tmpSerivceStart.getDate() - tmpSerivceEnd.getDate()))
                 let weekDayOccurred = false;
                 let occurrenceCounter = 0;
+                let skipMiddleDay;
                 localDays.forEach((date, index) => {
                     switch (regularityMeasure) {
                         case "day":
                             if (regularityCycleChange) {
                                 if (regularityNumber === (intervalLength + 1) && CalendarModule.getPrefix(date.date) !== CalendarModule.getPrefix(service.regularity.endsOn.date)) {
                                     tmpSerivceStart = date.date;
+                                    const tmpCompareDate = new Date(date.date);
+                                    const addedDate = tmpCompareDate.getDate() + intervalLength;
+                                    const changedCompareDate = tmpCompareDate.setDate(addedDate);
                                     serviceDurationCounter = serviceDuration;
 
                                     switch (regularityEndType) {
                                         case "onDate":
-                                            tmpSerivceEnd = new Date(year, month, (tmpSerivceStart.getDate() + intervalLength), 0, 0, 0) >= service.regularity.endsOn.date
+                                            tmpSerivceEnd = new Date(changedCompareDate) >= service.regularity.endsOn.date
                                                 ? service.regularity.endsOn.date
-                                                : new Date(year, month, (tmpSerivceStart.getDate() + intervalLength), 0, 0, 0);
+                                                : new Date(changedCompareDate);
+                                            break;
+
+                                        case "occurrence":
+                                            tmpSerivceEnd = new Date(changedCompareDate);
                                             break;
 
                                         case "never":
-                                            tmpSerivceEnd = numberOfDaysArray[numberOfDaysArray.length - 1];
+                                            tmpSerivceEnd = new Date(changedCompareDate) >= numberOfDaysArray[numberOfDaysArray.length - 1]
+                                                ? numberOfDaysArray[numberOfDaysArray.length - 1]
+                                                : new Date(changedCompareDate);
                                             break;
 
                                         default:
@@ -244,6 +255,19 @@ export default function Home(props) {
                                 serviceStarted = false;
                                 regularityCycleChange = true;
                                 if ((regularityEndType === "occurrence" && occurrenceCounter < service.regularity.endsOn.occurrence) || regularityEndType !== "occurrence") {
+                                    if (index !== 0 && localDays[index - 1].fullscreenServices.length === 2 && date.fullscreenServices.length === 0) {
+                                        date.fullscreenServices.push({
+                                            id: -1,
+                                            serviceDate: new Date(date.date),
+                                            name: "",
+                                            type: "ghost",
+                                            serviceDefiner: -1,
+                                            start: null,
+                                            end: null,
+                                            allDay: undefined
+                                        });
+                                    }
+
                                     date.fullscreenServices.push({
                                         id: service.id,
                                         serviceDate: new Date(date.date),
@@ -271,6 +295,19 @@ export default function Home(props) {
                             }
                             else if (serviceStarted) {
                                 if ((regularityEndType === "occurrence" && occurrenceCounter < service.regularity.endsOn.occurrence) || regularityEndType !== "occurrence") {
+                                    if (index !== 0 && localDays[index - 1].fullscreenServices.length === 2 && date.fullscreenServices.length === 0) {
+                                        date.fullscreenServices.push({
+                                            id: -1,
+                                            serviceDate: new Date(date.date),
+                                            name: "",
+                                            type: "ghost",
+                                            serviceDefiner: -1,
+                                            start: null,
+                                            end: null,
+                                            allDay: undefined
+                                        });
+                                    }
+
                                     //Fullscreen
                                     date.fullscreenServices.push({
                                         id: service.id,
@@ -315,7 +352,7 @@ export default function Home(props) {
                         case "week":
                             const tmpDayName = getDayName(date.date, "hu-HU");
                             const selectedDays = service.regularity.days;
-                            let skipMiddleDay = false;
+                            skipMiddleDay = false;
                             if (selectedDays.includes(tmpDayName) && date.date > tmpSerivceStart) {
                                 if ((regularityEndType === "occurrence" && occurrenceCounter < service.regularity.endsOn.occurrence) || regularityEndType !== "occurrence") {
                                     tmpSerivceStart = date.date;
@@ -436,6 +473,19 @@ export default function Home(props) {
                             }
                             else if (serviceStarted && !skipMiddleDay && intervalLength > 0) {
                                 if ((regularityEndType === "occurrence" && occurrenceCounter < service.regularity.endsOn.occurrence) || regularityEndType !== "occurrence") {
+                                    if (index !== 0 && localDays[index - 1].fullscreenServices.length === 2 && date.fullscreenServices.length === 0) {
+                                        date.fullscreenServices.push({
+                                            id: -1,
+                                            serviceDate: new Date(date.date),
+                                            name: "",
+                                            type: "ghost",
+                                            serviceDefiner: -1,
+                                            start: null,
+                                            end: null,
+                                            allDay: undefined
+                                        });
+                                    }
+
                                     date.fullscreenServices.push({
                                         id: service.id,
                                         serviceDate: new Date(date.date),
@@ -482,90 +532,140 @@ export default function Home(props) {
                             }
                             break;
                         case "month":
-                            if (regularityCycleChange) {
-                                if (regularityNumber === (intervalLength + 1) && CalendarModule.getPrefix(date.date) !== CalendarModule.getPrefix(service.regularity.endsOn.date)) {
-                                    tmpSerivceStart = date.date;
-                                    serviceDurationCounter = serviceDuration;
+                            const nextAppearance = new Date(tmpSerivceStart);
+                            nextAppearance.setMonth(tmpSerivceStart.getMonth() + regularityNumber + ((date.date.getMonth() - tmpSerivceStart.getMonth()) - 1));
+                            skipMiddleDay = false;
+                            occurrenceCounter = date.date.getMonth() - tmpSerivceStart.getMonth();
+                            if (CalendarModule.getPrefix(date.date) === CalendarModule.getPrefix(nextAppearance)
+                                && ((regularityEndType === "occurrence" && occurrenceCounter < service.regularity.endsOn.occurrence) || regularityEndType !== "occurrence")) {
+                                tmpSerivceStart = date.date;
+                                tmpSerivceStart.setHours(tmpSerivceStartTime[0], tmpSerivceStartTime[1]);
+                                const tmpCompareDate = new Date(date.date);
+                                const addedDate = tmpCompareDate.getDate() + intervalLength;
+                                const changedCompareDate = tmpCompareDate.setDate(addedDate);
+                                serviceDurationCounter = serviceDuration;
 
-                                    switch (regularityEndType) {
-                                        case "onDate":
-                                            tmpSerivceEnd = new Date(year, month, (tmpSerivceStart.getDate() + intervalLength), 0, 0, 0) >= service.regularity.endsOn.date
-                                                ? service.regularity.endsOn.date
-                                                : new Date(year, month, (tmpSerivceStart.getDate() + intervalLength), 0, 0, 0);
-                                            break;
+                                switch (regularityEndType) {
+                                    case "onDate":
+                                        tmpSerivceEnd = new Date(changedCompareDate) >= service.regularity.endsOn.date
+                                            ? service.regularity.endsOn.date
+                                            : new Date(changedCompareDate);
+                                        break;
 
-                                        case "never":
-                                            tmpSerivceEnd = numberOfDaysArray[numberOfDaysArray.length - 1];
-                                            break;
+                                    case "occurrence":
+                                        tmpSerivceEnd = new Date(changedCompareDate);
+                                        break;
 
-                                        default:
-                                            break;
+                                    case "never":
+                                        tmpSerivceEnd = new Date(changedCompareDate) >= numberOfDaysArray[numberOfDaysArray.length - 1]
+                                            ? numberOfDaysArray[numberOfDaysArray.length - 1]
+                                            : new Date(changedCompareDate);
+                                        break;
+
+                                    default:
+                                        break;
+                                }
+                                if (service.regularity.endsOn.date === undefined || date.date < service.regularity.endsOn.date) {
+                                    serviceStarted = true;
+                                    if ((regularityEndType === "occurrence" && occurrenceCounter < service.regularity.endsOn.occurrence) || regularityEndType !== "occurrence") {
+                                        if (index !== 0 && localDays[index + 1].fullscreenServices.length > 0) {
+                                            for (let serCounter = 0; serCounter < (localDays[index + 1].fullscreenServices.length - date.fullscreenServices.length); serCounter++) {
+                                                date.fullscreenServices.push({
+                                                    id: -1,
+                                                    serviceDate: new Date(date.date),
+                                                    name: "",
+                                                    type: "ghost",
+                                                    serviceDefiner: -1,
+                                                    start: null,
+                                                    end: null,
+                                                    allDay: undefined
+                                                });
+                                            }
+                                        }
+                                        let hasGhostItem = null;
+                                        date.fullscreenServices.forEach((oneService, oneIndex) => {
+                                            if (oneService.id === -1) {
+                                                hasGhostItem = oneIndex;
+                                            }
+                                        })
+                                        if (hasGhostItem !== null)
+                                            date.fullscreenServices.splice(hasGhostItem, 1, {
+                                                id: service.id,
+                                                serviceDate: new Date(date.date),
+                                                name: service.title,
+                                                type: intervalLength > 0 ? "start" : "not",
+                                                serviceDefiner: occurrenceCounter,
+                                                start: tmpSerivceStart,
+                                                end: tmpSerivceEnd,
+                                                allDay: allDay
+                                            })
+                                        else
+                                            date.fullscreenServices.push({
+                                                id: service.id,
+                                                serviceDate: new Date(date.date),
+                                                name: service.title,
+                                                type: intervalLength > 0 ? "start" : "not",
+                                                serviceDefiner: occurrenceCounter,
+                                                start: tmpSerivceStart,
+                                                end: tmpSerivceEnd,
+                                                allDay: allDay
+                                            });
+
+                                        //NotFullscreen
+                                        let dayDuration;
+                                        if (intervalLength > 0) {
+                                            const tmpDayEnd = new Date(tmpSerivceStart);
+                                            tmpDayEnd.setHours(23, 59, 59);
+                                            dayDuration = CalendarModule.convertDuration(
+                                                intervalToDuration({
+                                                    start: tmpSerivceStart,
+                                                    end: tmpDayEnd
+                                                })
+                                            );
+                                        }
+                                        else dayDuration = serviceDurationCounter;
+                                        serviceDurationCounter -= dayDuration;
+                                        date.services.push({
+                                            id: service.id,
+                                            serviceDate: new Date(date.date),
+                                            name: service.title,
+                                            type: "start",
+                                            serviceDefiner: occurrenceCounter,
+                                            serviceStart: `${tmpSerivceStartTime[0]}:${tmpSerivceStartTime[1]}`,
+                                            serviceLength: dayDuration,
+                                            start: tmpSerivceStart,
+                                            end: tmpSerivceEnd,
+                                            allDay: allDay
+                                        });
+
+                                        skipMiddleDay = true;
+
+                                        if (intervalLength === 0) {
+                                            serviceStarted = false;
+                                            regularityCycleChange = true;
+                                        };
                                     }
 
-                                    regularityCycleChange = false;
                                     regularityNumber = service.regularity.repeatNumber;
                                 }
-                                else if (date.date >= service.regularity.endsOn.date) {
-                                    regularityCycleChange = false;
-                                }
-                                else {
-                                    regularityNumber--;
-                                }
                             }
-
-                            if (CalendarModule.getPrefix(date.date) === CalendarModule.getPrefix(tmpSerivceStart)) {
-                                serviceStarted = true;
-                                if ((regularityEndType === "occurrence" && occurrenceCounter < service.regularity.endsOn.occurrence) || regularityEndType !== "occurrence") {
-                                    //Fullscreen
-                                    date.fullscreenServices.push({
-                                        id: service.id,
-                                        serviceDate: new Date(date.date),
-                                        name: service.title,
-                                        type: intervalLength > 0 ? "start" : "not",
-                                        serviceDefiner: occurrenceCounter,
-                                        start: tmpSerivceStart,
-                                        end: tmpSerivceEnd,
-                                        allDay: allDay
-                                    });
-
-                                    //NotFullscreen
-                                    let dayDuration;
-                                    if (intervalLength > 0) {
-                                        const tmpDayEnd = new Date(tmpSerivceStart);
-                                        tmpDayEnd.setHours(23, 59, 59);
-                                        dayDuration = CalendarModule.convertDuration(
-                                            intervalToDuration({
-                                                start: tmpSerivceStart,
-                                                end: tmpDayEnd
-                                            })
-                                        );
-                                    }
-                                    else dayDuration = serviceDurationCounter;
-                                    serviceDurationCounter -= dayDuration;
-                                    date.services.push({
-                                        id: service.id,
-                                        serviceDate: new Date(date.date),
-                                        name: service.title,
-                                        type: "start",
-                                        serviceDefiner: occurrenceCounter,
-                                        serviceStart: `${tmpSerivceStartTime[0]}:${tmpSerivceStartTime[1]}`,
-                                        serviceLength: dayDuration,
-                                        start: tmpSerivceStart,
-                                        end: tmpSerivceEnd,
-                                        allDay: allDay
-                                    });
-
-                                    if (intervalLength === 0) {
-                                        serviceStarted = false;
-                                        regularityCycleChange = true;
-                                    };
-                                }
-
-                            }
-                            else if (serviceStarted && CalendarModule.getPrefix(date.date) === CalendarModule.getPrefix(tmpSerivceEnd)) {
+                            if (serviceStarted && CalendarModule.getPrefix(date.date) === CalendarModule.getPrefix(tmpSerivceEnd)) {
                                 serviceStarted = false;
                                 regularityCycleChange = true;
                                 if ((regularityEndType === "occurrence" && occurrenceCounter < service.regularity.endsOn.occurrence) || regularityEndType !== "occurrence") {
+                                    if (index !== 0 && localDays[index - 1].fullscreenServices.length === 2 && date.fullscreenServices.length === 0) {
+                                        date.fullscreenServices.push({
+                                            id: -1,
+                                            serviceDate: new Date(date.date),
+                                            name: "",
+                                            type: "ghost",
+                                            serviceDefiner: -1,
+                                            start: null,
+                                            end: null,
+                                            allDay: undefined
+                                        });
+                                    }
+
                                     date.fullscreenServices.push({
                                         id: service.id,
                                         serviceDate: new Date(date.date),
@@ -591,8 +691,24 @@ export default function Home(props) {
                                     });
                                 }
                             }
-                            else if (serviceStarted) {
+                            else if (serviceStarted && !skipMiddleDay) {
                                 if ((regularityEndType === "occurrence" && occurrenceCounter < service.regularity.endsOn.occurrence) || regularityEndType !== "occurrence") {
+                                    if (index !== 0
+                                        && localDays[index - 1].fullscreenServices.length === 2
+                                        && date.fullscreenServices.length === 0
+                                        && localDays[index - 1].fullscreenServices[0].id !== service.id) {
+                                        date.fullscreenServices.push({
+                                            id: -1,
+                                            serviceDate: new Date(date.date),
+                                            name: "",
+                                            type: "ghost",
+                                            serviceDefiner: -1,
+                                            start: null,
+                                            end: null,
+                                            allDay: undefined
+                                        });
+                                    }
+
                                     //Fullscreen
                                     date.fullscreenServices.push({
                                         id: service.id,
@@ -635,7 +751,204 @@ export default function Home(props) {
                             }
                             break;
                         case "year":
+                            const nextAppearanceYear = new Date(tmpSerivceStart);
+                            nextAppearanceYear.setFullYear(tmpSerivceStart.getFullYear() + regularityNumber + ((date.date.getFullYear() - tmpSerivceStart.getFullYear()) - 1));
+                            skipMiddleDay = false;
+                            occurrenceCounter = date.date.getFullYear() - tmpSerivceStart.getFullYear();
+                            if (CalendarModule.getPrefix(date.date) === CalendarModule.getPrefix(nextAppearanceYear)
+                                && ((regularityEndType === "occurrence" && occurrenceCounter < service.regularity.endsOn.occurrence) || regularityEndType !== "occurrence")) {
+                                tmpSerivceStart = date.date;
+                                tmpSerivceStart.setHours(tmpSerivceStartTime[0], tmpSerivceStartTime[1]);
+                                const tmpCompareDate = new Date(date.date);
+                                const addedDate = tmpCompareDate.getDate() + intervalLength;
+                                const changedCompareDate = tmpCompareDate.setDate(addedDate);
+                                serviceDurationCounter = serviceDuration;
 
+                                switch (regularityEndType) {
+                                    case "onDate":
+                                        tmpSerivceEnd = new Date(changedCompareDate) >= service.regularity.endsOn.date
+                                            ? service.regularity.endsOn.date
+                                            : new Date(changedCompareDate);
+                                        break;
+
+                                    case "occurrence":
+                                        tmpSerivceEnd = new Date(changedCompareDate);
+                                        break;
+
+                                    case "never":
+                                        tmpSerivceEnd = new Date(changedCompareDate) >= numberOfDaysArray[numberOfDaysArray.length - 1]
+                                            ? numberOfDaysArray[numberOfDaysArray.length - 1]
+                                            : new Date(changedCompareDate);
+                                        break;
+
+                                    default:
+                                        break;
+                                }
+                                if (service.regularity.endsOn.date === undefined || date.date < service.regularity.endsOn.date) {
+                                    serviceStarted = true;
+                                    if ((regularityEndType === "occurrence" && occurrenceCounter < service.regularity.endsOn.occurrence) || regularityEndType !== "occurrence") {
+                                        if (index !== 0 && localDays[index + 1].fullscreenServices.length > 0 && date.fullscreenServices.length === 0) {
+                                            for (let serCounter = 0; serCounter < localDays[index + 1].fullscreenServices.length; serCounter++) {
+                                                date.fullscreenServices.push({
+                                                    id: -1,
+                                                    serviceDate: new Date(date.date),
+                                                    name: "",
+                                                    type: "ghost",
+                                                    serviceDefiner: -1,
+                                                    start: null,
+                                                    end: null,
+                                                    allDay: undefined
+                                                });
+
+                                            }
+                                        }
+                                        //Fullscreen
+                                        date.fullscreenServices.push({
+                                            id: service.id,
+                                            serviceDate: new Date(date.date),
+                                            name: service.title,
+                                            type: intervalLength > 0 ? "start" : "not",
+                                            serviceDefiner: occurrenceCounter,
+                                            start: tmpSerivceStart,
+                                            end: tmpSerivceEnd,
+                                            allDay: allDay
+                                        });
+
+                                        //NotFullscreen
+                                        let dayDuration;
+                                        if (intervalLength > 0) {
+                                            const tmpDayEnd = new Date(tmpSerivceStart);
+                                            tmpDayEnd.setHours(23, 59, 59);
+                                            dayDuration = CalendarModule.convertDuration(
+                                                intervalToDuration({
+                                                    start: tmpSerivceStart,
+                                                    end: tmpDayEnd
+                                                })
+                                            );
+                                        }
+                                        else dayDuration = serviceDurationCounter;
+                                        serviceDurationCounter -= dayDuration;
+                                        date.services.push({
+                                            id: service.id,
+                                            serviceDate: new Date(date.date),
+                                            name: service.title,
+                                            type: "start",
+                                            serviceDefiner: occurrenceCounter,
+                                            serviceStart: `${tmpSerivceStartTime[0]}:${tmpSerivceStartTime[1]}`,
+                                            serviceLength: dayDuration,
+                                            start: tmpSerivceStart,
+                                            end: tmpSerivceEnd,
+                                            allDay: allDay
+                                        });
+
+                                        skipMiddleDay = true;
+
+                                        if (intervalLength === 0) {
+                                            serviceStarted = false;
+                                            regularityCycleChange = true;
+                                        };
+                                    }
+
+                                    regularityNumber = service.regularity.repeatNumber;
+                                }
+                            }
+                            if (serviceStarted && CalendarModule.getPrefix(date.date) === CalendarModule.getPrefix(tmpSerivceEnd)) {
+                                serviceStarted = false;
+                                regularityCycleChange = true;
+                                if ((regularityEndType === "occurrence" && occurrenceCounter < service.regularity.endsOn.occurrence) || regularityEndType !== "occurrence") {
+                                    if (index !== 0 && localDays[index - 1].fullscreenServices.length === 2 && date.fullscreenServices.length === 0) {
+                                        date.fullscreenServices.push({
+                                            id: -1,
+                                            serviceDate: new Date(date.date),
+                                            name: "",
+                                            type: "ghost",
+                                            serviceDefiner: -1,
+                                            start: null,
+                                            end: null,
+                                            allDay: undefined
+                                        });
+                                    }
+
+                                    date.fullscreenServices.push({
+                                        id: service.id,
+                                        serviceDate: new Date(date.date),
+                                        name: service.title,
+                                        type: "end",
+                                        serviceDefiner: occurrenceCounter,
+                                        start: tmpSerivceStart,
+                                        end: tmpSerivceEnd,
+                                        allDay: allDay
+                                    });
+
+                                    date.services.push({
+                                        id: service.id,
+                                        serviceDate: new Date(date.date),
+                                        name: service.title,
+                                        type: "end",
+                                        serviceDefiner: occurrenceCounter,
+                                        serviceStart: `0:0`,
+                                        serviceLength: serviceDurationCounter,
+                                        start: tmpSerivceStart,
+                                        end: tmpSerivceEnd,
+                                        allDay: allDay
+                                    });
+                                }
+                            }
+                            else if (serviceStarted && !skipMiddleDay) {
+                                if ((regularityEndType === "occurrence" && occurrenceCounter < service.regularity.endsOn.occurrence) || regularityEndType !== "occurrence") {
+                                    if (index !== 0 && localDays[index - 1].fullscreenServices.length === 2 && date.fullscreenServices.length === 0) {
+                                        date.fullscreenServices.push({
+                                            id: -1,
+                                            serviceDate: new Date(date.date),
+                                            name: "",
+                                            type: "ghost",
+                                            serviceDefiner: -1,
+                                            start: null,
+                                            end: null,
+                                            allDay: undefined
+                                        });
+                                    }
+
+                                    //Fullscreen
+                                    date.fullscreenServices.push({
+                                        id: service.id,
+                                        serviceDate: new Date(date.date),
+                                        name: service.title,
+                                        type: "middle",
+                                        serviceDefiner: occurrenceCounter,
+                                        start: tmpSerivceStart,
+                                        end: tmpSerivceEnd,
+                                        allDay: allDay
+                                    });
+
+                                    //NotFullscreen
+                                    const tmpDayStart = new Date(date.date);
+                                    const tmpDayEnd = new Date(date.date);
+                                    tmpDayStart.setHours(0, 0, 0);
+                                    tmpDayEnd.setHours(23, 59, 59);
+                                    const dayDuration = CalendarModule.convertDuration(
+                                        intervalToDuration({
+                                            start: tmpDayStart,
+                                            end: tmpDayEnd
+                                        })
+                                    );
+                                    serviceDurationCounter -= dayDuration;
+                                    // 
+
+                                    date.services.push({
+                                        id: service.id,
+                                        serviceDate: new Date(date.date),
+                                        name: service.title,
+                                        type: "middle",
+                                        serviceDefiner: occurrenceCounter,
+                                        serviceStart: `0:0`,
+                                        serviceLength: dayDuration,
+                                        start: tmpSerivceStart,
+                                        end: tmpSerivceEnd,
+                                        allDay: allDay
+                                    });
+                                }
+                            }
                             break;
 
                         default:
@@ -700,6 +1013,7 @@ export default function Home(props) {
     function openCalendar(service) {
         setCalendarOpen(true);
         setSelectedService(service);
+
     }
 
     useEffect(() => {

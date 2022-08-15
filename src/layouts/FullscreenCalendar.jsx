@@ -1,12 +1,16 @@
 import React, { useEffect, useState } from "react";
 import FullscreenExitIcon from '@mui/icons-material/FullscreenExit';
-import { Checkbox, FormControlLabel, FormGroup, IconButton } from "@mui/material";
+import { Checkbox, FormControlLabel, FormGroup, IconButton, TextField } from "@mui/material";
 import { ArrowBackIosNew, ArrowForwardIos, Visibility, VisibilityOff } from "@mui/icons-material";
 import CloseIcon from '@mui/icons-material/Close';
 import ListItem from "../components/ListItem";
 import FullscreenEvent from "../components/FullscreenEvent";
 import ServiceDetails from "../components/ServiceDetails";
 import Calendar from "../modules/Calendar";
+import DatePicker from "@mui/lab/DatePicker";
+import LocalizationProvider from "@mui/lab/LocalizationProvider";
+import AdapterDateFns from '@mui/lab/AdapterDateFns';
+import { useRef } from "react";
 
 export default function FullscreenCalendar(props) {
     const [year, setYear] = useState(new Date().getFullYear());
@@ -20,8 +24,12 @@ export default function FullscreenCalendar(props) {
     const [services, setServices] = useState([]);
     const [selectedService, setSelectedService] = useState({});
     const [showOthers, setShowOthers] = useState();
+    const [monthPickerOpen, setMonthPickerOpen] = useState(false);
+    const [monthPickerValue, setMonthPickerValue] = useState(new Date(year, month));
     const monthNames = props.monthNames;
     const dayNames = props.dayNames;
+    let isDialogClick = false;
+    const refBody = useRef(document.querySelector("body"));
 
 
     const exitFullScreen = () => {
@@ -113,6 +121,8 @@ export default function FullscreenCalendar(props) {
             })
         }
 
+        setMonthPickerValue(new Date(props.year, props.month));
+
         // eslint-disable-next-line
     }, [props.year, props.month])
 
@@ -129,6 +139,7 @@ export default function FullscreenCalendar(props) {
         if (props.monthName && props.month && !calendarDays.classList.contains("days-change-out")) {
             setMonthName(props.monthName);
             setMonth(props.month);
+            setMonthPickerValue(new Date(props.year, props.month));
         }
     }, [props])
 
@@ -157,8 +168,29 @@ export default function FullscreenCalendar(props) {
         props.setProps("showOthers", !props.showOthers);
     }
 
+    const checkClick = () => {
+        if (isDialogClick === true) {
+            isDialogClick = false;
+        }
+        else {
+            setMonthPickerOpen(false);
+        }
+    }
+
+    const openMonthPicker = () => {
+        isDialogClick = true;
+        if (monthPickerOpen === false)
+            setMonthPickerOpen(true);
+    }
+
+    const monthPickerChange = (value) => {
+        props.setProps('year', value.getFullYear());
+        props.setProps('month', value.getMonth());
+        props.setProps("monthName", monthNames[value.getMonth()]);
+    }
+
     return (
-        <div className="fullscreen-calendar hidden">
+        <div onClick={checkClick} className="fullscreen-calendar hidden">
             <div className="fullscreen-calendar_right-col">
                 <FormGroup>
                     <FormControlLabel
@@ -178,7 +210,24 @@ export default function FullscreenCalendar(props) {
                         <IconButton size="large" id="next" className="fullscreen-calendar_month-switch" onClick={monthChange}>
                             <ArrowForwardIos />
                         </IconButton>
-                        {year}. {monthName}
+                        <span className="fullscreen-calendar_header_month-picker" onClick={openMonthPicker}>
+                            {year}. {monthName}
+                            <LocalizationProvider dateAdapter={AdapterDateFns}>
+                                <DatePicker
+                                    value={monthPickerValue}
+                                    onChange={(newValue) => {
+                                        monthPickerChange(newValue);
+                                    }}
+                                    views={['year', 'month']}
+                                    openTo={'month'}
+                                    minDate={new Date(year - 2, 1, 1)}
+                                    maxDate={new Date(year + 12, 12, 31)}
+                                    open={monthPickerOpen}
+                                    renderInput={(params) => <TextField {...params} />}
+                                />
+                            </LocalizationProvider>
+                        </span>
+
                     </div>
                     <div>
                         <IconButton size="large" onClick={exitFullScreen} className="fullscreen-calendar_exit-fullscreen">

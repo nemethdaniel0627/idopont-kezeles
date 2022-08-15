@@ -32158,7 +32158,12 @@ bDpZUmVzb2x1dGlvbgA3Mi8xdO+JvQAAAABJRU5ErkJggg==" />
 
             </div>
 
-            <EditSzolgaltatas serviceDatas={props.serviceDatas} id={props.id} title={props.title} open={setElementOpen} />
+            <EditSzolgaltatas
+                serviceDatas={props.serviceDatas}
+                id={props.id}
+                title={props.title}
+                open={setElementOpen}
+                saveService={props.saveService} />
         </>
     )
 }

@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
+    Alert,
+    Button,
     Checkbox,
     FilledInput,
     FormControl,
@@ -10,6 +12,7 @@ import {
     MenuItem,
     Radio,
     RadioGroup,
+    Snackbar,
     TextField,
     ToggleButton,
     ToggleButtonGroup
@@ -45,7 +48,8 @@ const regularityOptions = [
 ];
 
 export default function EditSzolgaltatas(props) {
-
+    const [openSnackbar, setOpenSnackbar] = useState(false);
+    const [snackbarStlye, setSnackbarStlye] = useState("success");
     const [regularity, setRegularity] = useState('never');
     const [repeatsEvery, setRepeatsEvery] = useState("1");
     const [daySelected, setDaySelected] = useState(['']);
@@ -103,6 +107,62 @@ export default function EditSzolgaltatas(props) {
         // eslint-disable-next-line
     }, [regularity, startInputValue, endInputValue])
 
+    const saveService = () => {
+        if (title !== "") {
+            let tmpEndsOnDate;
+            let tmpEndsOnOccurrence;
+            switch (repeatEnd) {
+                case "onDate":
+                    tmpEndsOnOccurrence = undefined;
+                    break;
+                case "occurrence":
+                    tmpEndsOnDate = undefined;
+                    break;
+                case "never":
+                    tmpEndsOnDate = undefined;
+                    tmpEndsOnOccurrence = undefined;
+                    break;
+
+                default:
+                    break;
+            }
+            props.saveService({
+                id: -1,
+                date: {
+                    start: startInputValue,
+                    end: endInputValue
+                },
+                allDay: allDayService,
+                title: title,
+                regularity: {
+                    measure: regularity,
+                    repeatNumber: Number(repeatsEvery),
+                    days: daySelected.length === 0 ? undefined : daySelected,
+                    endsOn: {
+                        type: repeatEnd,
+                        date: tmpEndsOnDate,
+                        occurrence: tmpEndsOnOccurrence,
+                    }
+                }
+            });
+            const editServiceContainer = document.querySelector(`#editService_${props.id}`);
+            if (editServiceContainer) {
+
+                editServiceContainer.setAttribute("closing", "");
+                editServiceContainer.addEventListener("animationend", () => {
+                    editServiceContainer.close();
+                    editServiceContainer.removeAttribute("closing");
+                    editServiceContainer.removeAttribute("open");
+                }, { once: true });
+
+            }
+            setSnackbarStlye("success");
+            setOpenSnackbar(true);
+        } else {
+            setSnackbarStlye("error");
+            setOpenSnackbar(true);
+        }
+    }
 
     const selectionChanged = (event) => {
         setRegularity(event.target.value);
@@ -118,7 +178,7 @@ export default function EditSzolgaltatas(props) {
         setDaySelected(newAlignment);
     };
 
-    const closeDialog = (event) => {
+    const closeDialog = () => {
         const editServiceContainer = document.querySelector(`#editService_${props.id}`);
         if (editServiceContainer) {
 
@@ -145,7 +205,6 @@ export default function EditSzolgaltatas(props) {
     const titleChange = (event) => {
         const editTileInput = document.querySelector(`.editService_edit-title_${props.id}`);
         setTitle(event.target.value);
-        console.log(event.target.value);
 
         if (editTileInput) {
             editTileInput.style.width = event.target.value.length + 5 + "ch";
@@ -195,210 +254,226 @@ export default function EditSzolgaltatas(props) {
         // eslint-disable-next-line
     }, [props.serviceDatas])
 
-    return (
-        <dialog id={`editService_${props.id}`} className="editService">
-            <IconButton onClick={closeDialog} size="large" className="editService_close">
-                <CloseIcon />
-            </IconButton>
-            {
-                editTile === true ?
-                    <FormControl variant="filled" className={`editService_edit-title editService_edit-title_${props.id}`}>
-                        <FilledInput
-                            id="filled-adornment-password"
-                            type="text"
-                            value={title}
-                            onChange={titleChange}
-                            placeholder="Erőforrás neve"
-                            endAdornment={
-                                <InputAdornment position="end">
-                                    <IconButton
-                                        aria-label="szerkeztés befejezése"
-                                        onClick={finishEditTitle}
-                                        onMouseDown={handleMouseDownTitle}
-                                        edge="end"
-                                    >
-                                        <DoneIcon />
-                                    </IconButton>
-                                </InputAdornment>
-                            }
-                        />
-                    </FormControl>
-                    :
-                    <h2 onClick={() => setEditTile(true)} className="editService_title">
-                        {title}
-                        <EditIcon />
-                    </h2>
-            }
-            <div className="editService_date-time-pickers">
-                <LocalizationProvider dateAdapter={AdapterDateFns}>
-                    {allDayService === true ?
-                        <>
-                            <DatePicker
-                                label="Erőforrás kezdő időpontja"
-                                value={startInputValue}
-                                inputFormat="yyyy-MM-dd"
-                                onChange={(newValue) => {
-                                    setStartInputValue(newValue);
-                                }}
-                                renderInput={(params) =>
-                                    <TextField
-                                        {...params}
-                                        error={startInputValue > endInputValue}
-                                        variant="filled" />}
-                            />
-                            <DatePicker
-                                label="Erőforrás záró időpontja"
-                                value={endInputValue}
-                                inputFormat="yyyy-MM-dd"
-                                onChange={(newValue) => {
-                                    setEndInputValue(newValue);
-                                }}
-                                renderInput={(params) =>
-                                    <TextField
-                                        {...params}
-                                        error={startInputValue > endInputValue}
-                                        variant="filled" />}
-                            />
-                        </>
-                        :
-                        <>
-                            <DateTimePicker
-                                label="Erőforrás kezdő időpontja"
-                                value={startInputValue}
-                                ampm={false}
-                                inputFormat="yyyy-MM-dd HH:mm"
-                                onChange={(newValue) => {
-                                    setStartInputValue(newValue);
-                                }}
-                                renderInput={(params) =>
-                                    <TextField
-                                        {...params}
-                                        error={startInputValue > endInputValue}
-                                        variant="filled" />}
-                            />
-                            <DateTimePicker
-                                label="Erőforrás záró időpontja"
-                                value={endInputValue}
-                                ampm={false}
-                                inputFormat="yyyy-MM-dd HH:mm"
-                                onChange={(newValue) => {
-                                    setEndInputValue(newValue);
-                                }}
-                                renderInput={(params) =>
-                                    <TextField
-                                        {...params}
-                                        error={startInputValue > endInputValue}
-                                        variant="filled" />}
-                            />
-                        </>
-                    }
-                </LocalizationProvider>
-            </div>
-            <FormControlLabel control={<Checkbox onChange={() => { setAllDayService(!allDayService) }} value={allDayService} />} label="Egész nap?" />
-            <div className="editService_repeat-container">
-                <p>{regularityText}</p>
-                {
-                    regularity === "never" ? <></> :
-                        <TextField
-                            type="number"
-                            className="editService_number"
-                            onChange={repeatsEveryChange}
-                            value={repeatsEvery}
-                            variant="filled"
-                            error={(Math.abs((startInputValue.getDate() - endInputValue.getDate()))) > repeatsEvery}
-                        />
-                }
-                <TextField
-                    id="filled-select-currency"
-                    select
-                    className="editService_select"
-                    value={regularity}
-                    onChange={selectionChanged}
-                    variant="filled"
-                >
-                    {regularityOptions.map((option) => (
-                        <MenuItem className="editService_menu-item" key={option.value} value={option.value}>
-                            {option.label}
-                        </MenuItem>
-                    ))}
-                </TextField>
-                <p className="text-error">
-                    {
-                        (Math.abs((startInputValue.getDate() - endInputValue.getDate()))) > repeatsEvery && regularity === "day"
-                            ? "Az ismétlődő szám nem lehet kisebb mint a napok különbsége"
-                            : ""
-                    }
-                </p>
-            </div>
-            {
-                regularity === 'week' ?
-                    <div className="editService_week-days_container">
-                        <hr />
-                        <p>A kiválaszott napok minden hétre lefoglalhatóak lesznek</p>
-                        <ToggleButtonGroup
-                            color="primary"
-                            value={daySelected}
-                            className="editService_week-days"
-                            onChange={daySelectionChanged}
-                        >
-                            <ToggleButton value="hétfő">Hé</ToggleButton>
-                            <ToggleButton value="kedd">Ke</ToggleButton>
-                            <ToggleButton value="szerda">Sze</ToggleButton>
-                            <ToggleButton value="csütörtök">Csü</ToggleButton>
-                            <ToggleButton value="péntek">Pé</ToggleButton>
-                            <ToggleButton value="szombat">Szo</ToggleButton>
-                            <ToggleButton value="vasárnap">Va</ToggleButton>
-                        </ToggleButtonGroup>
-                    </div>
-                    :
-                    <></>
-            }
+    const handleSnackbarClose = (event, reason) => {
+        if (reason === 'clickaway') {
+            return;
+        }
 
-            {
-                regularity !== "never" ?
-                    <div className="editService_repeat-end">
-                        <hr />
-                        <FormControl>
-                            <FormLabel id="demo-row-radio-buttons-group-label">Ismétlődés vége</FormLabel>
-                            <RadioGroup
-                                row
-                                aria-labelledby="demo-row-radio-buttons-group-label"
-                                name="row-radio-buttons-group"
-                                onChange={repeatEndChange}
-                            >
-                                <FormControlLabel value="never" control={<Radio />} checked={repeatEnd === "never"} label="Soha" />
-                                <FormControlLabel value="onDate" control={<Radio />} checked={repeatEnd === "onDate"} />
-                                <label onClick={() => setRepeatEnd("onDate")} className="editService_repeat-end_date-picker">
-                                    <LocalizationProvider dateAdapter={AdapterDateFns}>
-                                        <DatePicker
-                                            disabled={repeatEnd !== "onDate"}
-                                            value={repeatEndDate}
-                                            inputFormat="yyyy-MM-dd"
-                                            onChange={(newValue) => {
-                                                setRepeatEndDate(newValue);
-                                            }}
-                                            renderInput={(params) => <TextField {...params} variant="filled" />}
-                                        />
-                                        <span>napon</span>
-                                    </LocalizationProvider>
-                                </label>
-                                <FormControlLabel value="occurrence" control={<Radio />} checked={repeatEnd === "occurrence"} />
-                                <label onClick={() => setRepeatEnd("occurrence")} className="editService_repeat-end_occurrence">
-                                    <TextField
-                                        disabled={repeatEnd !== "occurrence"}
-                                        type="number"
-                                        className="editService_number"
-                                        onChange={occurrenceChange}
-                                        value={occurrence}
-                                        variant="filled"
-                                    />
-                                    <span>előfordulás után</span>
-                                </label>
-                            </RadioGroup>
+        setOpenSnackbar(false);
+    };
+
+    return (
+        <React.Fragment>
+            <dialog id={`editService_${props.id}`} className="editService">
+                <IconButton onClick={closeDialog} size="large" className="editService_close">
+                    <CloseIcon />
+                </IconButton>
+                {
+                    editTile === true ?
+                        <FormControl variant="filled" className={`editService_edit-title editService_edit-title_${props.id}`}>
+                            <FilledInput
+                                id="filled-adornment-password"
+                                type="text"
+                                value={title}
+                                onChange={titleChange}
+                                placeholder="Erőforrás neve"
+                                endAdornment={
+                                    <InputAdornment position="end">
+                                        <IconButton
+                                            aria-label="szerkeztés befejezése"
+                                            onClick={finishEditTitle}
+                                            onMouseDown={handleMouseDownTitle}
+                                            edge="end"
+                                        >
+                                            <DoneIcon />
+                                        </IconButton>
+                                    </InputAdornment>
+                                }
+                            />
                         </FormControl>
-                    </div>
-                    : <></>
-            }
-        </dialog >
+                        :
+                        <h2 onClick={() => setEditTile(true)} className="editService_title">
+                            {title}
+                            <EditIcon />
+                        </h2>
+                }
+                <div className="editService_date-time-pickers">
+                    <LocalizationProvider dateAdapter={AdapterDateFns}>
+                        {allDayService === true ?
+                            <>
+                                <DatePicker
+                                    label="Erőforrás kezdő időpontja"
+                                    value={startInputValue}
+                                    inputFormat="yyyy-MM-dd"
+                                    onChange={(newValue) => {
+                                        setStartInputValue(newValue);
+                                    }}
+                                    renderInput={(params) =>
+                                        <TextField
+                                            {...params}
+                                            error={startInputValue > endInputValue}
+                                            variant="filled" />}
+                                />
+                                <DatePicker
+                                    label="Erőforrás záró időpontja"
+                                    value={endInputValue}
+                                    inputFormat="yyyy-MM-dd"
+                                    onChange={(newValue) => {
+                                        setEndInputValue(newValue);
+                                    }}
+                                    renderInput={(params) =>
+                                        <TextField
+                                            {...params}
+                                            error={startInputValue > endInputValue}
+                                            variant="filled" />}
+                                />
+                            </>
+                            :
+                            <>
+                                <DateTimePicker
+                                    label="Erőforrás kezdő időpontja"
+                                    value={startInputValue}
+                                    ampm={false}
+                                    inputFormat="yyyy-MM-dd HH:mm"
+                                    onChange={(newValue) => {
+                                        setStartInputValue(newValue);
+                                    }}
+                                    renderInput={(params) =>
+                                        <TextField
+                                            {...params}
+                                            error={startInputValue > endInputValue}
+                                            variant="filled" />}
+                                />
+                                <DateTimePicker
+                                    label="Erőforrás záró időpontja"
+                                    value={endInputValue}
+                                    ampm={false}
+                                    inputFormat="yyyy-MM-dd HH:mm"
+                                    onChange={(newValue) => {
+                                        setEndInputValue(newValue);
+                                    }}
+                                    renderInput={(params) =>
+                                        <TextField
+                                            {...params}
+                                            error={startInputValue > endInputValue}
+                                            variant="filled" />}
+                                />
+                            </>
+                        }
+                    </LocalizationProvider>
+                </div>
+                <FormControlLabel control={<Checkbox onChange={() => { setAllDayService(!allDayService) }} value={allDayService} />} label="Egész nap?" />
+                <div className="editService_repeat-container">
+                    <p>{regularityText}</p>
+                    {
+                        regularity === "never" ? <></> :
+                            <TextField
+                                type="number"
+                                className="editService_number"
+                                onChange={repeatsEveryChange}
+                                value={repeatsEvery}
+                                variant="filled"
+                                error={(Math.abs((startInputValue.getDate() - endInputValue.getDate()))) > repeatsEvery}
+                            />
+                    }
+                    <TextField
+                        id="filled-select-currency"
+                        select
+                        className="editService_select"
+                        value={regularity}
+                        onChange={selectionChanged}
+                        variant="filled"
+                    >
+                        {regularityOptions.map((option) => (
+                            <MenuItem className="editService_menu-item" key={option.value} value={option.value}>
+                                {option.label}
+                            </MenuItem>
+                        ))}
+                    </TextField>
+                    <p className="text-error">
+                        {
+                            (Math.abs((startInputValue.getDate() - endInputValue.getDate()))) > repeatsEvery && regularity === "day"
+                                ? "Az ismétlődő szám nem lehet kisebb mint a napok különbsége"
+                                : ""
+                        }
+                    </p>
+                </div>
+                {
+                    regularity === 'week' ?
+                        <div className="editService_week-days_container">
+                            <hr />
+                            <p>A kiválaszott napok minden hétre lefoglalhatóak lesznek</p>
+                            <ToggleButtonGroup
+                                color="primary"
+                                value={daySelected}
+                                className="editService_week-days"
+                                onChange={daySelectionChanged}
+                            >
+                                <ToggleButton value="hétfő">Hé</ToggleButton>
+                                <ToggleButton value="kedd">Ke</ToggleButton>
+                                <ToggleButton value="szerda">Sze</ToggleButton>
+                                <ToggleButton value="csütörtök">Csü</ToggleButton>
+                                <ToggleButton value="péntek">Pé</ToggleButton>
+                                <ToggleButton value="szombat">Szo</ToggleButton>
+                                <ToggleButton value="vasárnap">Va</ToggleButton>
+                            </ToggleButtonGroup>
+                        </div>
+                        :
+                        <></>
+                }
+                {
+                    regularity !== "never" ?
+                        <div className="editService_repeat-end">
+                            <hr />
+                            <FormControl>
+                                <FormLabel id="demo-row-radio-buttons-group-label">Ismétlődés vége</FormLabel>
+                                <RadioGroup
+                                    row
+                                    aria-labelledby="demo-row-radio-buttons-group-label"
+                                    name="row-radio-buttons-group"
+                                    onChange={repeatEndChange}
+                                >
+                                    <FormControlLabel value="never" control={<Radio />} checked={repeatEnd === "never"} label="Soha" />
+                                    <FormControlLabel value="onDate" control={<Radio />} checked={repeatEnd === "onDate"} />
+                                    <label onClick={() => setRepeatEnd("onDate")} className="editService_repeat-end_date-picker">
+                                        <LocalizationProvider dateAdapter={AdapterDateFns}>
+                                            <DatePicker
+                                                disabled={repeatEnd !== "onDate"}
+                                                value={repeatEndDate}
+                                                inputFormat="yyyy-MM-dd"
+                                                onChange={(newValue) => {
+                                                    setRepeatEndDate(newValue);
+                                                }}
+                                                renderInput={(params) => <TextField {...params} variant="filled" />}
+                                            />
+                                            <span>napon</span>
+                                        </LocalizationProvider>
+                                    </label>
+                                    <FormControlLabel value="occurrence" control={<Radio />} checked={repeatEnd === "occurrence"} />
+                                    <label onClick={() => setRepeatEnd("occurrence")} className="editService_repeat-end_occurrence">
+                                        <TextField
+                                            disabled={repeatEnd !== "occurrence"}
+                                            type="number"
+                                            className="editService_number"
+                                            onChange={occurrenceChange}
+                                            value={occurrence}
+                                            variant="filled"
+                                        />
+                                        <span>előfordulás után</span>
+                                    </label>
+                                </RadioGroup>
+                            </FormControl>
+                        </div>
+                        : <></>
+                }
+                <Button onClick={saveService} variant="contained">Létrehozás</Button>
+            </dialog >
+            <Snackbar open={openSnackbar} autoHideDuration={5000} onClose={handleSnackbarClose}>
+                <Alert severity={snackbarStlye}>
+                    {snackbarStlye === "success" ? "Sikeres művelet" : "Sikertelen művelet"}
+                </Alert>
+            </Snackbar>
+        </React.Fragment>
+
     )
 }

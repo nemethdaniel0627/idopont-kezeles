@@ -212,9 +212,10 @@ export default function Calendar(props) {
     //   }
     //   monthSelected(tmpEvent)
     // }
-    // openFullScreen();
-    console.log("cal");
-  }, [])
+    if (props.open === true) {
+      openFullScreen();
+    }
+  }, [props.open])
 
   function radioChange(event) {
     const daysWindow = document.querySelector(".days-window");

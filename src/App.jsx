@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import Home from "./pages/Home";
 import "./scss/styles.scss";
 import { Routes, Route } from 'react-router-dom';
@@ -7,7 +7,7 @@ import Nav from "./components/Nav"
 
 export default function App() {
 
-  const tempDatas = [
+  const [tempDatas, setTempDatas] = useState([
     {
       id: 1,
       date: {
@@ -36,7 +36,7 @@ export default function App() {
       regularity: {
         measure: "week",
         repeatNumber: 2,
-        days: ["hétfő", "szerda"],
+        days: ["hétfő", "péntek"],
         endsOn: {
           // type: "occurrence",
           // occurrence: 3,
@@ -50,9 +50,9 @@ export default function App() {
       id: 3,
       date: {
         start: new Date("2022-07-09 0:0:0"),
-        end: new Date("2022-07-10 0:0:0")
+        end: new Date("2022-07-11 0:0:0")
       },
-      allDay: false,
+      allDay: true,
       title: "Tárgyaló 3",
       regularity: {
         measure: "month",
@@ -60,13 +60,46 @@ export default function App() {
         endsOn: {
           // type: "occurrence",
           // occurrence: 3,
+
           // type: "onDate",
-          // date: new Date("2022-07-15 0:0:0")
+          // date: new Date("2022-08-9 0:0:0"),
+
           type: "never"
         }
       }
     },
-  ]
+    {
+      id: 4,
+      date: {
+        start: new Date("2022-07-19 0:0:0"),
+        end: new Date("2022-07-22 0:0:0")
+      },
+      allDay: true,
+      title: "Tárgyaló 4",
+      regularity: {
+        measure: "year",
+        repeatNumber: 1,
+        endsOn: {
+          // type: "occurrence",
+          // occurrence: 3,
+
+          // type: "onDate",
+          // date: new Date("2022-08-9 0:0:0"),
+
+          type: "never"
+        }
+      }
+    },
+  ]);
+
+  const saveService = (newService) => {
+    console.log(newService);
+    newService.id = tempDatas.length + 1;
+    console.log(newService);
+    setTempDatas(prevData => {
+      return [...prevData, newService]
+    });
+  };
 
   useEffect(() => {
     const checkMobileBrowser = () => {
@@ -86,7 +119,7 @@ export default function App() {
       <Nav />
       <Routes>
         <Route path="/" element={<Home services={tempDatas} />} />
-        <Route path="/admin" element={<AdminSzolgaltatas services={tempDatas} />} />
+        <Route path="/admin" element={<AdminSzolgaltatas services={tempDatas} saveService={saveService} />} />
       </Routes>
     </>
   );
