@@ -23,7 +23,9 @@ export default function App() {
           type: "onDate",
           date: new Date("2022-07-13 0:0:0")
         }
-      }
+      },
+      participants: 0,
+      maxParticipants: 0,
     },
     {
       id: 2,
@@ -44,7 +46,9 @@ export default function App() {
           // date: new Date("2022-07-15 0:0:0")
           type: "never"
         }
-      }
+      },
+      participants: 0,
+      maxParticipants: 0,
     },
     {
       id: 3,
@@ -66,7 +70,9 @@ export default function App() {
 
           type: "never"
         }
-      }
+      },
+      participants: 0,
+      maxParticipants: 0,
     },
     {
       id: 4,
@@ -88,7 +94,9 @@ export default function App() {
 
           type: "never"
         }
-      }
+      },
+      participants: 0,
+      maxParticipants: 0,
     },
   ]);
 

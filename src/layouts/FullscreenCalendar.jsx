@@ -289,6 +289,7 @@ export default function FullscreenCalendar(props) {
                                                         type={sameDate.type}
                                                         serviceDefiner={sameDate.serviceDefiner}
                                                         allDay={sameDate.allDay}
+                                                        maxParticipants={sameDate.maxParticipants}
                                                     />
                                                     : <React.Fragment key={`${item.date}_${index}__${sameIndex}`} />
                                             })

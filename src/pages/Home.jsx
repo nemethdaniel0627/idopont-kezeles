@@ -180,7 +180,8 @@ export default function Home(props) {
                                     //             serviceDefiner: occurrenceCounter,
                                     //             start: tmpSerivceStart,
                                     //             end: tmpSerivceEnd,
-                                    //             allDay: allDay
+                                    //             allDay: allDay,
+                                    //maxParticipants: service.maxParticipants,
                                     //         });
 
 
@@ -193,7 +194,8 @@ export default function Home(props) {
                                     //             serviceStart: "0:0",
                                     //             end: tmpSerivceEnd,
                                     //             start: tmpSerivceStart,
-                                    //             allDay: allDay
+                                    //             allDay: allDay,
+                                    //maxParticipants: service.maxParticipants,
                                     //         });
                                     //     }
                                 }
@@ -214,7 +216,8 @@ export default function Home(props) {
                                         serviceDefiner: occurrenceCounter,
                                         start: tmpSerivceStart,
                                         end: tmpSerivceEnd,
-                                        allDay: allDay
+                                        allDay: allDay,
+                                        maxParticipants: service.maxParticipants,
                                     });
 
                                     //NotFullscreen
@@ -241,7 +244,8 @@ export default function Home(props) {
                                         serviceLength: dayDuration,
                                         start: tmpSerivceStart,
                                         end: tmpSerivceEnd,
-                                        allDay: allDay
+                                        allDay: allDay,
+                                        maxParticipants: service.maxParticipants,
                                     });
 
                                     if (intervalLength === 0) {
@@ -276,7 +280,8 @@ export default function Home(props) {
                                         serviceDefiner: occurrenceCounter,
                                         start: tmpSerivceStart,
                                         end: tmpSerivceEnd,
-                                        allDay: allDay
+                                        allDay: allDay,
+                                        maxParticipants: service.maxParticipants,
                                     });
 
                                     date.services.push({
@@ -289,7 +294,8 @@ export default function Home(props) {
                                         serviceLength: serviceDurationCounter,
                                         start: tmpSerivceStart,
                                         end: tmpSerivceEnd,
-                                        allDay: allDay
+                                        allDay: allDay,
+                                        maxParticipants: service.maxParticipants,
                                     });
                                 }
                             }
@@ -317,7 +323,8 @@ export default function Home(props) {
                                         serviceDefiner: occurrenceCounter,
                                         start: tmpSerivceStart,
                                         end: tmpSerivceEnd,
-                                        allDay: allDay
+                                        allDay: allDay,
+                                        maxParticipants: service.maxParticipants,
                                     });
 
                                     //NotFullscreen
@@ -344,7 +351,8 @@ export default function Home(props) {
                                         serviceLength: dayDuration,
                                         start: tmpSerivceStart,
                                         end: tmpSerivceEnd,
-                                        allDay: allDay
+                                        allDay: allDay,
+                                        maxParticipants: service.maxParticipants,
                                     });
                                 }
                             }
@@ -392,7 +400,8 @@ export default function Home(props) {
                                             serviceDefiner: occurrenceCounter,
                                             start: tmpSerivceStart,
                                             end: tmpSerivceEnd,
-                                            allDay: allDay
+                                            allDay: allDay,
+                                            maxParticipants: service.maxParticipants,
                                         });
 
 
@@ -420,7 +429,8 @@ export default function Home(props) {
                                             serviceLength: dayDuration,
                                             start: tmpSerivceStart,
                                             end: tmpSerivceEnd,
-                                            allDay: allDay
+                                            allDay: allDay,
+                                            maxParticipants: service.maxParticipants,
                                         });
                                         serviceStarted = true;
                                         skipMiddleDay = true;
@@ -453,7 +463,8 @@ export default function Home(props) {
                                         serviceDefiner: occurrenceCounter,
                                         start: tmpSerivceStart,
                                         end: tmpSerivceEnd,
-                                        allDay: allDay
+                                        allDay: allDay,
+                                        maxParticipants: service.maxParticipants,
                                     });
 
                                     date.services.push({
@@ -466,7 +477,8 @@ export default function Home(props) {
                                         serviceLength: serviceDurationCounter,
                                         start: tmpSerivceStart,
                                         end: tmpSerivceEnd,
-                                        allDay: allDay
+                                        allDay: allDay,
+                                        maxParticipants: service.maxParticipants,
                                     });
                                 }
                                 weekDayOccurred = true;
@@ -494,7 +506,8 @@ export default function Home(props) {
                                         serviceDefiner: occurrenceCounter,
                                         start: tmpSerivceStart,
                                         end: tmpSerivceEnd,
-                                        allDay: allDay
+                                        allDay: allDay,
+                                        maxParticipants: service.maxParticipants,
                                     });
 
                                     const tmpDayStart = new Date(date.date);
@@ -520,7 +533,8 @@ export default function Home(props) {
                                         serviceLength: dayDuration,
                                         start: tmpSerivceStart,
                                         end: tmpSerivceEnd,
-                                        allDay: allDay
+                                        allDay: allDay,
+                                        maxParticipants: service.maxParticipants,
                                     });
                                 }
                                 skipMiddleDay = false;
@@ -597,7 +611,8 @@ export default function Home(props) {
                                                 serviceDefiner: occurrenceCounter,
                                                 start: tmpSerivceStart,
                                                 end: tmpSerivceEnd,
-                                                allDay: allDay
+                                                allDay: allDay,
+                                                maxParticipants: service.maxParticipants,
                                             })
                                         else
                                             date.fullscreenServices.push({
@@ -608,7 +623,8 @@ export default function Home(props) {
                                                 serviceDefiner: occurrenceCounter,
                                                 start: tmpSerivceStart,
                                                 end: tmpSerivceEnd,
-                                                allDay: allDay
+                                                allDay: allDay,
+                                                maxParticipants: service.maxParticipants,
                                             });
 
                                         //NotFullscreen
@@ -635,7 +651,8 @@ export default function Home(props) {
                                             serviceLength: dayDuration,
                                             start: tmpSerivceStart,
                                             end: tmpSerivceEnd,
-                                            allDay: allDay
+                                            allDay: allDay,
+                                            maxParticipants: service.maxParticipants,
                                         });
 
                                         skipMiddleDay = true;
@@ -674,7 +691,8 @@ export default function Home(props) {
                                         serviceDefiner: occurrenceCounter,
                                         start: tmpSerivceStart,
                                         end: tmpSerivceEnd,
-                                        allDay: allDay
+                                        allDay: allDay,
+                                        maxParticipants: service.maxParticipants,
                                     });
 
                                     date.services.push({
@@ -687,7 +705,8 @@ export default function Home(props) {
                                         serviceLength: serviceDurationCounter,
                                         start: tmpSerivceStart,
                                         end: tmpSerivceEnd,
-                                        allDay: allDay
+                                        allDay: allDay,
+                                        maxParticipants: service.maxParticipants,
                                     });
                                 }
                             }
@@ -718,7 +737,8 @@ export default function Home(props) {
                                         serviceDefiner: occurrenceCounter,
                                         start: tmpSerivceStart,
                                         end: tmpSerivceEnd,
-                                        allDay: allDay
+                                        allDay: allDay,
+                                        maxParticipants: service.maxParticipants,
                                     });
 
                                     //NotFullscreen
@@ -745,7 +765,8 @@ export default function Home(props) {
                                         serviceLength: dayDuration,
                                         start: tmpSerivceStart,
                                         end: tmpSerivceEnd,
-                                        allDay: allDay
+                                        allDay: allDay,
+                                        maxParticipants: service.maxParticipants,
                                     });
                                 }
                             }
@@ -811,7 +832,8 @@ export default function Home(props) {
                                             serviceDefiner: occurrenceCounter,
                                             start: tmpSerivceStart,
                                             end: tmpSerivceEnd,
-                                            allDay: allDay
+                                            allDay: allDay,
+                                            maxParticipants: service.maxParticipants,
                                         });
 
                                         //NotFullscreen
@@ -838,7 +860,8 @@ export default function Home(props) {
                                             serviceLength: dayDuration,
                                             start: tmpSerivceStart,
                                             end: tmpSerivceEnd,
-                                            allDay: allDay
+                                            allDay: allDay,
+                                            maxParticipants: service.maxParticipants,
                                         });
 
                                         skipMiddleDay = true;
@@ -877,7 +900,8 @@ export default function Home(props) {
                                         serviceDefiner: occurrenceCounter,
                                         start: tmpSerivceStart,
                                         end: tmpSerivceEnd,
-                                        allDay: allDay
+                                        allDay: allDay,
+                                        maxParticipants: service.maxParticipants,
                                     });
 
                                     date.services.push({
@@ -890,7 +914,8 @@ export default function Home(props) {
                                         serviceLength: serviceDurationCounter,
                                         start: tmpSerivceStart,
                                         end: tmpSerivceEnd,
-                                        allDay: allDay
+                                        allDay: allDay,
+                                        maxParticipants: service.maxParticipants,
                                     });
                                 }
                             }
@@ -918,7 +943,8 @@ export default function Home(props) {
                                         serviceDefiner: occurrenceCounter,
                                         start: tmpSerivceStart,
                                         end: tmpSerivceEnd,
-                                        allDay: allDay
+                                        allDay: allDay,
+                                        maxParticipants: service.maxParticipants,
                                     });
 
                                     //NotFullscreen
@@ -945,12 +971,158 @@ export default function Home(props) {
                                         serviceLength: dayDuration,
                                         start: tmpSerivceStart,
                                         end: tmpSerivceEnd,
-                                        allDay: allDay
+                                        allDay: allDay,
+                                        maxParticipants: service.maxParticipants,
                                     });
                                 }
                             }
                             break;
+                        case "never":
+                            if (CalendarModule.getPrefix(date.date) === CalendarModule.getPrefix(tmpSerivceStart)) {
 
+                                //Fullscreen
+                                date.fullscreenServices.push({
+                                    id: service.id,
+                                    serviceDate: new Date(date.date),
+                                    name: service.title,
+                                    type: intervalLength > 0 ? "start" : "not",
+                                    serviceDefiner: occurrenceCounter,
+                                    start: tmpSerivceStart,
+                                    end: tmpSerivceEnd,
+                                    allDay: allDay,
+                                    maxParticipants: service.maxParticipants,
+                                });
+
+                                //NotFullscreen
+                                let dayDuration;
+                                if (intervalLength > 0) {
+                                    serviceStarted = true;
+                                    const tmpDayEnd = new Date(tmpSerivceStart);
+                                    tmpDayEnd.setHours(23, 59, 59);
+                                    dayDuration = CalendarModule.convertDuration(
+                                        intervalToDuration({
+                                            start: tmpSerivceStart,
+                                            end: tmpDayEnd
+                                        })
+                                    );
+                                }
+                                else dayDuration = serviceDurationCounter;
+                                serviceDurationCounter -= dayDuration;
+                                date.services.push({
+                                    id: service.id,
+                                    serviceDate: new Date(date.date),
+                                    name: service.title,
+                                    type: "start",
+                                    serviceDefiner: occurrenceCounter,
+                                    serviceStart: `${tmpSerivceStartTime[0]}:${tmpSerivceStartTime[1]}`,
+                                    serviceLength: dayDuration,
+                                    start: tmpSerivceStart,
+                                    end: tmpSerivceEnd,
+                                    allDay: allDay,
+                                    maxParticipants: service.maxParticipants,
+                                });
+
+
+                            }
+                            else if (serviceStarted && CalendarModule.getPrefix(date.date) === CalendarModule.getPrefix(tmpSerivceEnd)) {
+                                serviceStarted = false;
+
+                                if (index !== 0 && localDays[index - 1].fullscreenServices.length === 2 && date.fullscreenServices.length === 0) {
+                                    date.fullscreenServices.push({
+                                        id: -1,
+                                        serviceDate: new Date(date.date),
+                                        name: "",
+                                        type: "ghost",
+                                        serviceDefiner: -1,
+                                        start: null,
+                                        end: null,
+                                        allDay: undefined
+                                    });
+                                }
+
+                                date.fullscreenServices.push({
+                                    id: service.id,
+                                    serviceDate: new Date(date.date),
+                                    name: service.title,
+                                    type: "end",
+                                    serviceDefiner: occurrenceCounter,
+                                    start: tmpSerivceStart,
+                                    end: tmpSerivceEnd,
+                                    allDay: allDay,
+                                    maxParticipants: service.maxParticipants,
+                                });
+
+                                date.services.push({
+                                    id: service.id,
+                                    serviceDate: new Date(date.date),
+                                    name: service.title,
+                                    type: "end",
+                                    serviceDefiner: occurrenceCounter,
+                                    serviceStart: `0:0`,
+                                    serviceLength: serviceDurationCounter,
+                                    start: tmpSerivceStart,
+                                    end: tmpSerivceEnd,
+                                    allDay: allDay,
+                                    maxParticipants: service.maxParticipants,
+                                });
+                            }
+                            else if (serviceStarted) {
+
+                                if (index !== 0 && localDays[index - 1].fullscreenServices.length === 2 && date.fullscreenServices.length === 0) {
+                                    date.fullscreenServices.push({
+                                        id: -1,
+                                        serviceDate: new Date(date.date),
+                                        name: "",
+                                        type: "ghost",
+                                        serviceDefiner: -1,
+                                        start: null,
+                                        end: null,
+                                        allDay: undefined
+                                    });
+                                }
+
+                                //Fullscreen
+                                date.fullscreenServices.push({
+                                    id: service.id,
+                                    serviceDate: new Date(date.date),
+                                    name: service.title,
+                                    type: "middle",
+                                    serviceDefiner: occurrenceCounter,
+                                    start: tmpSerivceStart,
+                                    end: tmpSerivceEnd,
+                                    allDay: allDay,
+                                    maxParticipants: service.maxParticipants,
+                                });
+
+                                //NotFullscreen
+                                const tmpDayStart = new Date(date.date);
+                                const tmpDayEnd = new Date(date.date);
+                                tmpDayStart.setHours(0, 0, 0);
+                                tmpDayEnd.setHours(23, 59, 59);
+                                const dayDuration = CalendarModule.convertDuration(
+                                    intervalToDuration({
+                                        start: tmpDayStart,
+                                        end: tmpDayEnd
+                                    })
+                                );
+                                serviceDurationCounter -= dayDuration;
+                                // 
+
+                                date.services.push({
+                                    id: service.id,
+                                    serviceDate: new Date(date.date),
+                                    name: service.title,
+                                    type: "middle",
+                                    serviceDefiner: occurrenceCounter,
+                                    serviceStart: `0:0`,
+                                    serviceLength: dayDuration,
+                                    start: tmpSerivceStart,
+                                    end: tmpSerivceEnd,
+                                    allDay: allDay,
+                                    maxParticipants: service.maxParticipants,
+                                });
+                            }
+                            break;
                         default:
                             break;
                     }

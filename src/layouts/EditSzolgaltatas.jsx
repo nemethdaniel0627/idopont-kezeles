@@ -50,6 +50,7 @@ const regularityOptions = [
 export default function EditSzolgaltatas(props) {
     const [openSnackbar, setOpenSnackbar] = useState(false);
     const [snackbarStlye, setSnackbarStlye] = useState("success");
+    const [snackbarText, setSnackbarText] = useState("");
     const [regularity, setRegularity] = useState('never');
     const [repeatsEvery, setRepeatsEvery] = useState("1");
     const [daySelected, setDaySelected] = useState(['']);
@@ -106,6 +107,7 @@ export default function EditSzolgaltatas(props) {
         return returnText;
         // eslint-disable-next-line
     }, [regularity, startInputValue, endInputValue])
+    const [maxParticipants, setMaxParticipants] = useState(1);
 
     const saveService = () => {
         if (title !== "") {
@@ -143,7 +145,9 @@ export default function EditSzolgaltatas(props) {
                         date: tmpEndsOnDate,
                         occurrence: tmpEndsOnOccurrence,
                     }
-                }
+                },
+                participants: 0,
+                maxParticipants: maxParticipants,
             });
             const editServiceContainer = document.querySelector(`#editService_${props.id}`);
             if (editServiceContainer) {
@@ -156,9 +160,11 @@ export default function EditSzolgaltatas(props) {
                 }, { once: true });
 
             }
+            setSnackbarText("Sikeres művelet!")
             setSnackbarStlye("success");
             setOpenSnackbar(true);
         } else {
+            setSnackbarText("Nincs megadva erőforrás cím!")
             setSnackbarStlye("error");
             setOpenSnackbar(true);
         }
@@ -209,6 +215,10 @@ export default function EditSzolgaltatas(props) {
         if (editTileInput) {
             editTileInput.style.width = event.target.value.length + 5 + "ch";
         }
+    }
+
+    const maxParticipantsChange = (event) => {
+        setMaxParticipants(Number(event.target.value));
     }
 
     const handleMouseDownTitle = (event) => {
@@ -363,6 +373,7 @@ export default function EditSzolgaltatas(props) {
                     </LocalizationProvider>
                 </div>
                 <FormControlLabel control={<Checkbox onChange={() => { setAllDayService(!allDayService) }} value={allDayService} />} label="Egész nap?" />
+                <hr />
                 <div className="editService_repeat-container">
                     <p>{regularityText}</p>
                     {
@@ -466,11 +477,23 @@ export default function EditSzolgaltatas(props) {
                         </div>
                         : <></>
                 }
+                <hr />
+                <div className="editService_max-participants">
+                    <p>Jelentkezők maximális száma</p>
+                    <TextField
+                        type="number"
+                        className="editService_number"
+                        onChange={maxParticipantsChange}
+                        value={maxParticipants}
+                        variant="filled"
+                        error={maxParticipants < 1}
+                    />
+                </div>
                 <Button onClick={saveService} variant="contained">Létrehozás</Button>
             </dialog >
             <Snackbar open={openSnackbar} autoHideDuration={5000} onClose={handleSnackbarClose}>
                 <Alert severity={snackbarStlye}>
-                    {snackbarStlye === "success" ? "Sikeres művelet" : "Sikertelen művelet"}
+                    {snackbarText}
                 </Alert>
             </Snackbar>
         </React.Fragment>

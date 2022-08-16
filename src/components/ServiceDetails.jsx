@@ -9,6 +9,7 @@ export default function ServiceDetails(props) {
     const [serviceStart, setServiceStart] = useState(new Date());
     const [serviceEnd, setServiceEnd] = useState(new Date());
     const [serviceAllDay, setServiceAllDay] = useState(new Date());
+    const [maxParticipants, setMaxParticipants] = useState(-1);
 
     useEffect(() => {
         const eventDetails = document.querySelector(".event-details_container");
@@ -22,6 +23,7 @@ export default function ServiceDetails(props) {
                     setServiceStart(props.serviceDetails.start);
                     setServiceEnd(props.serviceDetails.end);
                     setServiceAllDay(props.serviceDetails.allDay);
+                    setMaxParticipants(props.serviceDetails.maxParticipants);
                     eventDetails.classList.add("event-details_appear");
                 }
             }, { once: true });
@@ -98,6 +100,7 @@ export default function ServiceDetails(props) {
                     <p>Ünnep</p>
                     <p>Nyilvános</p>
                     <p>{serviceDef}</p>
+                    <p>{maxParticipants}</p>
                 </div>
             </div>
         </dialog>

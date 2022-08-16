@@ -49,3 +49,14 @@ input[type="number"] {
     margin-top: 0.5rem;
     color: #d32f2f;
 }
+
+.MuiSnackbar-root {
+    .MuiPaper-root {
+        align-items: center;
+        font-size: 1.6rem;
+
+        .MuiAlert-icon {
+            font-size: 2.5rem;
+        }
+    }
+}

@@ -179,6 +179,13 @@
         }
     }
 
+    &_max-participants {
+        .MuiFilledInput-input {
+            padding: 1rem;
+            width: 6rem;
+        }
+    }
+
     .MuiSelect-select,
     .editService_repeat-container .MuiFilledInput-input {
         padding-top: 1rem;
