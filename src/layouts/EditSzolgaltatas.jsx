@@ -236,24 +236,24 @@ export default function EditSzolgaltatas(props) {
             setEditTile(false);
             setTitle(props.title);
             const serviceDatas = props.serviceDatas;
-            setStartInputValue(serviceDatas.date.start);
-            setEndInputValue(serviceDatas.date.end);
+            setStartInputValue(new Date(serviceDatas.startDate));
+            setEndInputValue(new Date(serviceDatas.endDate));
             if (serviceDatas.regularity !== "never") {
-                setRegularity(serviceDatas.regularity.measure);
-                setRepeatsEvery(serviceDatas.regularity.repeatNumber)
-                if (serviceDatas.regularity.measure === "week")
-                    setDaySelected(serviceDatas.regularity.days);
-                switch (serviceDatas.regularity.endsOn.type) {
+                setRegularity(serviceDatas.regularityMeasure);
+                setRepeatsEvery(serviceDatas.regularityRepeatNumber)
+                if (serviceDatas.regularityMeasure === "week")
+                    setDaySelected(serviceDatas.regularityDays);
+                switch (serviceDatas.endsOnType) {
                     case "never":
-                        setRepeatEnd(serviceDatas.regularity.endsOn.type);
+                        setRepeatEnd(serviceDatas.endsOnType);
                         break;
                     case "onDate":
-                        setRepeatEnd(serviceDatas.regularity.endsOn.type);
-                        setRepeatEndDate(serviceDatas.regularity.endsOn.date);
+                        setRepeatEnd(serviceDatas.endsOnType);
+                        setRepeatEndDate(serviceDatas.endsOnDate);
                         break;
                     case "occurrence":
-                        setRepeatEnd(serviceDatas.regularity.endsOn.type);
-                        setOccurrence(serviceDatas.regularity.endsOn.occurrence);
+                        setRepeatEnd(serviceDatas.endsOnType);
+                        setOccurrence(serviceDatas.endsOnOccurrence);
                         break;
 
                     default:
