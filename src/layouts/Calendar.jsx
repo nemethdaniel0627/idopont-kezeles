@@ -3,9 +3,9 @@ import { START_HOUR_OF_EVENTS, END_HOUR_OF_EVENTS } from "../constants.js";
 import IntervalButton from "../components/IntervalButton.jsx";
 import Loader from "../components/Loader.jsx";
 import ListItem from "../components/ListItem.jsx";
-import Event from "../components/Event.jsx";
 import IntervalList from "../components/IntervalList.jsx";
 import NewEvent from "../components/NewEvent.jsx";
+import CalendarModule from "../modules/Calendar";
 
 export default function Calendar() {
   const [year, setYear] = useState(new Date().getFullYear());
@@ -44,7 +44,6 @@ export default function Calendar() {
   const [hours, setHours] = useState([]);
   const [halfHours, setHalfHours] = useState([]);
   const [minutes, setMinutes] = useState([]);
-  const [whichInterval, setWhichInterval] = useState(60);
   const [eventTime, setEventTime] = useState({});
   const [numberOfDaysArray, setNumberOfDaysArray] = useState([]);
   const [daysWindowItem, setDaysWindowItem] = useState(-1);
@@ -60,16 +59,11 @@ export default function Calendar() {
       console.time();
       let dateArr = date.toString().split(" ");
 
-      let setmonth = dateArr[1];
-      let setday = dateArr[2];
-
       setYear(Number(dateArr[3]));
       setMonthName(monthNames[date.getMonth()]);
       setMonth(date.getMonth());
       setDay(date.getDate());
-      setDayName(dayNames[date.getDay() !== 0 ? date.getDay() - 1 : 6]);
       let months = document.getElementById("months");
-      let days = document.getElementById("days");
       if (years.length === 0) {
         for (let i = Number(dateArr[3]); i <= Number(dateArr[3]) + 11; i++) {
           setYears((prevState) => {
@@ -87,17 +81,6 @@ export default function Calendar() {
         });
       }
 
-      // nap beállitasa
-      if (days) {
-        console.log(setday);
-        days.childNodes.forEach((li, index) => {
-          if (index !== days.childNodes.length - 1 && li.firstChild.attributes[1].value === setday) {
-            li.firstChild.className = "selected";
-          }
-        });
-      }
-
-
       setInterval();
       console.timeEnd();
     }
@@ -108,7 +91,16 @@ export default function Calendar() {
   useEffect(() => {
     console.log("egész");
     setNumberOfDaysArray(numberOfDays());
+    // eslint-disable-next-line
   }, [])
+
+  // The day name always follows the selected date, whichever of year, month or day changed
+  useEffect(() => {
+    if (day > 0) {
+      setDayName(dayNames[CalendarModule.getWeekdayIndex(new Date(year, month, day))]);
+    }
+    // eslint-disable-next-line
+  }, [year, month, day])
 
   async function setInterval() {
 
@@ -176,84 +168,31 @@ export default function Calendar() {
   }
 
   function daySelected(event) {
-    setDayName(
-      dayNames[
-      new Date(year, month, event.target.attributes[1].value - 1).getDay()
-      ]
-    );
-    setDay(event.target.attributes[1].value);
-    // setEventHeight();
+    setDay(Number(event.target.attributes[1].value));
   }
 
   function monthSelected(event) {
     let months = document.getElementById("months");
-    let days = document.getElementById("days");
-    console.log(event.target.attributes);
-
-    let pastMonth = new Date(year, month, day);
-    let newMonth = new Date(
-      year,
-      Number(event.target.attributes[1].value) - 1,
-      1
-    );
-    let thisMonth = new Date();
-
-    let newMonthShort = newMonth.toString().split(" ")[1];
-    let pastMonthShort = pastMonth.toString().split(" ")[1];
-    let pastDayShort = pastMonth.toString().split(" ")[2];
-    let newDayShort = newMonth.toString().split(" ")[2];
+    const newMonth = Number(event.target.attributes[1].value) - 1;
+    const today = new Date();
 
     if (months) {
       months.childNodes.forEach((li) => {
-        if (li.firstChild.attributes[1].value === (newMonth.getMonth() + 1).toString()) {
-          li.firstChild.className = "selected";
-        } else if (li.firstChild.attributes[1].value === (pastMonth.getMonth() + 1).toString()) {
-          li.firstChild.className = "";
-        }
-      });
-    }
-    if (days) {
-      days.childNodes.forEach((li, index) => {
-        if (index !== days.childNodes.length - 1) {
-          if (
-            newMonth.getMonth() === thisMonth.getMonth() &&
-            li.firstChild.attributes[1].value === thisMonth.getDate().toString()
-          ) {
-            li.firstChild.className = "selected";
-            setDay(thisMonth.getDate());
-            setDayName(
-              thisMonth.getDay() === 0
-                ? "Sunday"
-                : dayNames[thisMonth.getDay() - 1]
-            );
-          } else if (
-            newMonth.getMonth() !== thisMonth.getMonth() &&
-            li.firstChild.attributes[1].value === newDayShort
-          ) {
-            li.firstChild.className = "selected";
-            setDay(newMonth.getDate());
-            setDayName(
-              newMonth.getDay() === 0 ? "Sunday" : dayNames[newMonth.getDay() - 1]
-            );
-          } else if (
-            (newMonth.getMonth() === thisMonth.getMonth() && index === 0)
-            || li.firstChild.attributes[1].value === pastDayShort) {
-            li.firstChild.className = "";
-          }
-        }
+        li.firstChild.className = li.firstChild.attributes[1].value === (newMonth + 1).toString() ? "selected" : "";
       });
     }
 
-    setMonthName(monthNames[newMonth.getMonth()]);
-    setMonth(newMonth.getMonth());
-    // setNumberOfDaysArray(numberOfDays());
+    // Today in the current month, the first day in any other
+    setDay(newMonth === today.getMonth() && year === today.getFullYear() ? today.getDate() : 1);
+    setMonthName(monthNames[newMonth]);
+    setMonth(newMonth);
   }
 
   function yearSelected(event) {
-    console.log(event.target.attributes[0].value);
     let selectedYear = Number(event.target.attributes[0].value);
     setYear(selectedYear);
-    // numberOfDays();
+    // e.g. február 29 does not exist in every year
+    setDay(prevDay => Math.min(prevDay, CalendarModule.getDaysInMonth(selectedYear, month)));
   }
 
   function numberOfDays() {
@@ -311,6 +250,7 @@ export default function Calendar() {
     setTimeout(() => {
       setNumberOfDaysArray(numberOfDays());
     }, 200);
+    // eslint-disable-next-line
   }, [year, month])
 
   useEffect(() => {
@@ -393,17 +333,6 @@ export default function Calendar() {
 
       default:
         break;
-    }
-  }
-
-  function setEventHeight() {
-    const eventLength = 180;
-    const oneHourLength = 300;
-    const oneMinuteLength = oneHourLength / 60;
-
-    let event = document.querySelector(`#event_23_0`);
-    if (event) {
-      event.style.height = `${oneMinuteLength * eventLength}%`;
     }
   }
 
@@ -535,7 +464,7 @@ export default function Calendar() {
                     htmlFor={`${year}-${month + 1}-${item}_radio`}
                     onClick={daySelected}
                     value={item < 10 ? "0" + item : item}
-                    className={addClass}
+                    className={item === day ? "selected" : addClass}
                     datavalue={item}
                   >
                     {item}

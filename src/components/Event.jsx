@@ -1,7 +1,9 @@
 import React, { useEffect } from "react";
-import Calendar from "../modules/Calendar";
 
 export default function Event(props) {
+    // id ends with "_<event index>", the rest is shared by the events starting in the same time unit
+    const sameStartClass = props.id.slice(0, props.id.lastIndexOf("_"));
+    const eventIndex = Number(props.id.slice(props.id.lastIndexOf("_") + 1));
 
     useEffect(() => {
 
@@ -28,11 +30,11 @@ export default function Event(props) {
         if (event) {
             event.style.height = `${oneMinuteLength * eventLength}px`;
             let eventColors = getComputedStyle(document.documentElement).getPropertyValue("--event-colors").toString().trim().split(",");
-            const r = Math.floor(Math.random() * 7);
-            event.style.backgroundColor = eventColors[r];
-            const sameStartEvents = props.id.includes(":")
-                ? document.querySelectorAll(`.${props.id.slice(0, -2).split(":")[0]}\\:${props.id.slice(0, -2).split(":")[1]}`)
-                : document.querySelectorAll(`.${props.id.slice(0, -2)}`);
+            // Same event, same color in every interval list and after every render
+            event.style.backgroundColor = eventColors[eventIndex % eventColors.length].trim();
+            const sameStartEvents = sameStartClass.includes(":")
+                ? document.querySelectorAll(`.${sameStartClass.split(":")[0]}\\:${sameStartClass.split(":")[1]}`)
+                : document.querySelectorAll(`.${sameStartClass}`);
             console.log(sameStartEvents);
             const eventMaxWidth = document.querySelector(".days--info--hour").clientWidth + 1;
             sameStartEvents.forEach((event, index) => {
@@ -44,9 +46,9 @@ export default function Event(props) {
                 event.style.marginTop = `${oneMinuteLength * props.eventNotRound}px`;
             }
         }
-    }, [props.eventLength, props.id]);
+    }, [props.eventLength, props.id, props.prefix, props.eventNotRound, sameStartClass, eventIndex]);
     return (
-        <span id={props.id} className={`event ${props.id.slice(0, -2)}`}>
+        <span id={props.id} className={`event ${sameStartClass}`}>
             <label className="event-name">{props.eventName}</label>
         </span>
     )

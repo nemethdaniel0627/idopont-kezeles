@@ -6,6 +6,7 @@ import AdapterDateFns from '@mui/lab/AdapterDateFns';
 import LocalizationProvider from '@mui/lab/LocalizationProvider';
 import TimePicker from '@mui/lab/TimePicker';
 import { Button } from "@mui/material";
+import CalendarModule from "../modules/Calendar";
 
 export default function NewEvent(props) {
     // const [eventTime, setEventTime] = useState({
@@ -20,8 +21,18 @@ export default function NewEvent(props) {
     const [endTime, setEndTime] = useState(null);
     const [onceOpen, setOnceOpen] = useState(false);
     const [startTimeIsClosed, setStartTimeIsClosed] = useState(null);
+    const isValidTime = time => time instanceof Date && !isNaN(time);
+    const timesAreValid = isValidTime(startTime) && isValidTime(endTime) && startTime < endTime;
+
+    // A time typed into the picker gets today's date, so move it to the selected day
+    function onSelectedDay(time) {
+        return isValidTime(time)
+            ? CalendarModule.setTimeOnDate(CalendarModule.getDateFromPrefix(props.item), time)
+            : time;
+    }
 
     function addNewEvent(id) {
+        if (!timesAreValid) return;
         props.addNewEvent(startTime, endTime);
         newEventClose("event", id);
     }
@@ -37,13 +48,13 @@ export default function NewEvent(props) {
     }
 
     useEffect(() => {
-        let tmpStartTime = new Date(props.item);
+        let tmpStartTime = CalendarModule.getDateFromPrefix(props.item);
         tmpStartTime.setHours(props.eventTime.startHour, props.eventTime.startMinute);
         setStartTime(tmpStartTime);
-        let tmpEndTime = new Date(props.item);
+        let tmpEndTime = CalendarModule.getDateFromPrefix(props.item);
         tmpEndTime.setHours(props.eventTime.endHour, props.eventTime.endMinute);
         setEndTime(tmpEndTime)
-    }, [props.eventTime])
+    }, [props.eventTime, props.item])
 
     useEffect(() => {
         if (startTime !== null && onceOpen !== true && startTimeIsClosed === true) {
@@ -51,6 +62,7 @@ export default function NewEvent(props) {
             tmpEnd.setHours(Number(tmpEnd.getHours()) + 1, tmpEnd.getMinutes());
             setEndTime(tmpEnd);
         }
+        // eslint-disable-next-line
     }, [startTime])
 
 
@@ -73,7 +85,7 @@ export default function NewEvent(props) {
                         label="Időpont kezdés"
                         value={startTime}
                         onChange={(newStart) => {
-                            setStartTime(newStart);
+                            setStartTime(onSelectedDay(newStart));
                         }}
                         onClose={() => { setStartTimeIsClosed(true) }}
                         onOpen={() => { setStartTimeIsClosed(false) }}
@@ -81,8 +93,8 @@ export default function NewEvent(props) {
                         renderInput={(params) =>
                             <TextField
                                 {...params}
-                                error={!(startTime <= endTime)}
-                                helperText={(startTime <= endTime) === false ? "Az időpont vége nem lehet később mint az eleje" : ""} />
+                                error={!timesAreValid}
+                                helperText={timesAreValid ? "" : "Az időpont végének a kezdete után kell lennie"} />
                         }
                     />
                 </LocalizationProvider>
@@ -93,7 +105,7 @@ export default function NewEvent(props) {
                         label="Időpont vége"
                         value={endTime}
                         onChange={(newEnd) => {
-                            setEndTime(newEnd);
+                            setEndTime(onSelectedDay(newEnd));
                         }}
                         onOpen={() => { setOnceOpen(true) }}
                         ampm={false}
@@ -103,6 +115,7 @@ export default function NewEvent(props) {
             </div>
             <Button
                 variant="outlined"
+                disabled={!timesAreValid}
                 onClick={() => { addNewEvent(props.item) }}>
                 Létrehozás
             </Button>
