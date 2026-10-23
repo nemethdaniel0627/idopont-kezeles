@@ -30,6 +30,9 @@ export default function FullscreenCalendar(props) {
     const dayNames = props.dayNames;
     let isDialogClick = false;
     const refBody = useRef(document.querySelector("body"));
+    // The animationend listeners outlive the render that added them, so they read the latest numberOfDays from here
+    const numberOfDaysRef = useRef(props.numberOfDays);
+    numberOfDaysRef.current = props.numberOfDays;
 
 
     const exitFullScreen = () => {
@@ -109,7 +112,7 @@ export default function FullscreenCalendar(props) {
                 if (event.animationName === "fullDaysChangeOut") {
                     setMonthName(props.monthName);
                     setMonth(props.month);
-                    setNumberOfDaysArray(props.numberOfDays());
+                    setNumberOfDaysArray(numberOfDaysRef.current());
                     calendarDays.classList.add("days-change-in");
                 }
             }, { once: true })
@@ -143,7 +146,11 @@ export default function FullscreenCalendar(props) {
         }
     }, [props])
 
-
+    // Services are fetched after mount, so recalculate the days when they arrive
+    useEffect(() => {
+        setNumberOfDaysArray(props.numberOfDays());
+        // eslint-disable-next-line
+    }, [props.services])
 
     useEffect(() => {
         // eslint-disable-next-line

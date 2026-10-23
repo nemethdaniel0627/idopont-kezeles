@@ -1463,7 +1463,9 @@ export default function Home(props) {
     useEffect(() => {
         setNumberOfDaysArray(numberOfDays());
         setServices(props.services)
-    }, [])
+        // Services are fetched after mount, so recalculate the days when they arrive
+        // eslint-disable-next-line
+    }, [props.services])
 
 
     return (

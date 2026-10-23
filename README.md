@@ -13,7 +13,8 @@ In another terminal
 
   1. cd server
   2. yarn install
-  3. yarn start
+  3. copy .env.example to .env and fill in your PostgreSQL connection details
+  4. yarn start
  ```
 
 and access the application at `http://localhost:3000/`

@@ -92,12 +92,16 @@ export default function App() {
   useEffect(() => {
     axios.get("/services")
       .then(res => {
-        console.log(res.data.result);
-        res.data.result.startDate = new Date(res.data.result.startDate);
-        res.data.result.endDate = new Date(res.data.result.endDate);
-        res.data.result.endsOnDate = new Date(res.data.result.endsOnDate);
+        // result is an array of rows, each needs its dates converted
+        const services = res.data.result.map(service => ({
+          ...service,
+          startDate: new Date(service.startDate),
+          endDate: new Date(service.endDate),
+          // Home checks endsOnDate === undefined for services that never end
+          endsOnDate: service.endsOnDate ? new Date(service.endsOnDate) : undefined
+        }));
         setTempDatas(prevData => {
-          return [...prevData, res.data.result]
+          return [...prevData, ...services]
         });
       })
       .catch(err => {
