@@ -1,9 +1,9 @@
 const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '.env') });
 const axios = require('axios');
 const cors = require('cors');
 const express = require('express');
 const database = require('./database');
-const { Pool, Client } = require('pg');
 const app = express();
 
 
@@ -19,30 +19,22 @@ app.get("/", (req, res) => {
 })
 
 app.get("/services", async (req, res) => {
-  const queryResult = await database.select(
-    "*",
-    "services",
-    "INNER JOIN serviceendson " +
-    'ON "regularityEndsOnId" = serviceendson.id; ');
-  queryResult.forEach(row => {
-    row.id = Number(row.id);
-  });
+  try {
+    // services.* instead of *, so serviceendson.id does not overwrite the service id
+    const queryResult = await database.select(
+      'services.*, "endsOnType", "endsOnDate", "endsOnOccurrence"',
+      "services",
+      "INNER JOIN serviceendson " +
+      'ON "regularityEndsOnId" = serviceendson.id; ');
+    queryResult.forEach(row => {
+      row.id = Number(row.id);
+    });
 
-  console.log(queryResult);
-  res.json({ result: queryResult });
-  // const pool = new Pool({
-  //   user: 'postgres',
-  //   host: 'localhost',
-  //   database: 'idopont',
-  //   password: 'Dani0234!',
-  //   port: 5432,
-  // });
-
-  // pool.query(`SELECT * FROM users`, (err, res) => {
-  //   console.log(res);
-  //   console.log(err);
-  //   pool.end();
-  // })
+    res.json({ result: queryResult });
+  } catch (err) {
+    console.error(err.stack);
+    res.status(500).json({ error: "Could not load services" });
+  }
 })
 
 app.listen(PORT, () => {
