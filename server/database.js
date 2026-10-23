@@ -15,13 +15,25 @@ _pool.on('error', err => console.error(err.stack));
 class Database {
 
     // Errors are passed on to the caller, so it can answer the request with an error status
-    async select(rows, table, innerJoins = "", where = "") {
-        const res = await _pool.query(`SELECT ${rows} FROM ${table} ${innerJoins} ${where}`);
+    async query(text, params = []) {
+        const res = await _pool.query(text, params);
         return res.rows;
     }
 
-    getAllItems() {
-
+    // Runs callback(client) in one transaction, rolled back if callback throws
+    async transaction(callback) {
+        const client = await _pool.connect();
+        try {
+            await client.query("BEGIN");
+            const result = await callback(client);
+            await client.query("COMMIT");
+            return result;
+        } catch (err) {
+            await client.query("ROLLBACK");
+            throw err;
+        } finally {
+            client.release();
+        }
     }
 }
 

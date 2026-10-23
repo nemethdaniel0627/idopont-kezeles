@@ -53,11 +53,12 @@ export default function EditSzolgaltatas(props) {
     const [snackbarText, setSnackbarText] = useState("");
     const [regularity, setRegularity] = useState('never');
     const [repeatsEvery, setRepeatsEvery] = useState("1");
-    const [daySelected, setDaySelected] = useState(['']);
+    const [daySelected, setDaySelected] = useState([]);
     const [startInputValue, setStartInputValue] = useState(new Date());
     const [endInputValue, setEndInputValue] = useState(new Date(new Date().setHours(new Date().getHours() + 1)));
     const [repeatEndDate, setRepeatEndDate] = useState(new Date());
-    const [repeatEnd, setRepeatEnd] = useState();
+    const [repeatEnd, setRepeatEnd] = useState("never");
+    const [saving, setSaving] = useState(false);
     const [occurrence, setOccurrence] = useState("1");
     const [editTile, setEditTile] = useState(true);
     const [title, setTitle] = useState("");
@@ -109,46 +110,42 @@ export default function EditSzolgaltatas(props) {
     }, [regularity, startInputValue, endInputValue])
     const [maxParticipants, setMaxParticipants] = useState(1);
 
-    const saveService = () => {
+    const saveService = async () => {
         if (title !== "") {
-            let tmpEndsOnDate;
-            let tmpEndsOnOccurrence;
-            switch (repeatEnd) {
-                case "onDate":
-                    tmpEndsOnOccurrence = undefined;
-                    break;
-                case "occurrence":
-                    tmpEndsOnDate = undefined;
-                    break;
-                case "never":
-                    tmpEndsOnDate = undefined;
-                    tmpEndsOnOccurrence = undefined;
-                    break;
-
-                default:
-                    break;
-            }
-            props.saveService({
-                id: -1,
-                date: {
-                    start: startInputValue,
-                    end: endInputValue
-                },
-                allDay: allDayService,
+            const repeats = regularity !== "never";
+            // The same flat shape the server returns and the calendar reads
+            const service = {
                 title: title,
-                regularity: {
-                    measure: regularity,
-                    repeatNumber: Number(repeatsEvery),
-                    days: daySelected.length === 0 ? undefined : daySelected,
-                    endsOn: {
-                        type: repeatEnd,
-                        date: tmpEndsOnDate,
-                        occurrence: tmpEndsOnOccurrence,
-                    }
-                },
-                participants: 0,
+                startDate: startInputValue,
+                endDate: endInputValue,
+                allDay: allDayService,
+                regularityMeasure: regularity,
+                regularityRepeatNumber: repeats ? Number(repeatsEvery) : null,
+                regularityDays: regularity === "week" ? daySelected : null,
+                endsOnType: repeats ? repeatEnd : "never",
+                endsOnDate: repeats && repeatEnd === "onDate" ? repeatEndDate : null,
+                endsOnOccurrence: repeats && repeatEnd === "occurrence" ? Number(occurrence) : null,
                 maxParticipants: maxParticipants,
-            });
+            };
+            // With an id the existing service is updated, without one a new service is created
+            if (props.serviceDatas) {
+                service.id = props.serviceDatas.id;
+            }
+
+            setSaving(true);
+            try {
+                await props.saveService(service);
+            } catch (err) {
+                setSnackbarText(err.response && err.response.data && err.response.data.error
+                    ? err.response.data.error
+                    : "Nem sikerült menteni az erőforrást!");
+                setSnackbarStlye("error");
+                setOpenSnackbar(true);
+                return;
+            } finally {
+                setSaving(false);
+            }
+
             const editServiceContainer = document.querySelector(`#editService_${props.id}`);
             if (editServiceContainer) {
 
@@ -238,9 +235,11 @@ export default function EditSzolgaltatas(props) {
             const serviceDatas = props.serviceDatas;
             setStartInputValue(new Date(serviceDatas.startDate));
             setEndInputValue(new Date(serviceDatas.endDate));
-            if (serviceDatas.regularity !== "never") {
-                setRegularity(serviceDatas.regularityMeasure);
-                setRepeatsEvery(serviceDatas.regularityRepeatNumber)
+            setAllDayService(serviceDatas.allDay === true);
+            setMaxParticipants(serviceDatas.maxParticipants);
+            setRegularity(serviceDatas.regularityMeasure);
+            if (serviceDatas.regularityMeasure !== "never") {
+                setRepeatsEvery(String(serviceDatas.regularityRepeatNumber))
                 if (serviceDatas.regularityMeasure === "week")
                     setDaySelected(serviceDatas.regularityDays);
                 switch (serviceDatas.endsOnType) {
@@ -253,7 +252,7 @@ export default function EditSzolgaltatas(props) {
                         break;
                     case "occurrence":
                         setRepeatEnd(serviceDatas.endsOnType);
-                        setOccurrence(serviceDatas.endsOnOccurrence);
+                        setOccurrence(String(serviceDatas.endsOnOccurrence));
                         break;
 
                     default:
@@ -372,7 +371,7 @@ export default function EditSzolgaltatas(props) {
                         }
                     </LocalizationProvider>
                 </div>
-                <FormControlLabel control={<Checkbox onChange={() => { setAllDayService(!allDayService) }} value={allDayService} />} label="Egész nap?" />
+                <FormControlLabel control={<Checkbox onChange={() => { setAllDayService(!allDayService) }} checked={allDayService} />} label="Egész nap?" />
                 <hr />
                 <div className="editService_repeat-container">
                     <p>{regularityText}</p>
@@ -489,7 +488,9 @@ export default function EditSzolgaltatas(props) {
                         error={maxParticipants < 1}
                     />
                 </div>
-                <Button onClick={saveService} variant="contained">Létrehozás</Button>
+                <Button onClick={saveService} disabled={saving} variant="contained">
+                    {props.serviceDatas ? "Mentés" : "Létrehozás"}
+                </Button>
             </dialog >
             <Snackbar open={openSnackbar} autoHideDuration={5000} onClose={handleSnackbarClose}>
                 <Alert severity={snackbarStlye}>

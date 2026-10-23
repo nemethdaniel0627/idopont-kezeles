@@ -78,12 +78,26 @@ export default function App() {
     // },
   ]);
 
-  const saveService = (newService) => {
-    console.log(newService);
-    newService.id = tempDatas.length + 1;
-    console.log(newService);
+  // A service from the server, its dates arrive as strings
+  const toCalendarService = service => ({
+    ...service,
+    startDate: new Date(service.startDate),
+    endDate: new Date(service.endDate),
+    // Home checks endsOnDate === undefined for services that never end
+    endsOnDate: service.endsOnDate ? new Date(service.endsOnDate) : undefined
+  });
+
+  // Creates the service, or updates it when it has an id. Errors are left to the caller to show.
+  const saveService = async (service) => {
+    const isNew = service.id === undefined;
+    const res = isNew
+      ? await axios.post("/services", service)
+      : await axios.put(`/services/${service.id}`, service);
+    const saved = toCalendarService(res.data.result);
     setTempDatas(prevData => {
-      return [...prevData, newService]
+      return isNew
+        ? [...prevData, saved]
+        : prevData.map(item => item.id === saved.id ? saved : item)
     });
   };
 
@@ -92,14 +106,7 @@ export default function App() {
   useEffect(() => {
     axios.get("/services")
       .then(res => {
-        // result is an array of rows, each needs its dates converted
-        const services = res.data.result.map(service => ({
-          ...service,
-          startDate: new Date(service.startDate),
-          endDate: new Date(service.endDate),
-          // Home checks endsOnDate === undefined for services that never end
-          endsOnDate: service.endsOnDate ? new Date(service.endsOnDate) : undefined
-        }));
+        const services = res.data.result.map(toCalendarService);
         setTempDatas(prevData => {
           return [...prevData, ...services]
         });
