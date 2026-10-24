@@ -4,95 +4,41 @@ import IntervalButton from "../components/IntervalButton.jsx";
 import Loader from "../components/Loader.jsx";
 import ListItem from "../components/ListItem.jsx";
 import IntervalList from "../components/IntervalList.jsx";
-import NewEvent from "../components/NewEvent.jsx";
+import { Fullscreen } from "@mui/icons-material";
+import CloseIcon from '@mui/icons-material/Close';
+import { IconButton } from "@mui/material";
 import CalendarModule from "../modules/Calendar";
 
-export default function Calendar() {
+
+export default function Calendar(props) {
   const [year, setYear] = useState(new Date().getFullYear());
   const [monthName, setMonthName] = useState("");
   const [month, setMonth] = useState(new Date().getMonth());
   const [day, setDay] = useState(0);
   const [dayName, setDayName] = useState("");
-  const monthNames = [
-    "Január",
-    "Február",
-    "Március",
-    "Április",
-    "Május",
-    "Június",
-    "Július",
-    "Augusztus",
-    "Szeptember",
-    "Október",
-    "November",
-    "December",
-  ];
-  const dayNames = [
-    "Hétfő",
-    "Kedd",
-    "Szerda",
-    "Csütörtök",
-    "Péntek",
-    "Szombat",
-    "Vasárnap",
-  ];
-  const [events, setEvents] = useState([
-    { eventStart: "0:30", eventLength: 90, eventDate: new Date() },
-    { eventStart: "3:0", eventLength: 120, eventDate: new Date() }
-  ])
+  const monthNames = props.monthNames;
+  const dayNames = props.dayNames;
   const [years, setYears] = useState([]);
   const [hours, setHours] = useState([]);
   const [halfHours, setHalfHours] = useState([]);
   const [minutes, setMinutes] = useState([]);
-  const [eventTime, setEventTime] = useState({});
-  const [numberOfDaysArray, setNumberOfDaysArray] = useState([]);
   const [daysWindowItem, setDaysWindowItem] = useState(-1);
-
-  let calendar = document.getElementById("calendar");
-  let date = new Date();
-
-  // let numberOfDaysArray = numberOfDays();
+  // "year-month" of the day open in the day window, which can be a greyed day of a neighbouring month
+  const [daysWindowMonth, setDaysWindowMonth] = useState("");
+  // The days of the shown month with the open resource's reservations, built by Home
+  const numberOfDaysArray = props.numberOfDaysArray;
 
   useEffect(() => {
-    // setNumberOfDaysArray(numberOfDays());
-    if (numberOfDaysArray.length !== 0) {
-      console.time();
-      let dateArr = date.toString().split(" ");
-
-      setYear(Number(dateArr[3]));
-      setMonthName(monthNames[date.getMonth()]);
-      setMonth(date.getMonth());
-      setDay(date.getDate());
-      let months = document.getElementById("months");
-      if (years.length === 0) {
-        for (let i = Number(dateArr[3]); i <= Number(dateArr[3]) + 11; i++) {
-          setYears((prevState) => {
-            return [...prevState, i];
-          });
-        }
-      }
-
-      // honap beallitas
-      if (months) {
-        months.childNodes.forEach((li) => {
-          if (li.firstChild.attributes[1].value === (date.getMonth() + 1).toString()) {
-            li.firstChild.className = "selected";
-          }
-        });
-      }
-
-      setInterval();
-      console.timeEnd();
+    if (props) {
+      setYear(props.year);
+      setMonthName(props.monthName);
+      setMonth(props.month);
+      setDay(props.day);
+      setYears(props.years);
     }
-    // console.timeLog();
-    //eslint-disable-next-line
-  }, [calendar]);
-
-  useEffect(() => {
-    console.log("egész");
-    setNumberOfDaysArray(numberOfDays());
+    setInterval();
     // eslint-disable-next-line
-  }, [])
+  }, [props])
 
   // The day name always follows the selected date, whichever of year, month or day changed
   useEffect(() => {
@@ -118,23 +64,7 @@ export default function Calendar() {
         ++i;
       }
     }
-    // for (let i = START_HOUR_OF_EVENTS; i < END_HOUR_OF_EVENTS; i++) {
-    //   for (let j = 0; j < 60; j += 5) {
-    //     let tmp = i + ":" + j;
-    //     setMinutes((prevState) => {
-    //       return [...prevState, tmp];
-    //     });
-    //   }
-    // }
     if (halfHours.length === 0) {
-      // for (let i = START_HOUR_OF_EVENTS; i < END_HOUR_OF_EVENTS; i++) {
-      //   for (let j = 0; j < 60; j += 30) {
-      //     let tmp = i + ":" + j;
-      //     setHalfHours((prevState) => {
-      //       return [...prevState, tmp];
-      //     });
-      //   }
-      // }
       let i = START_HOUR_OF_EVENTS;
       while (i < END_HOUR_OF_EVENTS) {
         let j = 0;
@@ -150,15 +80,6 @@ export default function Calendar() {
     }
 
     if (hours.length === 0) {
-      //   let i = START_HOUR_OF_EVENTS;
-      //   while (i < END_HOUR_OF_EVENTS) {
-      //     // eslint-disable-next-line no-loop-func
-      //     setHours((prevState) => {
-      //        return [...prevState, i];
-      //     });
-      //     i++;
-      //   }
-
       for (let i = START_HOUR_OF_EVENTS; i < END_HOUR_OF_EVENTS; i++) {
         setHours((prevState) => {
           return [...prevState, i];
@@ -172,67 +93,27 @@ export default function Calendar() {
   }
 
   function monthSelected(event) {
-    let months = document.getElementById("months");
-    const newMonth = Number(event.target.attributes[1].value) - 1;
-    const today = new Date();
+    let newMonth = new Date(
+      year,
+      Number(event.target.attributes[1].value) - 1,
+      1
+    );
 
-    if (months) {
-      months.childNodes.forEach((li) => {
-        li.firstChild.className = li.firstChild.attributes[1].value === (newMonth + 1).toString() ? "selected" : "";
-      });
-    }
-
-    // Today in the current month, the first day in any other
-    setDay(newMonth === today.getMonth() && year === today.getFullYear() ? today.getDate() : 1);
-    setMonthName(monthNames[newMonth]);
-    setMonth(newMonth);
+    setMonthName(monthNames[newMonth.getMonth()]);
+    props.setProps("monthName", monthNames[newMonth.getMonth()]);
+    setMonth(newMonth.getMonth());
+    props.setProps("month", newMonth.getMonth());
   }
 
   function yearSelected(event) {
     let selectedYear = Number(event.target.attributes[0].value);
     setYear(selectedYear);
-    // e.g. február 29 does not exist in every year
-    setDay(prevDay => Math.min(prevDay, CalendarModule.getDaysInMonth(selectedYear, month)));
-  }
-
-  function numberOfDays() {
-
-    console.log("numberOfDays");
-    console.time();
-
-    const BigMonths = [1, 3, 5, 7, 8, 10, 12];
-    const SmallMonths = [4, 6, 9, 11];
-    let localdate = new Date(year, month);
-    let firstDay = new Date(Number(year), Number(month), 1).getDay() - 1;
-    if (firstDay === -1) {
-      firstDay = 6;
-    }
-
-    let numberOfdays;
-
-    if (BigMonths.includes(localdate.getMonth() + 1)) numberOfdays = 31;
-    else if (SmallMonths.includes(localdate.getMonth() + 1)) numberOfdays = 30;
-    else if (leapyear(localdate.getFullYear())) numberOfdays = 29;
-    else numberOfdays = 28;
-
-    // let localDays = Array.from({ length: (numberOfdays - (1 - firstDay)) + 1 }, (_, i) => (1 - firstDay) + i);
-    let localDays = [];
-
-    for (var i = 1 - firstDay; i <= numberOfdays; i += 1) {
-      localDays.push(i);
-    }
-
-    console.timeEnd();
-
-    console.log(localDays);
-
-    return localDays;
-
+    props.setProps("year", selectedYear);
+    // numberOfDays();
   }
 
   function daysAnimate(animateIn) {
     let days = document.getElementById("days");
-    console.log("animate" + animateIn);
     if (days) {
       days.style.opacity = animateIn === true ? "1" : "0";
     }
@@ -247,73 +128,59 @@ export default function Calendar() {
 
   useEffect(() => {
     daysAnimate(false);
-    setTimeout(() => {
-      setNumberOfDaysArray(numberOfDays());
-    }, 200);
+    let months = document.getElementById("months");
+    if (months) {
+      months.childNodes.forEach((li) => {
+        if (li.firstChild.attributes[1].value === (month + 1).toString()) {
+          li.firstChild.className = "selected";
+        } else {
+          li.firstChild.className = "";
+        }
+      });
+    }
+    // Today when it is in the shown month of the shown year, the first day otherwise
+    const today = new Date();
+    setDay(year === today.getFullYear() && month === today.getMonth() ? today.getDate() : 1);
     // eslint-disable-next-line
   }, [year, month])
 
   useEffect(() => {
     daysAnimate(true);
-    console.log(numberOfDaysArray);
-
   }, [numberOfDaysArray])
+
+  useEffect(() => {
+    // const days = document.querySelector("#days");
+    // if (days) {
+    //   const tmpEvent = {
+    //     target: {
+    //       attributes: [
+    //         -1,
+    //         { value: 6 }
+    //       ]
+    //     }
+    //   }
+    //   monthSelected(tmpEvent)
+    // }
+    if (props.open === true) {
+      openFullScreen();
+    }
+    // eslint-disable-next-line
+  }, [props.open])
 
   function radioChange(event) {
     const daysWindow = document.querySelector(".days-window");
     if (daysWindow) {
       daysWindow.style.transform = "scale(1) translateX(-50%)";
     }
-    setDaysWindowItem(event.target.attributes[2].value.split("_")[0].split("-")[2]);
+    const [dayYear, dayMonth, dayOfMonth] = event.target.attributes[2].value.split("_")[0].split("-");
+    setDaysWindowMonth(`${dayYear}-${dayMonth}`);
+    setDaysWindowItem(dayOfMonth);
   }
 
-
-  function setNewEvent(event) {
-    let item = event.target.attributes[0].value;
-    let selectedTime;
-    selectedTime = event.target.attributes[0].value.split("_")[2];
-    console.log(item);
-    // if (item === "days--info--hour") {
-    //   item = event.target.parentNode.parentNode.parentNode.parentNode.childNodes[1].id;
-    //   selectedTime = event.target.parentNode.attributes[0].value;
-    // }
-    // else item = event.target.parentNode.parentNode.parentNode.childNodes[1]
-    console.log(item);
-    item = item.split("_")[1];
-    console.log(item);
-
-    document.getElementById(item + "_newEvent").style.animation =
-      "slideInRight .6s ease-out forwards";
-
-    console.log(`item ${selectedTime}`);
-
-    let selectedHour = selectedTime.split(":")[0];
-    let selectedMinutes = selectedTime.split(":")[1] ? Number(selectedTime.split(":")[1]) < 10 ? `0${selectedTime.split(":")[1]}` : selectedTime.split(":")[1] : "00";
-    selectedHour = Number(selectedHour) < 10 ? `0${selectedHour}` : selectedHour
-    setEventTime(() => {
-      return {
-        startHour: selectedHour,
-        startMinute: selectedMinutes,
-        endHour: Number(selectedHour) < 10 ? `0${Number(selectedHour) + 1}` : (Number(selectedHour) + 1),
-        endMinute: selectedMinutes
-      };
-    });
-  }
-
-  function addNewEvent(startTime, endTime) {
-    const eventStart = `${startTime.getHours()}:${startTime.getMinutes()}`;
-    const eventLength = Math.abs(endTime - startTime) / 60000;
-    setEvents(prevEvents => {
-      return [...prevEvents, { eventStart: eventStart, eventLength: eventLength, eventDate: startTime }]
-    })
-    console.log(eventStart);
-
-  }
 
   function intervalChange(event) {
     const item = Number(event.target.attributes[0].value.split("_")[1]);
     const whichButton = Number(event.target.attributes[0].value.split("_")[2]);
-    console.log(`btn ${whichButton}`);
     switch (whichButton) {
       case 5:
         document.getElementById(`hour_list_${item}_5`).style.transform = "translateX(0)";
@@ -321,14 +188,14 @@ export default function Calendar() {
         document.getElementById(`hour_list_${item}_60`).style.transform = "translateX(0)";
         break;
       case 30:
-        document.getElementById(`hour_list_${item}_5`).style.transform = "translateX(-27rem)";
-        document.getElementById(`hour_list_${item}_30`).style.transform = "translateX(-27rem)";
-        document.getElementById(`hour_list_${item}_60`).style.transform = "translateX(-27rem)";
+        document.getElementById(`hour_list_${item}_5`).style.transform = "translateX(calc(var(--intervallistWidth) / 2))";
+        document.getElementById(`hour_list_${item}_30`).style.transform = "translateX(calc(var(--intervallistWidth) / 2))";
+        document.getElementById(`hour_list_${item}_60`).style.transform = "translateX(calc(var(--intervallistWidth) / 2))";
         break;
       case 60:
-        document.getElementById(`hour_list_${item}_5`).style.transform = "translateX(-54rem)";
-        document.getElementById(`hour_list_${item}_30`).style.transform = "translateX(-54rem)";
-        document.getElementById(`hour_list_${item}_60`).style.transform = "translateX(-54rem)";
+        document.getElementById(`hour_list_${item}_5`).style.transform = "translateX(var(--intervallistWidth))";
+        document.getElementById(`hour_list_${item}_30`).style.transform = "translateX(var(--intervallistWidth))";
+        document.getElementById(`hour_list_${item}_60`).style.transform = "translateX(var(--intervallistWidth))";
         break;
 
       default:
@@ -336,13 +203,33 @@ export default function Calendar() {
     }
   }
 
-  // useEffect(() => {
+  function openFullScreen() {
+    const fullscreen = document.querySelector(".fullscreen-calendar");
+    const calendar = document.querySelector("#calendar");
+    const body = document.querySelector("body");
 
+    if (fullscreen && calendar && body) {
+      body.style.overflow = "hidden";
+      fullscreen.setAttribute("open", "");
+      fullscreen.classList.remove("hidden");
+      calendar.setAttribute("open", "");
+    }
+  }
 
-  // }, [numberOfDays])
+  function closeCalendar() {
+    props.setProps("open", false);
+  }
+
+  const openDetails = (passedProps) => {
+    const tmpEventDetails = document.querySelector(".event-details");
+    if (tmpEventDetails) {
+      tmpEventDetails.setAttribute("open", "");
+      props.setProps("serviceDetails", passedProps);
+    }
+  }
 
   return (
-    <div id="calendar" className="calendar">
+    <div id="calendar" className={`calendar ${props.open ? '' : 'hidden'}`}>
       <div className="col leftCol">
         <div className="content">
           <h1 className="date">
@@ -380,6 +267,14 @@ export default function Calendar() {
             <label htmlFor="year--check">
               <span className="year">{year}</span>
             </label>
+            <div>
+              <IconButton className="calendar_fullscreen" size="large" onClick={openFullScreen}>
+                <Fullscreen />
+              </IconButton>
+              <IconButton className="calendar_fullscreen" size="large" onClick={closeCalendar}>
+                <CloseIcon />
+              </IconButton>
+            </div>
           </h2>
 
           <div className="year--block">
@@ -414,62 +309,42 @@ export default function Calendar() {
           </ul>
           <div className="clearfix"></div>
           <ul className="weekday">
-            <ListItem itemContent="Hé" datavalue="1" isWeekDay={true} />
-            <ListItem itemContent="Ke" datavalue="2" isWeekDay={true} />
-            <ListItem itemContent="Sze" datavalue="3" isWeekDay={true} />
-            <ListItem itemContent="Csü" datavalue="4" isWeekDay={true} />
-            <ListItem itemContent="Pé" datavalue="5" isWeekDay={true} />
-            <ListItem itemContent="Szo" datavalue="6" isWeekDay={true} />
-            <ListItem itemContent="Va" datavalue="7" isWeekDay={true} />
+            {
+              props.shortDayNames.map((item, index) => {
+                return <ListItem key={`${item}_${index}`} itemContent={item} datavalue="1" isWeekDay={true} />
+              })
+            }
           </ul>
           <div className="clearfix"></div>
           <ul className="days" id="days">
-            {numberOfDaysArray.map((item) => {
+            {numberOfDaysArray.map((item, index) => {
+              // A day with an all-day reservation is "full", one with other reservations "notfull"
               let addClass = "";
-              // switch (item) {
-              //   case 8:
-              //   case 10:
-              //   case 27:
-              //     addClass = "full";
-              //     break;
-              //   default:
-              //     break;
-              // }
-
-              // switch (item) {
-              //   case 3:
-              //   case 17:
-              //   case 23:
-              //     addClass = "notfull";
-              //     break;
-              //   default:
-              //     break;
-              // }
-
-              if (item < 1)
-                return (
-                  <li key={item}>
-                    <span
-                      className="empty"
-                      value={item}
-                      datavalue={item}
-                    ></span>
-                  </li>
-                );
-              // eslint-disable-next-line
+              if (item.services.some(reservation => reservation.allDay)) addClass = "full";
+              else if (item.services.length !== 0) addClass = "notfull";
+              let notThisMonthDay = false;
+              if (index < 8 && item.date.getDate() > 8) notThisMonthDay = true;
+              if (index > 20 && item.date.getDate() < 8) notThisMonthDay = true;
+              // The day's own year and month, so the greyed days of the next and previous month differ
+              const dayPrefix = CalendarModule.getPrefix(item.date);
               return (
-                <li key={item}>
+                <li key={`calendar_${item.date.getDate()}_${index}`}>
                   {/* eslint-disable-next-line */}
                   <label
-                    htmlFor={`${year}-${month + 1}-${item}_radio`}
+                    htmlFor={`${dayPrefix}_radio`}
                     onClick={daySelected}
-                    value={item < 10 ? "0" + item : item}
-                    className={item === day ? "selected" : addClass}
-                    datavalue={item}
+                    value={item.date.getDate() < 10 ? "0" + item.date.getDate() : item.date.getDate()}
+                    datavalue={item.date.getDate()}
+                    className={
+                      `${addClass} ${!notThisMonthDay && item.date.getDate() === day
+                        ? "selected"
+                        : ""
+                      } ${notThisMonthDay === true ? "greyDay" : ""}`
+                    }
                   >
-                    {item}
+                    {item.date.getDate()}
                   </label>
-                  <input onClick={radioChange} type="radio" name="days" id={`${year}-${month + 1}-${item}_radio`} />
+                  <input onClick={radioChange} type="radio" name="days" id={`${dayPrefix}_radio`} />
                 </li>
               );
             })}
@@ -502,13 +377,35 @@ export default function Calendar() {
                   </span>
                 </div>
                 <div className="interval-list--wrapper">
-                  <IntervalList key={`hour_list_${daysWindowItem}_5`} id={`hour_list_${daysWindowItem}_5`} prefix={`${year}-${month + 1}`} events={events} timeUnits={minutes} item={daysWindowItem} setNewEvent={setNewEvent} />
-                  <IntervalList key={`hour_list_${daysWindowItem}_30`} id={`hour_list_${daysWindowItem}_30`} prefix={`${year}-${month + 1}`} events={events} timeUnits={halfHours} item={daysWindowItem} setNewEvent={setNewEvent} />
-                  <IntervalList key={`hour_list_${daysWindowItem}_60`} id={`hour_list_${daysWindowItem}_60`} prefix={`${year}-${month + 1}`} events={events} timeUnits={hours} item={daysWindowItem} setNewEvent={setNewEvent} />
+                  <IntervalList
+                    key={`hour_list_${daysWindowItem}_5`}
+                    id={`hour_list_${daysWindowItem}_5`}
+                    prefix={daysWindowMonth}
+                    services={numberOfDaysArray}
+                    timeUnits={minutes}
+                    item={daysWindowItem}
+                    openDetails={openDetails}
+                  />
+                  <IntervalList
+                    key={`hour_list_${daysWindowItem}_30`}
+                    id={`hour_list_${daysWindowItem}_30`}
+                    prefix={daysWindowMonth}
+                    services={numberOfDaysArray}
+                    timeUnits={halfHours}
+                    item={daysWindowItem}
+                    openDetails={openDetails}
+                  />
+                  <IntervalList
+                    key={`hour_list_${daysWindowItem}_60`}
+                    id={`hour_list_${daysWindowItem}_60`}
+                    prefix={daysWindowMonth}
+                    services={numberOfDaysArray}
+                    timeUnits={hours}
+                    item={daysWindowItem}
+                    openDetails={openDetails}
+                  />
                 </div>
               </div>
-
-              <NewEvent item={`${year}-${month + 1}-${daysWindowItem}`} eventTime={eventTime} addNewEvent={addNewEvent} />
             </div>
           </ul>
           <div className="clearfix"></div>
@@ -517,8 +414,4 @@ export default function Calendar() {
       <div className="clearfix"></div>
     </div>
   );
-}
-
-function leapyear(year) {
-  return year % 100 === 0 ? year % 400 === 0 : year % 4 === 0;
 }
