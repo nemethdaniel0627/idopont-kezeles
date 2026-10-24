@@ -350,3 +350,83 @@ $available-hover: #cde7f6;
 .polls-admin_actions {
     white-space: nowrap;
 }
+
+// Right after creating a poll: the link to send
+.poll-created {
+    font-size: 1.5rem;
+
+    p {
+        margin-bottom: 0.8rem;
+    }
+}
+
+.poll-common {
+    gap: 1rem;
+
+    .MuiChip-root {
+        font-size: 1.4rem;
+    }
+
+    &_more {
+        align-self: flex-start;
+        color: var(--calendar-dark);
+        font-size: 1.4rem;
+    }
+}
+
+.poll-menu_danger {
+    color: #d32f2f;
+}
+
+// While answering, the save bar stays in view however long the grid is
+.poll-answers_editing {
+    position: sticky;
+    top: 0;
+    z-index: 4;
+    box-shadow: 0 0.4rem 0.8rem rgba(0, 0, 0, 0.08);
+}
+
+// The closing time under the last slot: a short row, so its label stays inside the grid
+.poll-grid_end-time {
+    height: 1.6rem;
+}
+
+.poll-grid_end {
+    height: 1.6rem;
+    border-top: 1px solid #d8dee9;
+}
+
+.poll-create_steps {
+    margin-bottom: 2rem;
+
+    .MuiStepLabel-label {
+        font-size: 1.5rem;
+    }
+}
+
+.poll-create_mode-hint,
+.poll-create_field-hint {
+    margin-top: 0;
+}
+
+.poll-create_days {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.4rem 1rem;
+    color: #444;
+}
+
+.poll-create_more {
+    border: 1px solid #e3e8f2;
+    border-radius: 0.8rem !important;
+
+    &::before {
+        display: none;
+    }
+
+    .MuiAccordionSummary-content {
+        font-size: 1.5rem;
+        color: #444;
+    }
+}

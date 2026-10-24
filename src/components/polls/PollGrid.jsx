@@ -131,6 +131,13 @@ export default function PollGrid({ days, times, slotMinutes, editing, selected, 
                     })}
                 </React.Fragment>
             ))}
+            {/* The end of the last slot, so the window's closing time can be read too */}
+            {times.length !== 0
+                ? <>
+                    <div className="poll-grid_time poll-grid_end-time">{toTime(toMinutes(times[times.length - 1]) + slotMinutes)}</div>
+                    {days.map(day => <div key={`end_${day}`} className="poll-grid_end" />)}
+                </>
+                : <></>}
         </div>
     );
 }

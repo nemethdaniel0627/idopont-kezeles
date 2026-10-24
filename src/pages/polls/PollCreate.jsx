@@ -2,14 +2,16 @@ import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import {
-    Autocomplete, Button, Checkbox, FormControlLabel, MenuItem, TextField, ToggleButton, ToggleButtonGroup
+    Accordion, AccordionDetails, AccordionSummary, Autocomplete, Button, Checkbox, FormControlLabel, MenuItem, Step, StepLabel, Stepper,
+    TextField, ToggleButton, ToggleButtonGroup
 } from "@mui/material";
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { DateTimePicker, LocalizationProvider } from "@mui/lab";
 import AdapterDateFns from '@mui/lab/AdapterDateFns';
 import AdminPage from "../../components/AdminPage";
 import DayPicker from "../../components/polls/DayPicker";
 import { errorMessage } from "../../modules/api";
-import { WEEK_DAYS, durationText, timeOptions, toMinutes } from "../../modules/pollSlots";
+import { WEEK_DAYS, describeDays, durationText, timeOptions, toMinutes } from "../../modules/pollSlots";
 
 const DEFAULT_TIME_ZONE = "Europe/Budapest";
 
@@ -81,7 +83,8 @@ export default function PollCreate() {
                 timeZone: form.timeZone,
                 answersVisible: form.answersVisible,
             });
-            navigate(`/egyeztetes/${res.data.result.publicKey}`);
+            // The poll page then shows the link to send right at the top
+            navigate(`/egyeztetes/${res.data.result.publicKey}`, { state: { created: true } });
         } catch (err) {
             setError(errorMessage(err, "Nem sikerült létrehozni az egyeztetést!"));
             setSaving(false);
@@ -90,6 +93,10 @@ export default function PollCreate() {
 
     return (
         <AdminPage title="Új egyeztetés" back={{ to: "/egyeztetesek", label: "Egyeztetéseim" }}>
+            <Stepper activeStep={step - 1} className="poll-create_steps">
+                <Step><StepLabel>Napok</StepLabel></Step>
+                <Step><StepLabel>Időpontok és beállítások</StepLabel></Step>
+            </Stepper>
             {step === 1
                 ? <section className="admin-section poll-create">
                     <h2>Mely napokon találkoznátok?</h2>
@@ -97,6 +104,11 @@ export default function PollCreate() {
                         <ToggleButton value="dates">Dátumok</ToggleButton>
                         <ToggleButton value="weekdays">A hét napjai</ToggleButton>
                     </ToggleButtonGroup>
+                    <p className="admin-section_hint poll-create_mode-hint">
+                        {mode === "dates"
+                            ? "Konkrét napok, például a jövő hét keddje és szerdája."
+                            : "Általános heti időpont, nem konkrét dátum: például egy rendszeres heti megbeszéléshez."}
+                    </p>
                     {mode === "dates"
                         ? <DayPicker selected={dates} onToggle={toggleDate} />
                         : <ToggleButtonGroup color="primary" value={weekDays} onChange={(event, value) => setWeekDays(value)}
@@ -110,6 +122,10 @@ export default function PollCreate() {
                 </section>
                 : <form className="admin-section poll-create" onSubmit={create}>
                     <h2>Az egyeztetés adatai</h2>
+                    <p className="poll-create_days">
+                        <span>Napok: <strong>{describeDays({ mode, dates: [...dates], weekDays })}</strong></span>
+                        <Button size="small" onClick={() => setStep(1)}>Módosítás</Button>
+                    </p>
                     {error !== "" ? <p className="reservation-form_error" role="alert">{error}</p> : <></>}
                     <TextField label="Az egyeztetés neve" required autoFocus value={form.title} onChange={event => set("title", event.target.value)} />
                     <TextField label="Miről szól?" multiline minRows={2} value={form.description} onChange={event => set("description", event.target.value)} />
@@ -123,9 +139,6 @@ export default function PollCreate() {
                             error={windowMinutes <= 0} helperText={windowMinutes <= 0 ? "A vége legyen a kezdete után!" : undefined}>
                             {timeOptions(form.slotMinutes, form.slotMinutes).map(time => <MenuItem key={time} value={time}>{time}</MenuItem>)}
                         </TextField>
-                        <Autocomplete options={zones} value={form.timeZone} disableClearable
-                            onChange={(event, value) => set("timeZone", value)}
-                            renderInput={params => <TextField {...params} label="Időzóna" />} />
                     </div>
                     <div>
                         <p className="admin-section_label">Idősávok hossza (lehetséges egység hossza)</p>
@@ -133,10 +146,11 @@ export default function PollCreate() {
                             <ToggleButton value={30}>30 perc</ToggleButton>
                             <ToggleButton value={60}>60 perc</ToggleButton>
                         </ToggleButtonGroup>
+                        <p className="admin-section_hint poll-create_field-hint">A válaszolók ekkora egységekben jelölik be, mikor érnek rá.</p>
                     </div>
                     <TextField select label="A megbeszélés hossza" value={form.meetingMinutes}
                         onChange={event => set("meetingMinutes", event.target.value)}
-                        helperText="Az eredményben csak az ennél nem rövidebb közös időpontok jelennek meg.">
+                        helperText="Maga a találkozó ennyi ideig tart: az eredményben csak az ennél nem rövidebb közös időpontok jelennek meg.">
                         <MenuItem value="">Nincs megadva</MenuItem>
                         {meetingOptions.map(minutes => <MenuItem key={minutes} value={minutes}>{durationText(minutes)}</MenuItem>)}
                     </TextField>
@@ -156,6 +170,17 @@ export default function PollCreate() {
                     {!form.answersVisible
                         ? <p className="admin-section_hint">Így csak te és az adminok látjátok, ki mikor ér rá.</p>
                         : <></>}
+
+                    {/* Rarely changed, so out of the way */}
+                    <Accordion disableGutters elevation={0} className="poll-create_more">
+                        <AccordionSummary expandIcon={<ExpandMoreIcon />}>További beállítások (időzóna: {form.timeZone})</AccordionSummary>
+                        <AccordionDetails>
+                            <Autocomplete options={zones} value={form.timeZone} disableClearable
+                                onChange={(event, value) => set("timeZone", value)}
+                                renderInput={params => <TextField {...params} label="Időzóna"
+                                    helperText="A napi időablak és a válaszok ebben az időzónában értendők." />} />
+                        </AccordionDetails>
+                    </Accordion>
 
                     <div className="admin-section_actions poll-create_actions">
                         <Button onClick={() => setStep(1)} disabled={saving}>Vissza</Button>
