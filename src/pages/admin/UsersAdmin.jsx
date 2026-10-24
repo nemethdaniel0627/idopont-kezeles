@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { Alert, Snackbar, Switch, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Tooltip } from "@mui/material";
+import {
+    Alert, Button, Chip, Dialog, DialogActions, DialogContent, DialogTitle, Snackbar, Switch,
+    Table, TableBody, TableCell, TableContainer, TableHead, TableRow
+} from "@mui/material";
 import AdminPage from "../../components/AdminPage";
 import { useAuth } from "../../auth/AuthContext";
 import { errorMessage } from "../../modules/api";
@@ -10,12 +13,20 @@ export default function UsersAdmin() {
     const { user: currentUser } = useAuth();
     const [users, setUsers] = useState(null);
     const [message, setMessage] = useState(null);
+    // The user whose admin right is about to change, asked first since it is a big change
+    const [pending, setPending] = useState(null);
 
     useEffect(() => {
         axios.get("/users")
             .then(res => setUsers(res.data.result))
             .catch(err => setMessage({ severity: "error", text: errorMessage(err, "Nem sikerült betölteni a felhasználókat!") }));
     }, []);
+
+    const confirmToggle = async () => {
+        const user = pending;
+        setPending(null);
+        await toggleAdmin(user);
+    };
 
     const toggleAdmin = async (user) => {
         const role = user.role === "admin" ? "regular" : "admin";
@@ -49,8 +60,6 @@ export default function UsersAdmin() {
                         <TableBody>
                             {users.map(user => {
                                 const isSelf = currentUser && currentUser.id === user.id;
-                                const toggle = <Switch checked={user.role === "admin"} disabled={isSelf} onChange={() => toggleAdmin(user)}
-                                    inputProps={{ "aria-label": `${user.name || user.email} admin` }} />;
                                 return (
                                     <TableRow key={user.id}>
                                         <TableCell>{user.name || "–"}</TableCell>
@@ -59,9 +68,10 @@ export default function UsersAdmin() {
                                         <TableCell className="users-table_optional">{new Date(user.createdAt).toLocaleDateString("hu-HU")}</TableCell>
                                         <TableCell align="center">
                                             {isSelf
-                                                // A disabled switch gets no hover events, so the tooltip needs a wrapper
-                                                ? <Tooltip title="A saját admin jogodat nem veheted el"><span>{toggle}</span></Tooltip>
-                                                : toggle}
+                                                // Your own right can't be taken away: no switch, just who you are
+                                                ? <Chip size="small" color="primary" label="Te (admin)" title="A saját admin jogodat nem veheted el" />
+                                                : <Switch checked={user.role === "admin"} onChange={() => setPending(user)}
+                                                    inputProps={{ "aria-label": `${user.name || user.email} admin` }} />}
                                         </TableCell>
                                     </TableRow>
                                 );
@@ -70,6 +80,22 @@ export default function UsersAdmin() {
                     </Table>
                 </TableContainer>
             }
+            <Dialog open={pending !== null} onClose={() => setPending(null)} maxWidth="xs">
+                <DialogTitle>{pending && pending.role === "admin" ? "Admin jog elvétele" : "Admin jog megadása"}</DialogTitle>
+                <DialogContent>
+                    {pending
+                        ? pending.role === "admin"
+                            ? `${pending.name || pending.email} ezután nem kezelheti az erőforrásokat, a foglalásokat és az egyeztetéseket.`
+                            : `${pending.name || pending.email} admin lesz: minden erőforrást, foglalást és egyeztetést kezelhet, és másokat is adminná tehet.`
+                        : ""}
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setPending(null)}>Mégse</Button>
+                    <Button variant="contained" color={pending && pending.role === "admin" ? "error" : "primary"} onClick={confirmToggle}>
+                        {pending && pending.role === "admin" ? "Elveszem" : "Admin lesz"}
+                    </Button>
+                </DialogActions>
+            </Dialog>
             <Snackbar open={message !== null} autoHideDuration={5000} onClose={() => setMessage(null)}>
                 <Alert severity={message ? message.severity : "success"} onClose={() => setMessage(null)}>{message ? message.text : ""}</Alert>
             </Snackbar>

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Alert, Button, IconButton, InputAdornment, TextField, ToggleButton, ToggleButtonGroup } from "@mui/material";
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -31,13 +31,30 @@ function toForm(resource) {
 }
 
 // Edits a resource (or creates one when `resource` is null): name, custom fields, booking rules;
-// an existing one also has its reservations and can be removed
-export default function ResourceEditor({ resource, saveResource, removeResource, onSaved, onRemoved, showMessage }) {
-    const [form, setForm] = useState(() => toForm(resource));
+// an existing one also has its reservations and can be removed. Unsaved changes are reported to
+// `onDirtyChange`, kept in view by a sticky save bar, and warned about when the browser tab is closed.
+export default function ResourceEditor({ resource, saveResource, removeResource, onSaved, onRemoved, showMessage, onDirtyChange }) {
+    const stored = useMemo(() => toForm(resource), [resource]);
+    const [form, setForm] = useState(stored);
     const [error, setError] = useState("");
     const [saving, setSaving] = useState(false);
     const [removeOpen, setRemoveOpen] = useState(false);
     const isNew = !resource;
+    const dirty = JSON.stringify(form) !== JSON.stringify(stored);
+
+    useEffect(() => {
+        if (onDirtyChange) onDirtyChange(dirty);
+    }, [dirty, onDirtyChange]);
+
+    useEffect(() => {
+        if (!dirty) return undefined;
+        const warn = event => {
+            event.preventDefault();
+            event.returnValue = "";
+        };
+        window.addEventListener("beforeunload", warn);
+        return () => window.removeEventListener("beforeunload", warn);
+    }, [dirty]);
 
     const set = (field, value) => setForm(previous => ({ ...previous, [field]: value }));
     const change = field => event => set(field, event.target.value);
@@ -116,8 +133,10 @@ export default function ResourceEditor({ resource, saveResource, removeResource,
                     </ToggleButtonGroup>
                 </div>
 
-                <div className="admin-section_actions">
-                    <Button type="submit" variant="contained" size="large" disabled={saving}>{isNew ? "Létrehozás" : "Mentés"}</Button>
+                <div className={`resource-editor_bar${dirty ? " dirty" : ""}`}>
+                    <span role="status">{dirty ? "Nem mentett módosítások" : isNew ? "" : "Minden módosítás elmentve"}</span>
+                    {dirty && !isNew ? <Button onClick={() => setForm(stored)} disabled={saving}>Elvetés</Button> : <></>}
+                    <Button type="submit" variant="contained" size="large" disabled={saving || (!dirty && !isNew)}>{isNew ? "Létrehozás" : "Mentés"}</Button>
                 </div>
             </form>
 

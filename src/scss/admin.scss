@@ -321,3 +321,35 @@
     gap: 1.2rem;
     font-size: 1.5rem;
 }
+
+// The editor's save bar stays at the bottom of the screen while the form is longer than it
+.resource-editor_bar {
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin: 0 -2.4rem -2.4rem;
+    padding: 1.2rem 2.4rem;
+    background: #fff;
+    border-top: 1px solid #e3e8f2;
+    border-radius: 0 0 1.2rem 1.2rem;
+
+    span {
+        margin-right: auto;
+        color: #666;
+        font-size: 1.4rem;
+    }
+
+    &.dirty {
+        background: #fff8e1;
+
+        span {
+            color: #8a4b00;
+            font-weight: bold;
+        }
+    }
+}
