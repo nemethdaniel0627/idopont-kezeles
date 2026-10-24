@@ -1,5 +1,8 @@
 // The poll pages: creating, answering, the overview, my polls
-$available: #2ea043;
+// The page's blue (--calendar-blue) and its light tints
+$available: #39a2db;
+$available-pale: #e8f4fb;
+$available-hover: #cde7f6;
 
 .poll-page {
     display: flex;
@@ -60,7 +63,7 @@ $available: #2ea043;
     &_editing {
         padding: 1.2rem 1.6rem;
         border-radius: 0.8rem;
-        background: #e6f4ea;
+        background: $available-pale;
         display: flex;
         flex-direction: column;
         gap: 0.8rem;
@@ -90,7 +93,7 @@ $available: #2ea043;
     &_focused {
         padding: 0.8rem 1.2rem;
         border-left: 4px solid $available;
-        background: #f3f7f4;
+        background: $available-pale;
     }
 
     &_own {
@@ -149,7 +152,7 @@ $available: #2ea043;
             border-radius: 0.6rem;
 
             &:hover {
-                background: #e6f4ea;
+                background: $available-pale;
             }
         }
     }
@@ -181,7 +184,7 @@ $available: #2ea043;
     }
 
     &_editing &_cell:hover {
-        background-color: #cfe9d6;
+        background-color: $available-hover;
     }
 
     &_editing &_cell.marked {
@@ -241,7 +244,7 @@ $available: #2ea043;
         cursor: pointer;
 
         &:hover:not(:disabled) {
-            background: #e6f4ea;
+            background: $available-pale;
         }
 
         &.today {
@@ -284,6 +287,11 @@ $available: #2ea043;
         display: flex;
         flex-wrap: wrap;
         gap: 0.6rem;
+
+        .MuiChip-root {
+            background-color: $available;
+            color: #fff;
+        }
     }
 
     &_people {

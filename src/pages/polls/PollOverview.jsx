@@ -68,7 +68,7 @@ export default function PollOverview() {
                                             <li key={group.day}>
                                                 <strong>{dayLabel(group.day)}</strong>
                                                 <span className="poll-overview_ranges">
-                                                    {group.ranges.map(range => <Chip key={range.from} color="success" label={`${range.from}–${range.to}`} />)}
+                                                    {group.ranges.map(range => <Chip key={range.from} label={`${range.from}–${range.to}`} />)}
                                                 </span>
                                             </li>
                                         )}

@@ -6,7 +6,7 @@ import { dayHeader, slotId, toMinutes, toTime } from "../../modules/pollSlots";
 //   between the first slot and the one under the pointer (as the first one turned), so no slot is missed
 //   however fast the mouse moves; on a touch screen each tap toggles a slot. A day's header fills or clears
 //   the whole day.
-// - viewing: each slot is as green as the share of respondents available then (`counts`, `total`);
+// - viewing: each slot is as blue as the share of respondents available then (`counts`, `total`);
 //   clicking one shows who is available in `onSlotFocus`.
 export default function PollGrid({ days, times, slotMinutes, editing, selected, setSelected, counts, total, focusedSlot, onSlotFocus }) {
     // While dragging: { day, time } indexes of the first slot, the value it got, and the selection before the drag
@@ -91,8 +91,8 @@ export default function PollGrid({ days, times, slotMinutes, editing, selected, 
         if (editing) return undefined;
         const count = counts[slot] || 0;
         if (count === 0 || total === 0) return undefined;
-        // From pale to full green; full when everyone is available
-        return { backgroundColor: `rgba(46, 160, 67, ${0.15 + 0.85 * (count / total)})` };
+        // The page's blue (--calendar-blue), from pale to full; full when everyone is available
+        return { backgroundColor: `rgba(57, 162, 219, ${0.15 + 0.85 * (count / total)})` };
     };
 
     return (

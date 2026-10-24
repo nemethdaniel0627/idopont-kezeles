@@ -272,7 +272,7 @@ export default function PollPage() {
                         </p>
                         : <></>}
                     {!editing && data.answers && data.answers.length
-                        ? <p className="admin-section_hint">Minél zöldebb egy idősáv, annál többen érnek rá; kattints rá, hogy lásd, kik.</p>
+                        ? <p className="admin-section_hint">Minél kékebb egy idősáv, annál többen érnek rá; kattints rá, hogy lásd, kik.</p>
                         : <></>}
 
                     {own && !editing
