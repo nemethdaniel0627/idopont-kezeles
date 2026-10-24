@@ -21,8 +21,11 @@ html {
     font-size: 62.5%;
 }
 
+// Set here, so the page is white in every browser (the default can be dark) and the pages' dark text shows
 body {
     font-family: Helvetica, Arial, sans-serif;
+    background-color: #fff;
+    color: #222;
     // height: 200vh;
 }
 

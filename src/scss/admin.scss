@@ -15,7 +15,7 @@
 
         h1 {
             font-size: 3rem;
-            color: #fff;
+            color: var(--calendar-dark);
             word-break: break-word;
         }
     }
@@ -29,16 +29,16 @@
         gap: 1.2rem;
     }
 
-    // Its buttons use color="inherit", so they are white on the dark page like the title
+    // Its buttons use color="inherit", so they take the title's color
     &_actions {
         display: flex;
         flex-wrap: wrap;
         gap: 0.8rem;
-        color: #fff;
+        color: var(--calendar-dark);
     }
 
     &_intro {
-        color: #ddd;
+        color: #555;
         margin-bottom: 1.6rem;
     }
 }
@@ -57,9 +57,6 @@
         max-width: 96rem;
     }
 
-    > .MuiButton-root {
-        color: #fff;
-    }
 }
 
 .admin-tile {
@@ -113,6 +110,7 @@
 
     &_list {
         background: #fff;
+        border: 1px solid #e3e8f2;
         border-radius: 1.2rem;
         padding: 1.6rem;
         display: flex;
@@ -125,7 +123,7 @@
     }
 
     &_empty {
-        color: #ddd;
+        color: #666;
     }
 }
 
@@ -137,6 +135,7 @@
 
 .admin-section {
     background: #fff;
+    border: 1px solid #e3e8f2;
     border-radius: 1.2rem;
     padding: 2.4rem;
     display: flex;
@@ -296,6 +295,7 @@
 
 .users-table {
     background: #fff;
+    border: 1px solid #e3e8f2;
     border-radius: 1.2rem;
 
     .MuiTableCell-root {
