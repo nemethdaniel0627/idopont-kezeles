@@ -295,6 +295,7 @@
 
 // The week view: days as columns, hours as rows. A half-hour row is 2.4rem, so a minute is 0.08rem.
 .week-view {
+    --week-head-height: 5.2rem;
     position: absolute;
     inset: 0;
     overflow: auto;
@@ -311,6 +312,8 @@
         position: sticky;
         top: 0;
         z-index: 3;
+        // Fixed, so the all-day row can stick right under it
+        height: var(--week-head-height);
         background: var(--calendar-grey);
         border-bottom: 1px solid #c9d3d6;
     }
@@ -338,7 +341,19 @@
         }
     }
 
+    // The all-day row stays under the day headers while the hours scroll
+    &_all-day-label,
+    &_all-day {
+        position: sticky;
+        top: var(--week-head-height);
+        z-index: 3;
+        background: #fff;
+        box-shadow: 0 0.2rem 0.3rem rgba(0, 0, 0, 0.06);
+    }
+
     &_all-day-label {
+        left: 0;
+        z-index: 4;
         font-size: 1.1rem;
         color: #666;
         padding: 0.4rem;
