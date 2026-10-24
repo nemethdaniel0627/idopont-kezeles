@@ -18,6 +18,28 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 const buildPath = path.join(__dirname, '..', 'build');
+
+// Earlier builds installed a caching service worker, so a normal reload showed an old build. Browsers check
+// this file for updates on every visit: this one empties the caches, removes itself and reloads the open
+// pages, which then load the current build. It is never cached itself.
+const SERVICE_WORKER_REMOVAL = `
+self.addEventListener('install', () => self.skipWaiting());
+self.addEventListener('activate', event => {
+  event.waitUntil((async () => {
+    await self.clients.claim();
+    const keys = await caches.keys();
+    await Promise.all(keys.map(key => caches.delete(key)));
+    await self.registration.unregister();
+    const pages = await self.clients.matchAll({ type: 'window' });
+    pages.forEach(page => page.navigate(page.url));
+  })());
+});
+`;
+app.get("/service-worker.js", (req, res) => {
+  res.set("Cache-Control", "no-store");
+  res.type("application/javascript").send(SERVICE_WORKER_REMOVAL);
+})
+
 app.use(express.static(buildPath));
 app.use(express.json());
 app.use(cors());
