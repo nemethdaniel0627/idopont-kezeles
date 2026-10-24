@@ -6,6 +6,17 @@ export default function IntervalList(props) {
 
     const intervalLength = Number(props.id.split("_")[3]);
 
+    // A time row that has not started yet opens a new booking at its time (a click on a reservation in it
+    // opens that reservation instead)
+    function slotProps(timeUnit) {
+        if (props.item === -1 || props.prefix === "") return {};
+        const [hours, minutes] = typeof timeUnit === "string" ? timeUnit.split(":").map(Number) : [timeUnit, 0];
+        const time = Calendar.getDateFromPrefix(`${props.prefix}-${props.item}`);
+        time.setHours(hours, minutes, 0, 0);
+        if (time <= new Date()) return {};
+        return { className: "bookable", title: "Foglalás erre az időpontra", onClick: () => props.newBooking(time, time) };
+    }
+
     // Services that start inside this time unit, shifted down by the minutes they start after it
     function servicesInTimeUnit(timeUnit) {
         return props.services.map((date, index) => {
@@ -37,6 +48,7 @@ export default function IntervalList(props) {
                         if (timeUnit <= 9)
                             return (
                                 <p
+                                    {...slotProps(timeUnit)}
                                     key={`${index}_p_key_${props.id}`}
                                     id={`timeUnit_${props.prefix}-${props.item}_${timeUnit}_${props.id.split("_")[3]}`}
                                 >
@@ -48,6 +60,7 @@ export default function IntervalList(props) {
                         else if (typeof (timeUnit) === typeof (""))
                             return (
                                 <p
+                                    {...slotProps(timeUnit)}
                                     key={`${index}_p_key_${props.id}`}
                                     id={`timeUnit_${props.prefix}-${props.item}_${timeUnit}_${props.id.split("_")[3]}`}
                                 >
@@ -60,6 +73,7 @@ export default function IntervalList(props) {
                         else
                             return (
                                 <p
+                                    {...slotProps(timeUnit)}
                                     key={`${index}_p_key_${props.id}`}
                                     id={`timeUnit_${props.prefix}-${props.item}_${timeUnit}_${props.id.split("_")[3]}`}
                                 >

@@ -87,6 +87,13 @@ async function exists(id) {
     return rows.length === 1;
 }
 
+// Inside a booking's transaction: the resource with its rules, locked until the transaction ends, so
+// bookings of the same resource are checked one after the other. Null when there is no such resource.
+async function lockForBooking(client, id) {
+    const res = await client.query(`SELECT ${COLUMNS} FROM resources WHERE id = $1 AND "deletedAt" IS NULL FOR UPDATE`, [id]);
+    return res.rows[0] || null;
+}
+
 async function create(body) {
     const rows = await database.query(
         `INSERT INTO resources (title, "customFields", "minLengthMinutes", "maxLengthMinutes", "openFrom", "openTo",
@@ -156,4 +163,4 @@ async function remove(id, notify) {
     return { notified: byEmail.size };
 }
 
-module.exports = { getAll, exists, create, update, removalPreview, remove, toCustomFields, toRules };
+module.exports = { getAll, exists, lockForBooking, create, update, removalPreview, remove, toCustomFields, toRules };

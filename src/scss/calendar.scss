@@ -93,7 +93,6 @@
         @media only screen and (max-width: 900px) {
             width: 100%;
             min-height: 10rem;
-            height: 20rem;
         }
     }
     & .rightCol {
@@ -116,52 +115,51 @@
             justify-content: space-between;
         }
     }
-    & .noteList li {
+    & .day-bookings {
+        display: flex;
+        flex-direction: column;
+        gap: 1.6rem;
         color: #ffffff;
-        margin-bottom: 10px;
-    }
-    & .notes {
-        p,
-        input,
-        .noteList li {
-            font-weight: 300;
-            font-size: 14px;
-        }
+        font-size: 1.5rem;
 
-        p {
-            border-bottom: solid 1px rgba(255, 255, 255, 0.4);
-        }
-
-        input {
-            background-color: var(--calendar-dark);
-            color: #ffffff;
-            border: none;
-            width: 200px;
-        }
-    }
-    & .addNote,
-    & .removeNote {
-        float: right;
-        color: rgba(255, 255, 255, 0.4);
-        font-weight: bold;
-        margin-left: 20px;
-
-        &:hover {
-            color: #ffffff;
-        }
-    }
-    & .addNote {
-        font-size: 2.5rem;
-
-        &--wrapper {
-            display: flex;
-            margin-bottom: 2rem;
-            align-items: center;
-        }
-
-        &--text {
+        &_empty {
             color: var(--calendar-grey);
-            font-size: 2.5rem;
+        }
+
+        &_list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+
+            button {
+                width: 100%;
+                display: flex;
+                gap: 1rem;
+                padding: 0.8rem 1rem;
+                border: none;
+                border-radius: 0.6rem;
+                background: rgba(255, 255, 255, 0.08);
+                color: #ffffff;
+                font: inherit;
+                text-align: left;
+                cursor: pointer;
+
+                &:hover,
+                &:focus-visible {
+                    background: rgba(255, 255, 255, 0.18);
+                }
+            }
+        }
+
+        &_time {
+            color: var(--calendar-grey);
+            white-space: nowrap;
+        }
+
+        &_new {
+            align-self: flex-start;
+            background-color: #ffffff;
+            color: var(--calendar-dark);
         }
     }
     & .leftCol h1 {
@@ -352,33 +350,6 @@
                 color: var(--calendar-blue);
             }
         }
-        .days--new-event {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            position: absolute;
-            top: 0;
-            transform: translateX(100%);
-            background: var(--calendar-dark);
-            color: var(--calendar-grey);
-            z-index: 12;
-            // animation: newEventIn 2s ease-out forwards;
-            // transform: translateX(-50rem) !important;
-            &--input {
-                &::-webkit-outer-spin-button,
-                &::-webkit-inner-spin-button {
-                    -webkit-appearance: none;
-                    margin: 0;
-                }
-                &[type="number"] {
-                    -moz-appearance: textfield;
-                }
-                width: 5rem;
-                font-size: 3rem;
-                text-align: center;
-            }
-        }
         .days--info {
             color: var(--calendar-grey);
             padding: 4rem 1rem 2rem 2rem;
@@ -395,6 +366,16 @@
                     position: relative;
                     font-weight: bold;
                     margin: 2.1rem 0;
+
+                    // A time row that can be booked
+                    &.bookable {
+                        cursor: pointer;
+
+                        &:hover .days--info--hour {
+                            background: #ffffff;
+                            height: 4px;
+                        }
+                    }
                     &::before {
                         content: "";
                         height: 1rem;
@@ -414,23 +395,6 @@
                 font-size: 2rem;
             }
 
-            &--close.newEvent {
-                position: absolute;
-                cursor: pointer;
-                top: 2rem;
-                left: 2rem;
-                font-size: 2rem;
-                width: fit-content;
-
-                &::before {
-                    content: "";
-                    display: inline-block;
-                    width: 2rem;
-                    height: 2rem;
-                    background-color: transparent;
-                    position: absolute;
-                }
-            }
             &--hour {
                 height: 2px;
                 width: 85%;

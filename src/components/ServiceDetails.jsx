@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { IconButton } from "@mui/material";
+import { Button, IconButton, ThemeProvider } from "@mui/material";
 import CloseIcon from '@mui/icons-material/Close';
+import EditIcon from '@mui/icons-material/Edit';
+import EventBusyIcon from '@mui/icons-material/EventBusy';
+import { appTheme } from "./AuthPage";
 import Calendar from "../modules/Calendar";
 
 export default function ServiceDetails(props) {
@@ -53,6 +56,13 @@ export default function ServiceDetails(props) {
         }
     }
 
+    // Closes the details, then opens the edit form or the cancel confirmation ("edit" or "cancel")
+    const change = (action) => {
+        const details = props.serviceDetails;
+        closeEventDetails();
+        props.changeReservation(details, action);
+    }
+
     function recreateNode(el, withChildren) {
         if (withChildren) {
             el.parentNode.replaceChild(el.cloneNode(true), el);
@@ -102,6 +112,12 @@ export default function ServiceDetails(props) {
                     {repeating ? <p>Ismétlődő foglalás</p> : <></>}
                     {description !== "" ? <p>{description}</p> : <></>}
                 </div>
+                <ThemeProvider theme={appTheme}>
+                    <div className="event-details_actions">
+                        <Button startIcon={<EditIcon />} onClick={() => change("edit")}>Módosítás</Button>
+                        <Button color="error" startIcon={<EventBusyIcon />} onClick={() => change("cancel")}>Lemondás</Button>
+                    </div>
+                </ThemeProvider>
             </div>
         </dialog>
     )

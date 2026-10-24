@@ -1,0 +1,46 @@
+// The booking, contact and cancel dialogs above the calendar
+.booking-dialog {
+    font-size: 1.6rem;
+
+    &_resource {
+        font-size: 1.4rem;
+        color: #666;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 0.8rem;
+    }
+
+    // The form has its own frame on the admin page; the dialog is the frame here
+    .reservation-form {
+        padding: 0;
+        border: none;
+        background: none;
+    }
+}
+
+.reservation-form_rules {
+    padding: 0.8rem 1.2rem;
+    border-radius: 0.6rem;
+    background: #e6eefc;
+    color: #2b4c96;
+}
+
+.contact-dialog {
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+    font-size: 1.5rem;
+
+    // Room for the text field's label at the top
+    .MuiTextField-root {
+        margin-top: 0.6rem;
+    }
+
+    &_time {
+        color: #555;
+    }
+
+    &_error {
+        color: #d32f2f;
+    }
+}

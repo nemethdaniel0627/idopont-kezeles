@@ -1,7 +1,9 @@
 const database = require('./database');
 const { expand, getRepeatLimit, WEEK_DAYS } = require('./recurrence');
-const { ValidationError, toPositiveSmallint, toDate, toTitle } = require('./validation');
+const { ValidationError, HttpError, toPositiveSmallint, toDate, toTitle } = require('./validation');
 const { toEmail, toPhone } = require('./auth');
+const resources = require('./resources');
+const { checkRules, checkConflicts, matchesContact } = require('./booking');
 
 const REGULARITY_MEASURES = ["never", "day", "week", "month"];
 // "sixMonths" is only accepted as input; it is stored as an end date at the 6-month limit
@@ -25,7 +27,7 @@ function toReservationValues(body) {
     const regularityMeasure = body.regularityMeasure || "never";
     if (!REGULARITY_MEASURES.includes(regularityMeasure)) throw new ValidationError("Hibás ismétlődés!");
 
-    // Optional; only admins see them
+    // Only admins see them. Optional for admins; users need at least one (checked in checkBooking).
     const contactEmail = typeof body.contactEmail === "string" && body.contactEmail.trim() !== "" ? toEmail(body.contactEmail) : "";
     const contactPhone = toPhone(body.contactPhone);
 
@@ -103,33 +105,86 @@ async function occurrences(resourceId, fromValue, toValue) {
         .sort((a, b) => a.start - b.start || a.reservationId - b.reservationId);
 }
 
-async function create(resourceId, body) {
+const WRONG_CONTACT = "A megadott e-mail cím vagy telefonszám nem egyezik a foglaláskor megadottal!";
+
+// The checks of a new or edited reservation, inside the transaction that holds the resource's lock.
+// Admins may book outside the booking rules; overlaps are refused for everyone.
+async function checkBooking(client, resource, values, { isAdmin, ignoreId = null }) {
+    if (!isAdmin && values.contactEmail === "" && values.contactPhone === "") {
+        throw new ValidationError("Adj meg e-mail címet vagy telefonszámot, ezzel tudod később módosítani vagy lemondani a foglalást!");
+    }
+    const newOccurrences = expand(values);
+    if (!isAdmin) checkRules(resource, values.allDay, newOccurrences, new Date(), { ignorePast: ignoreId !== null });
+    const existing = await client.query(
+        `SELECT ${COLUMNS} FROM reservations WHERE "resourceId" = $1 AND "deletedAt" IS NULL`, [resource.id]);
+    checkConflicts(newOccurrences, existing.rows, ignoreId);
+}
+
+// Locks the reservation's resource first (the same order as a new booking), then returns the reservation,
+// or null when there is no such reservation. Without admin rights `contact` must match the booking's.
+async function lockReservation(client, id, { isAdmin, contact }) {
+    const locked = await client.query(
+        `SELECT id FROM resources WHERE id = (SELECT "resourceId" FROM reservations WHERE id = $1) FOR UPDATE`, [id]);
+    if (locked.rows.length === 0) return null;
+    const rows = await client.query(`SELECT ${COLUMNS} FROM reservations WHERE id = $1 AND "deletedAt" IS NULL`, [id]);
+    const reservation = rows.rows[0] || null;
+    if (reservation !== null && !isAdmin && !matchesContact(reservation, contact)) throw new HttpError(403, WRONG_CONTACT);
+    return reservation;
+}
+
+// Returns null when there is no such resource
+async function create(resourceId, body, { isAdmin }) {
     const values = toReservationValues(body);
-    const rows = await database.query(
-        `INSERT INTO reservations ("resourceId", title, description, "startDate", "endDate", "allDay", "regularityMeasure",
-            "regularityRepeatNumber", "regularityDays", "endsOnType", "endsOnDate", "endsOnOccurrence", "contactEmail", "contactPhone")
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING ${COLUMNS}`,
-        [resourceId, ...valueList(values)]);
+    return database.transaction(async client => {
+        const resource = await resources.lockForBooking(client, resourceId);
+        if (resource === null) return null;
+        await checkBooking(client, resource, values, { isAdmin });
+        const rows = await client.query(
+            `INSERT INTO reservations ("resourceId", title, description, "startDate", "endDate", "allDay", "regularityMeasure",
+                "regularityRepeatNumber", "regularityDays", "endsOnType", "endsOnDate", "endsOnOccurrence", "contactEmail", "contactPhone")
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING ${COLUMNS}`,
+            [resourceId, ...valueList(values)]);
+        return rows.rows[0];
+    });
+}
+
+// The stored reservation for its edit form; without admin rights only when `contact` is the one given at booking. Null when there is
+// no such reservation.
+async function access(id, { isAdmin, contact }) {
+    const rows = await database.query(`SELECT ${COLUMNS} FROM reservations WHERE id = $1 AND "deletedAt" IS NULL`, [id]);
+    if (rows.length === 0) return null;
+    if (!isAdmin && !matchesContact(rows[0], contact)) throw new HttpError(403, WRONG_CONTACT);
     return rows[0];
 }
 
 // Returns null when there is no such reservation
-async function update(id, body) {
+async function update(id, body, { isAdmin, contact }) {
     const values = toReservationValues(body);
-    const rows = await database.query(
-        `UPDATE reservations SET title = $2, description = $3, "startDate" = $4, "endDate" = $5, "allDay" = $6,
-            "regularityMeasure" = $7, "regularityRepeatNumber" = $8, "regularityDays" = $9, "endsOnType" = $10,
-            "endsOnDate" = $11, "endsOnOccurrence" = $12, "contactEmail" = $13, "contactPhone" = $14
-        WHERE id = $1 AND "deletedAt" IS NULL RETURNING ${COLUMNS}`,
-        [id, ...valueList(values)]);
-    return rows.length === 1 ? rows[0] : null;
+    return database.transaction(async client => {
+        const reservation = await lockReservation(client, id, { isAdmin, contact });
+        if (reservation === null) return null;
+        const resource = await resources.lockForBooking(client, reservation.resourceId);
+        // The resource was removed: its reservations are gone with it
+        if (resource === null) return null;
+        await checkBooking(client, resource, values, { isAdmin, ignoreId: id });
+        const rows = await client.query(
+            `UPDATE reservations SET title = $2, description = $3, "startDate" = $4, "endDate" = $5, "allDay" = $6,
+                "regularityMeasure" = $7, "regularityRepeatNumber" = $8, "regularityDays" = $9, "endsOnType" = $10,
+                "endsOnDate" = $11, "endsOnOccurrence" = $12, "contactEmail" = $13, "contactPhone" = $14
+            WHERE id = $1 RETURNING ${COLUMNS}`,
+            [id, ...valueList(values)]);
+        return rows.rows[0];
+    });
 }
 
 // Soft delete: the row stays, hidden. Returns false when there is no such reservation.
-async function remove(id) {
-    const rows = await database.query(
-        `UPDATE reservations SET "deletedAt" = now() WHERE id = $1 AND "deletedAt" IS NULL RETURNING id`, [id]);
-    return rows.length === 1;
+async function remove(id, { isAdmin, contact }) {
+    return database.transaction(async client => {
+        const reservation = await lockReservation(client, id, { isAdmin, contact });
+        if (reservation === null) return false;
+        await client.query(`UPDATE reservations SET "deletedAt" = now() WHERE id = $1`, [id]);
+        return true;
+    });
 }
 
-module.exports = { listByResource, occurrences, create, update, remove, toReservationValues };
+module.exports = { listByResource, occurrences, create, access, update, remove, toReservationValues };

@@ -6,6 +6,14 @@ import FullscreenCalendar from "../layouts/FullscreenCalendar";
 import CalendarModule from "../modules/Calendar";
 import { placeOccurrences, getGridRange, toOccurrence } from "../modules/occurrences";
 import ServiceDetails from "../components/ServiceDetails.jsx";
+import { Alert, Snackbar, ThemeProvider } from "@mui/material";
+import { appTheme } from "../components/AuthPage";
+import BookingDialog from "../components/booking/BookingDialog";
+import ContactDialog from "../components/booking/ContactDialog";
+import CancelDialog from "../components/booking/CancelDialog";
+import { useAuth } from "../auth/AuthContext";
+import { errorMessage } from "../modules/api";
+import { suggestTimes } from "../modules/bookingTimes";
 
 export default function Home(props) {
     const [calendarOpen, setCalendarOpen] = useState(false);
@@ -21,6 +29,15 @@ export default function Home(props) {
     const [dayName, setDayName] = useState("");
     const [years, setYears] = useState([]);
     const [serviceDetails, setServiceDetails] = useState();
+    const { user } = useAuth();
+    const isAdmin = Boolean(user && user.role === "admin");
+    // The booking form: null, { initial } for a new reservation or { reservation, contact } for an edit
+    const [booking, setBooking] = useState(null);
+    // Asking for the contact before an edit or a cancel: null or { id, title, action }
+    const [contactRequest, setContactRequest] = useState(null);
+    // The cancel confirmation: null or { reservation, contact }
+    const [cancelRequest, setCancelRequest] = useState(null);
+    const [message, setMessage] = useState(null);
     const monthNames = [
         "Január",
         "Február",
@@ -110,6 +127,48 @@ export default function Home(props) {
         }
     }
 
+    // Shows the open resource's reservations again, after a booking, an edit or a cancel
+    const reloadReservations = () => setCalendarOpenings(openings => openings + 1);
+
+    // A new booking on `day`, or at `time` when a time slot was clicked; prefilled from the profile
+    function newBooking(day, time = null) {
+        const { start, end } = suggestTimes(selectedService, day, time);
+        const profile = user ? { title: user.name, contactEmail: user.email, contactPhone: user.phone } : {};
+        setBooking({ initial: { start, end, ...profile } });
+    }
+
+    // Editing or cancelling the reservation shown in the details: admins go on, others give their contact first
+    async function changeReservation(details, action) {
+        if (!isAdmin) {
+            setContactRequest({ id: details.id, title: details.name, action });
+            return;
+        }
+        try {
+            const res = await axios.post(`/reservations/${details.id}/access`, {});
+            openChange(res.data.result, "", action);
+        } catch (err) {
+            setMessage({ severity: "error", text: errorMessage(err, "Nem sikerült megnyitni a foglalást!") });
+        }
+    }
+
+    function openChange(reservation, contact, action) {
+        setContactRequest(null);
+        if (action === "cancel") setCancelRequest({ reservation, contact });
+        else setBooking({ reservation, contact });
+    }
+
+    function bookingSaved() {
+        setMessage({ severity: "success", text: booking.reservation ? "A foglalást módosítottuk." : "A foglalást rögzítettük." });
+        setBooking(null);
+        reloadReservations();
+    }
+
+    function reservationCancelled(reservation) {
+        setMessage({ severity: "success", text: `A(z) „${reservation.title}” foglalást lemondtuk.` });
+        setCancelRequest(null);
+        reloadReservations();
+    }
+
     function openCalendar(resource) {
         // Never the previous resource's reservations while this one's are loading
         setNumberOfDaysArray(getMonthDays());
@@ -193,6 +252,7 @@ export default function Home(props) {
                 monthNames={monthNames}
                 dayNames={dayNames}
                 shortDayNames={shortDayNames}
+                newBooking={newBooking}
                 setProps={setProps} />
             <FullscreenCalendar
                 numberOfDaysArray={numberOfDaysArray}
@@ -206,8 +266,17 @@ export default function Home(props) {
                 monthNames={monthNames}
                 dayNames={dayNames}
                 shortDayNames={shortDayNames}
+                newBooking={newBooking}
                 setProps={setProps} />
-            <ServiceDetails serviceDetails={serviceDetails} />
+            <ServiceDetails serviceDetails={serviceDetails} changeReservation={changeReservation} />
+            <BookingDialog resource={selectedService} booking={booking} onClose={() => setBooking(null)} onSaved={bookingSaved} />
+            <ContactDialog request={contactRequest} onClose={() => setContactRequest(null)} onAccess={openChange} />
+            <CancelDialog request={cancelRequest} onClose={() => setCancelRequest(null)} onCancelled={reservationCancelled} />
+            <ThemeProvider theme={appTheme}>
+                <Snackbar open={message !== null} autoHideDuration={5000} onClose={() => setMessage(null)}>
+                    <Alert severity={message ? message.severity : "success"} onClose={() => setMessage(null)}>{message ? message.text : ""}</Alert>
+                </Snackbar>
+            </ThemeProvider>
         </div>
     )
 }

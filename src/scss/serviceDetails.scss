@@ -46,3 +46,11 @@
 .event-details_appear {
     animation: detailsAppear 0.25s ease-out forwards;
 }
+
+.event-details_actions {
+    display: flex;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-top: 2rem;
+}

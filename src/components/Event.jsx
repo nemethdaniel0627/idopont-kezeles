@@ -53,7 +53,9 @@ export default function Event(props) {
         // eslint-disable-next-line
     }, [props.serviceLength, props.id]);
 
-    const openDetails = () => {
+    // Not the time row's click, which would start a new booking
+    const openDetails = (event) => {
+        event.stopPropagation();
         props.openDetails(props.serviceProps);
     }
 
