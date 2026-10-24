@@ -210,6 +210,13 @@ export default function FullscreenCalendar(props) {
         <div onClick={checkClick} className="fullscreen-calendar hidden">
             <div className="fullscreen-calendar_right-col">
                 <h2 className="fullscreen-calendar_resource-title">{props.selectedService.title}</h2>
+                {props.selectedService.customFields && props.selectedService.customFields.length !== 0
+                    ? <ul className="fullscreen-calendar_resource-fields">
+                        {props.selectedService.customFields.map((field, index) =>
+                            <li key={index}><span>{field.label}</span>{field.value}</li>
+                        )}
+                    </ul>
+                    : <></>}
             </div>
             <div className="fullscreen-calendar_left-col">
                 <h2 className="fullscreen-calendar_header">

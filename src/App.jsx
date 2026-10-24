@@ -2,9 +2,12 @@ import React, { useState, useEffect } from "react";
 import Home from "./pages/Home";
 import "./scss/styles.scss";
 import { Routes, Route } from 'react-router-dom';
-import AdminSzolgaltatas from "./pages/AdminSzolgaltatas";
 import Nav from "./components/Nav"
 import AdminRoute from "./auth/AdminRoute";
+import AdminHome from "./pages/admin/AdminHome";
+import ResourcesAdmin from "./pages/admin/ResourcesAdmin";
+import UsersAdmin from "./pages/admin/UsersAdmin";
+import SchedulingAdmin from "./pages/admin/SchedulingAdmin";
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
 import ForgotPassword from "./pages/auth/ForgotPassword";
@@ -15,8 +18,9 @@ import axios from "axios";
 export default function App() {
 
   const [resources, setResources] = useState([]);
+  const [resourcesLoaded, setResourcesLoaded] = useState(false);
 
-  // Creates the resource, or renames it when it has an id. Errors are left to the caller to show.
+  // Creates the resource, or updates it when it has an id, and returns it. Errors are left to the caller to show.
   const saveResource = async (resource) => {
     const isNew = resource.id === undefined;
     const res = isNew
@@ -28,12 +32,21 @@ export default function App() {
         ? [...prevData, saved]
         : prevData.map(item => item.id === saved.id ? saved : item)
     });
+    return saved;
+  };
+
+  // Soft deletes the resource; with notify the people with upcoming reservations get an email. Returns { notified }.
+  const removeResource = async (id, notify) => {
+    const res = await axios.delete(`/resources/${id}`, { data: { notify } });
+    setResources(prevData => prevData.filter(item => item.id !== id));
+    return res.data.result;
   };
 
   useEffect(() => {
     axios.get("/resources")
       .then(res => {
         setResources(res.data.result);
+        setResourcesLoaded(true);
       })
       .catch(err => {
         console.error(err);
@@ -59,7 +72,11 @@ export default function App() {
       <Nav />
       <Routes>
         <Route path="/" element={<Home resources={resources} />} />
-        <Route path="/admin" element={<AdminRoute><AdminSzolgaltatas resources={resources} saveResource={saveResource} /></AdminRoute>} />
+        <Route path="/admin" element={<AdminRoute><AdminHome /></AdminRoute>} />
+        <Route path="/admin/eroforrasok" element={<AdminRoute><ResourcesAdmin resources={resources} resourcesLoaded={resourcesLoaded} saveResource={saveResource} removeResource={removeResource} /></AdminRoute>} />
+        <Route path="/admin/eroforrasok/:id" element={<AdminRoute><ResourcesAdmin resources={resources} resourcesLoaded={resourcesLoaded} saveResource={saveResource} removeResource={removeResource} /></AdminRoute>} />
+        <Route path="/admin/egyeztetesek" element={<AdminRoute><SchedulingAdmin /></AdminRoute>} />
+        <Route path="/admin/felhasznalok" element={<AdminRoute><UsersAdmin /></AdminRoute>} />
         <Route path="/bejelentkezes" element={<Login />} />
         <Route path="/regisztracio" element={<Register />} />
         <Route path="/elfelejtett-jelszo" element={<ForgotPassword />} />
