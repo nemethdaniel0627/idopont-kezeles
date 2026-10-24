@@ -111,6 +111,12 @@ function normalizePhone(value) {
     return digits;
 }
 
+// The logged-in user who booked it, or whose account email is the booking's contact email
+function isOwner(reservation, user) {
+    if (!user) return false;
+    return reservation.userId === user.id || (reservation.contactEmail !== '' && reservation.contactEmail === user.email);
+}
+
 // Whether `contact` is the email (any case) or the phone number (any format) given at booking
 function matchesContact(reservation, contact) {
     const value = typeof contact === 'string' ? contact.trim() : '';
@@ -122,4 +128,4 @@ function matchesContact(reservation, contact) {
     return phone.length >= 6 && phone === normalizePhone(reservation.contactPhone);
 }
 
-module.exports = { checkRules, checkConflicts, matchesContact, describeOccurrence };
+module.exports = { checkRules, checkConflicts, isOwner, matchesContact, describeOccurrence };

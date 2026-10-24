@@ -52,3 +52,20 @@ export function describeRules(resource) {
     if (resource.maxDaysAhead) parts.push(`legfeljebb ${resource.maxDaysAhead} nappal előre`);
     return parts.join(" · ");
 }
+
+const WEEK_DAY_NAMES = ["vasárnap", "hétfő", "kedd", "szerda", "csütörtök", "péntek", "szombat"];
+const two = number => String(number).padStart(2, "0");
+const longDay = date => `${date.getFullYear()}. ${two(date.getMonth() + 1)}. ${two(date.getDate())}., ${WEEK_DAY_NAMES[date.getDay()]}`;
+const clock = date => `${two(date.getHours())}:${two(date.getMinutes())}`;
+
+// One occurrence's time in one line: "2026. 10. 27., kedd 14:00–15:00", "2026. 10. 27., kedd, egész nap",
+// or with both days when it runs over midnight. For an all-day one `end` is the start of the day after it.
+export function describeTime(start, end, allDay) {
+    if (allDay) {
+        const lastDay = new Date(end.getFullYear(), end.getMonth(), end.getDate() - 1);
+        return sameDay(start, lastDay) ? `${longDay(start)}, egész nap` : `${longDay(start)} – ${longDay(lastDay)}, egész nap`;
+    }
+    return sameDay(start, end)
+        ? `${longDay(start)} ${clock(start)}–${clock(end)}`
+        : `${longDay(start)} ${clock(start)} – ${longDay(end)} ${clock(end)}`;
+}

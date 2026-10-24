@@ -1,5 +1,5 @@
 .fullscreen-calendar {
-    // Fixed to the screen, so it opens in view however far the page is scrolled, above the small calendar
+    // Fixed to the screen, so it opens in view however far the page is scrolled
     position: fixed;
     z-index: 101;
     max-width: 800px;
@@ -29,48 +29,65 @@
     &_right-col {
         height: 100%;
         width: 30rem;
+        flex-shrink: 0;
         background-color: var(--calendar-dark);
         border-top-right-radius: 1rem;
         border-bottom-right-radius: 1rem;
         display: flex;
         flex-direction: column;
-        align-items: center;
+        gap: 2rem;
+        padding: 2rem;
+        color: #ddd;
 
         .fullscreen-calendar_resource-title {
-            margin: 2rem 1.5rem;
-            color: #ddd;
-            font-size: 2rem;
+            color: #fff;
+            font-size: 2.2rem;
             font-weight: bold;
-            text-align: center;
         }
 
         .fullscreen-calendar_resource-fields {
             list-style: none;
-            width: 100%;
-            padding: 0 2rem;
             display: flex;
             flex-direction: column;
             gap: 1rem;
-            color: #ddd;
             font-size: 1.5rem;
 
             li {
                 display: flex;
                 flex-direction: column;
             }
-
-            span {
-                font-size: 1.2rem;
-                color: #9fb9c0;
-                text-transform: uppercase;
-                letter-spacing: 0.05em;
-            }
         }
+
+        span {
+            font-size: 1.2rem;
+            color: #9fb9c0;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+    }
+
+    // The booking rules, so they are known before choosing a time
+    &_rules {
+        display: flex;
+        flex-direction: column;
+        gap: 0.2rem;
+        padding: 1rem 1.2rem;
+        border-radius: 0.8rem;
+        background: rgba(255, 255, 255, 0.08);
+        color: #fff;
+        font-size: 1.5rem;
+    }
+
+    &_hint {
+        font-size: 1.4rem;
+        line-height: 1.5;
+        color: #b9cdd2;
     }
 
     &_left-col {
         height: 100%;
-        width: calc(100% - 30rem);
+        flex: 1;
+        min-width: 0;
         display: flex;
         flex-direction: column;
         position: relative;
@@ -81,18 +98,44 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 0.4rem 1rem;
+        padding: 0.4rem 0.8rem;
         box-shadow: 0 0.1rem 1rem rgb(0 0 0 / 20%);
         font-size: 1.5rem;
+        z-index: 2;
+
+        &_nav {
+            display: flex;
+            align-items: center;
+        }
 
         &_actions {
             display: flex;
             align-items: center;
-            gap: 0.4rem;
+            flex-wrap: wrap;
+            gap: 0.6rem;
         }
 
         &_month-picker {
-            cursor: pointer;
             position: relative;
+
+            > button {
+                display: inline-flex;
+                align-items: center;
+                border: none;
+                background: none;
+                font: inherit;
+                font-weight: bold;
+                color: inherit;
+                cursor: pointer;
+                padding: 0.4rem 0.2rem 0.4rem 0.6rem;
+                border-radius: 0.6rem;
+
+                &:hover {
+                    background: rgba(0, 0, 0, 0.06);
+                }
+            }
 
             .MuiFormControl-root {
                 visibility: hidden;
@@ -100,16 +143,19 @@
                 left: 0;
             }
         }
+
+        &_week {
+            font-weight: bold;
+            padding-left: 0.6rem;
+        }
     }
 
     &_new-booking {
-        margin-right: 0.8rem;
         white-space: nowrap;
 
         // Only the + icon on phones, so the header fits
         @media only screen and (max-width: 600px) {
             min-width: 0;
-            margin-right: 0;
 
             .MuiButton-startIcon {
                 margin: 0;
@@ -121,10 +167,8 @@
         }
     }
 
-    &_exit-fullscreen {
-        svg {
-            font-size: 3rem;
-        }
+    &_close svg {
+        font-size: 2.8rem;
     }
 
     &_month-switch {
@@ -134,72 +178,99 @@
         }
     }
 
+    // Under the header: the month grid or the week view
+    &_body {
+        flex: 1;
+        min-height: 0;
+        position: relative;
+    }
+
     &_days {
         display: grid;
         gap: 0.1rem;
         background-color: #aaa;
-        grid-template-columns: repeat(7, 1fr);
-        height: calc(100% - 54px);
+        // Equal columns however long the booking names are
+        grid-template-columns: repeat(7, minmax(0, 1fr));
         position: absolute;
-        top: 54px;
-        width: 100%;
-        left: 0;
+        inset: 0;
         transform: translateX(0);
+
         &_day {
             background-color: var(--calendar-grey);
-
-            &.bookable {
-                cursor: pointer;
-
-                &:hover {
-                    background-color: #e3ebef;
-                }
-            }
-
             display: flex;
             flex-direction: column;
             align-items: center;
-            list-style: none;
+            min-width: 0;
+            overflow: hidden;
             font-size: 1.3rem;
+            cursor: pointer;
+
+            &.bookable:hover {
+                background-color: #dde8ec;
+            }
+
+            // Past, closed or too far ahead: shown, but plainly not bookable
+            &.unavailable {
+                background-color: #eef1f2;
+                background-image: repeating-linear-gradient(135deg, transparent 0 0.8rem, rgba(0, 0, 0, 0.035) 0.8rem 1.6rem);
+
+                .fullscreen-calendar_date {
+                    color: #9aa5a8;
+                }
+            }
+
             h3 {
                 font-size: 1.2rem;
                 margin-bottom: 0.5rem;
                 margin-top: 0.2rem;
             }
-            p {
-                border-radius: 50%;
-                padding: 0.5rem;
-                aspect-ratio: 1;
-                text-align: center;
-
-                &.no-ar {
-                    aspect-ratio: unset;
-                }
-            }
         }
     }
+
+    &_date {
+        border-radius: 50%;
+        padding: 0.5rem;
+        aspect-ratio: 1;
+        text-align: center;
+
+        &.no-ar {
+            aspect-ratio: unset;
+        }
+
+        &.other-month {
+            color: #9aa5a8;
+        }
+
+        &.today {
+            background-color: var(--calendar-blue);
+            color: #fff !important;
+            font-weight: bold;
+        }
+    }
+
     &_event {
         width: 90%;
-        padding: 0.5rem 0.2rem;
+        padding: 0.4rem 0.4rem;
         color: #eee;
         border-radius: 5px;
         align-self: flex-start;
         cursor: pointer;
         position: relative;
         margin-bottom: 0.2rem;
+        user-select: none;
+
+        // Long names are cut, never spill out of the day
+        h3 {
+            margin: 0 !important;
+            font-size: 1.2rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
 
         &_start-long {
             width: 102%;
             border-radius: 5px 0 0 5px;
-        }
-
-        &:not([class="fullscreen-calendar_event fullscreen-calendar_event_start-long"]) {
-            -webkit-touch-callout: none;
-            -webkit-user-select: none;
-            -khtml-user-select: none;
-            -moz-user-select: none;
-            -ms-user-select: none;
-            user-select: none;
         }
 
         &_middle-long {
@@ -214,10 +285,168 @@
         &.ghost_event {
             cursor: unset;
         }
+
+        // The viewer's own booking
+        &.mine {
+            box-shadow: inset 0 0 0 2px #fff, 0 0 0 1px var(--calendar-dark);
+        }
     }
 }
 
-// Phones: the resource's panel above the month, both full width
+// The week view: days as columns, hours as rows. A half-hour row is 2.4rem, so a minute is 0.08rem.
+.week-view {
+    position: absolute;
+    inset: 0;
+    overflow: auto;
+    background: #fff;
+
+    &_grid {
+        display: grid;
+        grid-template-columns: 5.2rem repeat(7, minmax(8rem, 1fr));
+        min-width: 61rem;
+    }
+
+    &_corner,
+    &_day-head {
+        position: sticky;
+        top: 0;
+        z-index: 3;
+        background: var(--calendar-grey);
+        border-bottom: 1px solid #c9d3d6;
+    }
+
+    &_day-head {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 0.4rem 0;
+        font-size: 1.3rem;
+
+        strong {
+            font-size: 1.6rem;
+        }
+
+        &.today strong {
+            color: #fff;
+            background: var(--calendar-blue);
+            border-radius: 1rem;
+            padding: 0 0.6rem;
+        }
+
+        &.unavailable {
+            color: #9aa5a8;
+        }
+    }
+
+    &_all-day-label {
+        font-size: 1.1rem;
+        color: #666;
+        padding: 0.4rem;
+        border-bottom: 1px solid #c9d3d6;
+    }
+
+    &_all-day {
+        display: flex;
+        flex-direction: column;
+        gap: 0.2rem;
+        padding: 0.2rem;
+        border-left: 1px solid #e3e8f2;
+        border-bottom: 1px solid #c9d3d6;
+    }
+
+    &_times {
+        position: relative;
+
+        span {
+            position: absolute;
+            right: 0.6rem;
+            font-size: 1.2rem;
+            color: #666;
+            transform: translateY(-0.6em);
+        }
+    }
+
+    &_column {
+        position: relative;
+        border-left: 1px solid #e3e8f2;
+        display: flex;
+        flex-direction: column;
+    }
+
+    &_slot {
+        height: 2.4rem;
+        flex-shrink: 0;
+        border: none;
+        border-top: 1px dashed #eef1f4;
+        background: none;
+        cursor: pointer;
+
+        &.hour {
+            border-top: 1px solid #e3e8f2;
+        }
+
+        &:hover:not(:disabled),
+        &:focus-visible {
+            background: #e8f4fb;
+            outline: none;
+        }
+
+        // Closed hours, closed days and the past
+        &.closed {
+            cursor: default;
+            background-color: #f3f5f6;
+            background-image: repeating-linear-gradient(135deg, transparent 0 0.6rem, rgba(0, 0, 0, 0.03) 0.6rem 1.2rem);
+        }
+    }
+
+    &_event {
+        position: absolute;
+        z-index: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        overflow: hidden;
+        padding: 0.2rem 0.4rem;
+        border: none;
+        border-radius: 0.4rem;
+        color: #fff;
+        font: inherit;
+        font-size: 1.2rem;
+        text-align: left;
+        cursor: pointer;
+        box-shadow: 0 0.1rem 0.3rem rgba(0, 0, 0, 0.2);
+
+        strong,
+        span {
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        &.all-day {
+            position: static;
+            width: 100%;
+        }
+
+        &.mine {
+            box-shadow: inset 0 0 0 2px #fff, 0 0 0 1px var(--calendar-dark);
+        }
+    }
+
+    // Now, on today's column
+    &_now {
+        position: absolute;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: #e53935;
+        z-index: 2;
+        pointer-events: none;
+    }
+}
+
+// Phones: the resource's panel above the calendar, both full width
 @media only screen and (max-width: 700px) {
     .fullscreen-calendar {
         flex-direction: column;
@@ -226,24 +455,25 @@
         &_right-col {
             width: 100%;
             height: auto;
-            flex-shrink: 0;
-            align-items: flex-start;
+            gap: 0.6rem;
             padding: 1rem 1.6rem;
             border-radius: 1rem 1rem 0 0;
-
-            .fullscreen-calendar_resource-title {
-                margin: 0;
-                text-align: left;
-            }
 
             .fullscreen-calendar_resource-fields {
                 flex-direction: row;
                 flex-wrap: wrap;
                 gap: 0.4rem 1.6rem;
-                padding: 0;
-                margin-top: 0.4rem;
                 font-size: 1.3rem;
             }
+        }
+
+        &_rules {
+            padding: 0.6rem 0.8rem;
+            font-size: 1.3rem;
+        }
+
+        &_hint {
+            display: none;
         }
 
         &_left-col {
@@ -269,4 +499,22 @@
 
 .days-change-in {
     animation: fullDaysChangeIn 0.5s ease-in-out forwards;
+}
+
+// The first hour's label sits below the day headers instead of under them
+.week-view_times span:first-child {
+    transform: none;
+}
+
+// On narrow screens the week scrolls sideways; the times stay at the left edge
+.week-view_times {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    background: #fff;
+}
+
+.week-view_corner {
+    left: 0;
+    z-index: 4;
 }

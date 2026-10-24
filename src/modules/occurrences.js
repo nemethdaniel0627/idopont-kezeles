@@ -36,6 +36,8 @@ export function placeOccurrences(days, occurrences) {
             start: occurrence.start,
             end: occurrence.end,
             allDay: occurrence.allDay,
+            // The viewer's own booking (they may change it without giving the contact)
+            mine: occurrence.mine === true,
         };
 
         covered.forEach(day => {

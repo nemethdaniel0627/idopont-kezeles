@@ -131,6 +131,8 @@ CREATE TABLE reservations (
   -- Only admins see these; used to notify the person if the resource is removed
   "contactEmail" TEXT NOT NULL DEFAULT '',
   "contactPhone" TEXT NOT NULL DEFAULT '',
+  -- Who booked it, when they were logged in; they change or cancel it without giving the contact again
+  "userId" INTEGER DEFAULT NULL REFERENCES users(id) ON DELETE SET NULL,
   "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
   -- Set when the reservation is removed; removed reservations are kept but hidden
   "deletedAt" TIMESTAMP WITH TIME ZONE DEFAULT NULL,

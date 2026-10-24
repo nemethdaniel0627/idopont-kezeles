@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Avatar, Button, ThemeProvider } from "@mui/material";
 import HomeIcon from '@mui/icons-material/Home';
 import GroupsIcon from '@mui/icons-material/Groups';
+import EventNoteIcon from '@mui/icons-material/EventNote';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import LogoutIcon from '@mui/icons-material/Logout';
 import LoginIcon from '@mui/icons-material/Login';
@@ -44,7 +45,10 @@ export default function Nav() {
                 <div className="nav_group">
                     <NavButton component={Link} to="/" icon={<HomeIcon />} label="Főoldal" active={isActive("/")} />
                     {user
-                        ? <NavButton component={Link} to="/egyeztetesek" icon={<GroupsIcon />} label="Egyeztetések" active={isActive("/egyeztetes")} />
+                        ? <>
+                            <NavButton component={Link} to="/foglalasaim" icon={<EventNoteIcon />} label="Foglalásaim" active={isActive("/foglalasaim")} />
+                            <NavButton component={Link} to="/egyeztetesek" icon={<GroupsIcon />} label="Egyeztetések" active={isActive("/egyeztetes")} />
+                        </>
                         : <></>}
                     {user && user.role === "admin"
                         ? <NavButton component={Link} to="/admin" icon={<AdminPanelSettingsIcon />} label="Admin" active={isActive("/admin")} />

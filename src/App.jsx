@@ -18,6 +18,7 @@ import Register from "./pages/auth/Register";
 import ForgotPassword from "./pages/auth/ForgotPassword";
 import ResetPassword from "./pages/auth/ResetPassword";
 import Profile from "./pages/auth/Profile";
+import MyBookings from "./pages/MyBookings";
 import axios from "axios";
 
 export default function App() {
@@ -87,6 +88,7 @@ export default function App() {
         <Route path="/elfelejtett-jelszo" element={<ForgotPassword />} />
         <Route path="/jelszo-visszaallitas" element={<ResetPassword />} />
         <Route path="/profil" element={<Profile />} />
+        <Route path="/foglalasaim" element={<UserRoute><MyBookings resources={resources} /></UserRoute>} />
         <Route path="/egyeztetesek" element={<UserRoute><MyPolls /></UserRoute>} />
         <Route path="/egyeztetesek/uj" element={<UserRoute><PollCreate /></UserRoute>} />
         <Route path="/egyeztetes/:key" element={<PollPage />} />
