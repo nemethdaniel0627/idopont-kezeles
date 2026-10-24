@@ -1,13 +1,11 @@
 import React, { useEffect } from "react";
 
 export default function Event(props) {
-    // id ends with "_<event index>", the rest is shared by the events starting in the same time unit
+    // id ends with "_<index>", the rest is shared by the events starting in the same time unit
     const sameStartClass = props.id.slice(0, props.id.lastIndexOf("_"));
-    const eventIndex = Number(props.id.slice(props.id.lastIndexOf("_") + 1));
 
     useEffect(() => {
-
-        const eventLength = props.eventLength;
+        const serviceLength = props.serviceLength;
         let oneHourLength;
         switch (props.id.split("_")[3]) {
             case "60":
@@ -28,27 +26,39 @@ export default function Event(props) {
         let event = props.id.includes(":") ? document.querySelector(`#${props.id.split(":")[0]}\\:${props.id.split(":")[1]}`) : document.querySelector(`#${props.id}`);
 
         if (event) {
-            event.style.height = `${oneMinuteLength * eventLength}px`;
+            event.style.height = `${oneMinuteLength * serviceLength}px`;
             let eventColors = getComputedStyle(document.documentElement).getPropertyValue("--event-colors").toString().trim().split(",");
-            // Same event, same color in every interval list and after every render
-            event.style.backgroundColor = eventColors[eventIndex % eventColors.length].trim();
+            // One color per service, starting over after the last color
+            event.style.backgroundColor = eventColors[(props.serviceProps.id - 1) % eventColors.length].trim();
+
             const sameStartEvents = sameStartClass.includes(":")
                 ? document.querySelectorAll(`.${sameStartClass.split(":")[0]}\\:${sameStartClass.split(":")[1]}`)
                 : document.querySelectorAll(`.${sameStartClass}`);
-            console.log(sameStartEvents);
-            const eventMaxWidth = document.querySelector(".days--info--hour").clientWidth + 1;
-            sameStartEvents.forEach((event, index) => {
-                let eventWidth = eventMaxWidth / sameStartEvents.length;
-                event.style.width = eventWidth + "px";
-                event.style.left = `calc(2.9rem + ${index * eventWidth}px)`;
-            })
+            if (sameStartEvents.length > 1) {
+                const eventMaxWidth = (document.querySelector(".days--info--hour").clientWidth + 1) - 10;
+                sameStartEvents.forEach((event, index) => {
+                    let eventWidth = eventMaxWidth / sameStartEvents.length;
+                    event.style.width = eventWidth + "px";
+                    event.style.left = `calc(2.9rem + ${index * eventWidth}px)`;
+                })
+            }
+            else if (props.eventOverlap !== undefined) {
+                event.style.left = `calc(2.9rem + ${props.eventOverlap.id * 20}px)`
+            }
+
             if (props.eventNotRound !== undefined) {
                 event.style.marginTop = `${oneMinuteLength * props.eventNotRound}px`;
             }
         }
-    }, [props.eventLength, props.id, props.prefix, props.eventNotRound, sameStartClass, eventIndex]);
+        // eslint-disable-next-line
+    }, [props.serviceLength, props.id]);
+
+    const openDetails = () => {
+        props.openDetails(props.serviceProps);
+    }
+
     return (
-        <span id={props.id} className={`event ${sameStartClass}`}>
+        <span onClick={openDetails} id={props.id} className={`event ${sameStartClass}`}>
             <label className="event-name">{props.eventName}</label>
         </span>
     )
