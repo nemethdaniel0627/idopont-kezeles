@@ -36,6 +36,13 @@ describe("getDaysInMonth", () => {
     });
 });
 
+describe("getRepeatLimit", () => {
+    it("is 6 months after the first date, at the end of shorter months", () => {
+        expect(Calendar.getRepeatLimit(new Date(2026, 9, 19, 8))).toEqual(new Date(2027, 3, 19));
+        expect(Calendar.getRepeatLimit(new Date(2026, 7, 31, 15))).toEqual(new Date(2027, 1, 28));
+    });
+});
+
 describe("getIntervalSlot", () => {
     it("puts an off-grid start into the time unit it falls in", () => {
         expect(Calendar.getIntervalSlot("7:10", 30)).toEqual({ timeUnit: "7:0", offset: 10 });
