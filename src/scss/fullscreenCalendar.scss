@@ -350,7 +350,7 @@
         flex-direction: column;
         gap: 0.2rem;
         padding: 0.2rem;
-        border-left: 1px solid #e3e8f2;
+        border-left: 1px solid #c9d3d8;
         border-bottom: 1px solid #c9d3d6;
     }
 
@@ -368,7 +368,7 @@
 
     &_column {
         position: relative;
-        border-left: 1px solid #e3e8f2;
+        border-left: 1px solid #c9d3d8;
         display: flex;
         flex-direction: column;
     }
@@ -377,12 +377,12 @@
         height: 2.4rem;
         flex-shrink: 0;
         border: none;
-        border-top: 1px dashed #eef1f4;
+        border-top: 1px dashed #d6dde2;
         background: none;
         cursor: pointer;
 
         &.hour {
-            border-top: 1px solid #e3e8f2;
+            border-top: 1px solid #bfcad0;
         }
 
         &:hover:not(:disabled),
