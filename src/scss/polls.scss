@@ -314,9 +314,27 @@ $available: #2ea043;
     background: #fff;
     border-radius: 1.2rem;
 
-    .MuiListItemButton-root {
-        gap: 1rem;
-        padding-right: 10rem;
+    &_item {
+        gap: 0.4rem;
+        padding-right: 1.2rem;
+
+        .MuiListItemButton-root {
+            gap: 1rem;
+            border-radius: 1.2rem;
+        }
+
+        .MuiListItemText-root {
+            min-width: 0;
+            word-break: break-word;
+        }
+
+        .MuiChip-root {
+            flex-shrink: 0;
+        }
+    }
+
+    &_link {
+        flex-shrink: 0;
     }
 }
 

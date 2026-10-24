@@ -29,10 +29,12 @@
         gap: 1.2rem;
     }
 
+    // Its buttons use color="inherit", so they are white on the dark page like the title
     &_actions {
         display: flex;
         flex-wrap: wrap;
         gap: 0.8rem;
+        color: #fff;
     }
 
     &_intro {

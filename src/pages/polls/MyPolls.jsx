@@ -39,12 +39,16 @@ export default function MyPolls() {
                     ? <p className="resources-admin_empty">Még nincs egyeztetésed.</p>
                     : <List className="my-polls">
                         {polls.map(poll =>
-                            <ListItem key={poll.publicKey} disablePadding
-                                secondaryAction={<Button startIcon={<LinkIcon />} onClick={() => copyLink(poll.publicKey)}>Link</Button>}>
+                            // The link button is next to the item, not laid over it, so the status never slides under it
+                            <ListItem key={poll.publicKey} disablePadding className="my-polls_item">
                                 <ListItemButton component={Link} to={`/egyeztetes/${poll.publicKey}`}>
                                     <ListItemText primary={poll.title} secondary={`${describeDays(poll)} · ${poll.answerCount} válasz`} />
                                     {poll.closed ? <Chip size="small" label="Lezárva" /> : <Chip size="small" color="success" label="Nyitott" />}
                                 </ListItemButton>
+                                <Button startIcon={<LinkIcon />} onClick={() => copyLink(poll.publicKey)} className="my-polls_link"
+                                    aria-label={`${poll.title} linkjének másolása`}>
+                                    Link
+                                </Button>
                             </ListItem>
                         )}
                     </List>}
