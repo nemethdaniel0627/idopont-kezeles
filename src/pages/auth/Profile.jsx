@@ -5,6 +5,7 @@ import { Alert, Button, Divider, TextField } from "@mui/material";
 import AuthPage from "../../components/AuthPage";
 import { useAuth } from "../../auth/AuthContext";
 import { errorMessage } from "../../modules/api";
+import PageLoader from "../../components/PageLoader";
 
 // The user's own data; step 4 fills the booking form with it
 export default function Profile() {
@@ -19,7 +20,7 @@ export default function Profile() {
         if (user) setForm({ name: user.name, email: user.email, phone: user.phone });
     }, [user]);
 
-    if (user === undefined) return <></>;
+    if (user === undefined) return <PageLoader />;
     if (user === null) return <Navigate to="/bejelentkezes" state={{ from: "/profil" }} replace />;
 
     const saveProfile = async (event) => {

@@ -63,3 +63,15 @@ input[type="number"] {
         }
     }
 }
+
+// While a page waits for the login check
+.page-loader {
+    min-height: 40vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    font-size: 1.5rem;
+    color: #555;
+}

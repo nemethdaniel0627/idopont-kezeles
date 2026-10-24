@@ -1,24 +1,31 @@
 import React from "react";
+import EventAvailableIcon from '@mui/icons-material/EventAvailable';
 import resourceImage from "../images/resource.png";
+import { describeRules } from "../modules/reservationText";
 
-// A resource on the home page with its custom fields; clicking it opens the resource's calendar
+// A resource on the home page with its custom fields and booking rules; clicking it (or Enter on it) opens
+// the resource's calendar
 export default function Szolgaltatas(props) {
-    const customFields = props.serviceDatas && props.serviceDatas.customFields ? props.serviceDatas.customFields : [];
+    const resource = props.serviceDatas || {};
+    const customFields = resource.customFields || [];
+    const rules = describeRules(resource);
 
     return (
-        <div id={props.id} onClick={props.openCalendar} className="service">
+        <button type="button" id={props.id} onClick={props.openCalendar} className="service"
+            aria-label={`${props.title} – foglalás, naptár megnyitása`}>
             <img className="service_img" src={resourceImage} alt="" />
-            <div className="service_caption">
-                <h3 className="service_title">{props.title}</h3>
+            <span className="service_caption">
+                <span className="service_title">{props.title}</span>
                 {customFields.length !== 0
-                    ? <ul className="service_fields">
+                    ? <span className="service_fields">
                         {customFields.map((field, index) =>
-                            <li key={index}><span>{field.label}:</span> {field.value}</li>
+                            <span key={index}><span className="service_label">{field.label}:</span> {field.value}</span>
                         )}
-                    </ul>
-                    : <></>
-                }
-            </div>
-        </div>
+                    </span>
+                    : <></>}
+                <span className="service_rules">{rules !== "" ? rules : "Bármikor foglalható"}</span>
+                <span className="service_cta"><EventAvailableIcon fontSize="small" /> Foglalás</span>
+            </span>
+        </button>
     )
 }
