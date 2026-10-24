@@ -18,6 +18,7 @@ export default function Nav() {
             <nav className="nav">
                 <div className="nav_group">
                     <Button color="inherit" component={Link} to="/">Főoldal</Button>
+                    {user ? <Button color="inherit" component={Link} to="/egyeztetesek">Egyeztetések</Button> : <></>}
                     {user && user.role === "admin" ? <Button color="inherit" component={Link} to="/admin">Admin</Button> : <></>}
                 </div>
                 {/* Nothing until the first login check is done, so the buttons do not flicker */}

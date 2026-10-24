@@ -1,5 +1,7 @@
 -- Creates the tables with sample data. Running it again starts over from the sample data.
 -- The sample reservations are placed relative to the current week, so they are always near today.
+DROP TABLE IF EXISTS "pollAnswers";
+DROP TABLE IF EXISTS polls;
 DROP TABLE IF EXISTS services;
 DROP TABLE IF EXISTS serviceendson;
 DROP TABLE IF EXISTS reservations;
@@ -36,6 +38,56 @@ CREATE TABLE "passwordResets" (
   "expiresAt" TIMESTAMP WITH TIME ZONE NOT NULL,
   "usedAt" TIMESTAMP WITH TIME ZONE DEFAULT NULL,
   PRIMARY KEY ("tokenHash")
+);
+
+-- A common time scheduling (lettucemeet-like). Created by a registered user, answered by anyone with the link.
+-- The days and times are wall-clock times in the poll's time zone.
+CREATE TABLE polls (
+  id INTEGER NOT NULL GENERATED ALWAYS AS IDENTITY,
+  -- The long random string in the poll's link
+  "publicKey" TEXT NOT NULL UNIQUE,
+  "organizerId" INTEGER NOT NULL REFERENCES users(id),
+  "title" TEXT NOT NULL,
+  "description" TEXT NOT NULL DEFAULT '',
+  -- "dates": the days in "dates" ("2026-11-03"); "weekdays": the Hungarian day names in "weekDays"
+  "mode" TEXT NOT NULL CHECK ("mode" IN ('dates', 'weekdays')),
+  "dates" TEXT[] DEFAULT NULL,
+  "weekDays" TEXT[] DEFAULT NULL,
+  -- The daily time window, divided into slots
+  "dayStart" TIME NOT NULL,
+  "dayEnd" TIME NOT NULL,
+  "slotMinutes" SMALLINT NOT NULL CHECK ("slotMinutes" IN (30, 60)),
+  -- Only common times at least this long are a result. NULL: any length.
+  "meetingMinutes" SMALLINT DEFAULT NULL,
+  -- After the deadline no answers are accepted, like after closing
+  "deadline" TIMESTAMP WITH TIME ZONE DEFAULT NULL,
+  "timeZone" TEXT NOT NULL DEFAULT 'Europe/Budapest',
+  -- Whether everyone sees all answers and the result, or only the organizer and admins
+  "answersVisible" BOOLEAN NOT NULL DEFAULT true,
+  "closedAt" TIMESTAMP WITH TIME ZONE DEFAULT NULL,
+  "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+  "deletedAt" TIMESTAMP WITH TIME ZONE DEFAULT NULL,
+  PRIMARY KEY (id)
+);
+
+-- One respondent's availability. Typing the same name again edits it; so does the private edit key.
+CREATE TABLE "pollAnswers" (
+  id INTEGER NOT NULL GENERATED ALWAYS AS IDENTITY,
+  "pollId" INTEGER NOT NULL REFERENCES polls(id) ON DELETE CASCADE,
+  "name" TEXT NOT NULL,
+  -- The name trimmed and lower-cased, so "Anna" and " anna " are the same respondent
+  "nameKey" TEXT NOT NULL,
+  -- SHA-256 of the private edit key; the key itself is given to the respondent once
+  "editKeyHash" TEXT NOT NULL,
+  "userId" INTEGER DEFAULT NULL REFERENCES users(id) ON DELETE SET NULL,
+  "contactEmail" TEXT NOT NULL DEFAULT '',
+  "contactPhone" TEXT NOT NULL DEFAULT '',
+  -- The available slots, e.g. "2026-11-03 09:30" or "kedd 09:30"
+  "slots" TEXT[] NOT NULL DEFAULT '{}',
+  "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+  "updatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+  PRIMARY KEY (id),
+  UNIQUE ("pollId", "nameKey")
 );
 
 -- Something that can be reserved: a meeting room, a parking space...
