@@ -11,6 +11,8 @@ export default function Home(props) {
     const [calendarOpen, setCalendarOpen] = useState(false);
     // The resource whose calendar is open
     const [selectedService, setSelectedService] = useState({});
+    // Counts the openings of a calendar, so opening the same resource again loads its reservations again
+    const [calendarOpenings, setCalendarOpenings] = useState(0);
     const [occurrences, setOccurrences] = useState([]);
     const [numberOfDaysArray, setNumberOfDaysArray] = useState([]);
     const [year, setYear] = useState(new Date().getFullYear());
@@ -112,6 +114,7 @@ export default function Home(props) {
     function openCalendar(resource) {
         setOccurrences([]);
         setSelectedService(resource);
+        setCalendarOpenings(openings => openings + 1);
         setCalendarOpen(true);
     }
 
@@ -160,7 +163,7 @@ export default function Home(props) {
         // A response for a month or resource that is no longer shown is dropped
         return () => { current = false; };
         // eslint-disable-next-line
-    }, [selectedService.id, year, month])
+    }, [selectedService.id, year, month, calendarOpenings])
 
     useEffect(() => {
         setNumberOfDaysArray(placeOccurrences(getMonthDays(), occurrences));
