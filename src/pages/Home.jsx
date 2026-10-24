@@ -13,7 +13,6 @@ export default function Home(props) {
     const [selectedService, setSelectedService] = useState({});
     // Counts the openings of a calendar, so opening the same resource again loads its reservations again
     const [calendarOpenings, setCalendarOpenings] = useState(0);
-    const [occurrences, setOccurrences] = useState([]);
     const [numberOfDaysArray, setNumberOfDaysArray] = useState([]);
     const [year, setYear] = useState(new Date().getFullYear());
     const [monthName, setMonthName] = useState("");
@@ -112,7 +111,8 @@ export default function Home(props) {
     }
 
     function openCalendar(resource) {
-        setOccurrences([]);
+        // Never the previous resource's reservations while this one's are loading
+        setNumberOfDaysArray(getMonthDays());
         setSelectedService(resource);
         setCalendarOpenings(openings => openings + 1);
         setCalendarOpen(true);
@@ -148,27 +148,29 @@ export default function Home(props) {
         //eslint-disable-next-line
     }, [calendar]);
 
-    // Load the open resource's reservations for the shown weeks
+    // The shown month's days with the open resource's reservations. They change only once the reservations are
+    // loaded, so a new month never shows up first without them.
     useEffect(() => {
-        if (selectedService.id === undefined) return;
+        const days = getMonthDays();
+        if (selectedService.id === undefined) {
+            setNumberOfDaysArray(days);
+            return;
+        }
         let current = true;
-        const { from, to } = getGridRange(getMonthDays());
+        const { from, to } = getGridRange(days);
         axios.get(`/resources/${selectedService.id}/occurrences`, { params: { from: from.toISOString(), to: to.toISOString() } })
             .then(res => {
-                if (current) setOccurrences(res.data.result.map(toOccurrence));
+                if (current) setNumberOfDaysArray(placeOccurrences(days, res.data.result.map(toOccurrence)));
             })
             .catch(err => {
                 console.error(err);
+                // The month is still shown, so the calendar can be used
+                if (current) setNumberOfDaysArray(days);
             });
         // A response for a month or resource that is no longer shown is dropped
         return () => { current = false; };
         // eslint-disable-next-line
     }, [selectedService.id, year, month, calendarOpenings])
-
-    useEffect(() => {
-        setNumberOfDaysArray(placeOccurrences(getMonthDays(), occurrences));
-        // eslint-disable-next-line
-    }, [occurrences, year, month])
 
 
     return (

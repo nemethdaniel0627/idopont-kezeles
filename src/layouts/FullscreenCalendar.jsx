@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import FullscreenExitIcon from '@mui/icons-material/FullscreenExit';
 import { IconButton, TextField } from "@mui/material";
 import { ArrowBackIosNew, ArrowForwardIos } from "@mui/icons-material";
@@ -14,8 +14,13 @@ export default function FullscreenCalendar(props) {
     const [year, setYear] = useState(new Date().getFullYear());
     const [monthName, setMonthName] = useState("");
     const [month, setMonth] = useState(new Date().getMonth());
-    // The days of the shown month with the open resource's reservations, built by Home
-    const numberOfDaysArray = props.numberOfDaysArray;
+    // The shown days with the open resource's reservations (built by Home). During a month change the old
+    // month stays until it has faded out and the new month's days have arrived, then both swap together.
+    const [numberOfDaysArray, setNumberOfDaysArray] = useState(props.numberOfDaysArray);
+    const latest = useRef({});
+    latest.current = { days: props.numberOfDaysArray, year: props.year, month: props.month, monthName: props.monthName };
+    // True from the end of a fade-out until the new month is shown
+    const waitingForMonth = useRef(false);
     const [monthPickerOpen, setMonthPickerOpen] = useState(false);
     const [monthPickerValue, setMonthPickerValue] = useState(new Date(year, month));
     const monthNames = props.monthNames;
@@ -89,30 +94,69 @@ export default function FullscreenCalendar(props) {
 
     }
 
+    // Calls handler when the days' own animation `name` ends (children's animation ends bubble up too)
+    const onDaysAnimationEnd = (calendarDays, name, handler) => {
+        const listener = (event) => {
+            if (event.target === calendarDays && event.animationName === name) {
+                calendarDays.removeEventListener("animationend", listener);
+                handler();
+            }
+        };
+        calendarDays.addEventListener("animationend", listener);
+    };
+
+    // After the fade-out, shows the new month as soon as its days are there
+    const showNewMonth = () => {
+        const { days, year: newYear, month: newMonth, monthName: newMonthName } = latest.current;
+        // The 15th day of the grid is always in the month the grid is for
+        const daysAreForNewMonth = days.length > 15
+            && days[15].date.getFullYear() === newYear && days[15].date.getMonth() === newMonth;
+        if (!waitingForMonth.current || !daysAreForNewMonth) return;
+
+        waitingForMonth.current = false;
+        setMonthName(newMonthName);
+        setMonth(newMonth);
+        setNumberOfDaysArray(days);
+        const calendarDays = document.querySelector(".fullscreen-calendar_days");
+        if (calendarDays) {
+            calendarDays.classList.add("days-change-in");
+            onDaysAnimationEnd(calendarDays, "fullDaysChangeIn", () => {
+                calendarDays.classList.remove("days-change-in");
+                calendarDays.classList.remove("days-change-out");
+            });
+        }
+    };
+
     useEffect(() => {
         const calendarDays = document.querySelector(".fullscreen-calendar_days");
 
         if (calendarDays) {
+            calendarDays.classList.remove("days-change-in");
             calendarDays.classList.add("days-change-out");
-            calendarDays.addEventListener("animationend", (event) => {
-                if (event.animationName === "fullDaysChangeOut") {
-                    setMonthName(props.monthName);
-                    setMonth(props.month);
-                    calendarDays.classList.add("days-change-in");
-                }
-            }, { once: true })
-            calendarDays.addEventListener("animationend", (event) => {
-                if (event.animationName === "fullDaysChangeIn") {
-                    calendarDays.classList.remove("days-change-in");
-                    calendarDays.classList.remove("days-change-out");
-                }
-            })
+            onDaysAnimationEnd(calendarDays, "fullDaysChangeOut", () => {
+                waitingForMonth.current = true;
+                showNewMonth();
+            });
         }
 
         setMonthPickerValue(new Date(props.year, props.month));
 
         // eslint-disable-next-line
     }, [props.year, props.month])
+
+    useEffect(() => {
+        const calendarDays = document.querySelector(".fullscreen-calendar_days");
+        const fadingOut = calendarDays
+            && calendarDays.classList.contains("days-change-out") && !calendarDays.classList.contains("days-change-in");
+        if (waitingForMonth.current) {
+            showNewMonth();
+        } else if (!fadingOut) {
+            // Not during a month change (e.g. a resource was opened): show right away
+            setNumberOfDaysArray(props.numberOfDaysArray);
+        }
+        // While fading out the old month stays; the new one is shown when the fade-out ends
+        // eslint-disable-next-line
+    }, [props.numberOfDaysArray])
 
     useEffect(() => {
         const calendarDays = document.querySelector(".fullscreen-calendar_days");

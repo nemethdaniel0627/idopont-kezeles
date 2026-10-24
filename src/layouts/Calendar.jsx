@@ -11,11 +11,10 @@ import CalendarModule from "../modules/Calendar";
 
 
 export default function Calendar(props) {
+  // The chosen date; what is on screen is `shown` below
   const [year, setYear] = useState(new Date().getFullYear());
-  const [monthName, setMonthName] = useState("");
   const [month, setMonth] = useState(new Date().getMonth());
   const [day, setDay] = useState(0);
-  const [dayName, setDayName] = useState("");
   const monthNames = props.monthNames;
   const dayNames = props.dayNames;
   const [years, setYears] = useState([]);
@@ -25,28 +24,45 @@ export default function Calendar(props) {
   const [daysWindowItem, setDaysWindowItem] = useState(-1);
   // "year-month" of the day open in the day window, which can be a greyed day of a neighbouring month
   const [daysWindowMonth, setDaysWindowMonth] = useState("");
-  // The days of the shown month with the open resource's reservations, built by Home
+  // The days of the chosen month with the open resource's reservations, built by Home
   const numberOfDaysArray = props.numberOfDaysArray;
+  // What is on screen. During a month change the old month (days, header, highlight) stays until it has
+  // faded out and the new month's days have arrived, then all of it changes together.
+  const [shown, setShown] = useState({ days: props.numberOfDaysArray, year: props.year, month: props.month, day: props.day });
+  const [fadedOut, setFadedOut] = useState(false);
+  const monthChanging = shown.year !== year || shown.month !== month;
+  const shownDayName = shown.day > 0 ? dayNames[CalendarModule.getWeekdayIndex(new Date(shown.year, shown.month, shown.day))] : "";
+  // The 15th day of a grid is always in the month the grid is for
+  const daysAreFor = (days, forYear, forMonth) => days.length > 15
+    && days[15].date.getFullYear() === forYear && days[15].date.getMonth() === forMonth;
 
   useEffect(() => {
     if (props) {
       setYear(props.year);
-      setMonthName(props.monthName);
       setMonth(props.month);
-      setDay(props.day);
       setYears(props.years);
     }
     setInterval();
     // eslint-disable-next-line
   }, [props])
 
-  // The day name always follows the selected date, whichever of year, month or day changed
+  // Home's day is only taken when it changes, so a re-render of Home does not reset the chosen day
   useEffect(() => {
-    if (day > 0) {
-      setDayName(dayNames[CalendarModule.getWeekdayIndex(new Date(year, month, day))]);
+    setDay(props.day);
+  }, [props.day])
+
+  useEffect(() => {
+    if (monthChanging) {
+      if (fadedOut && daysAreFor(numberOfDaysArray, year, month)) {
+        setShown({ days: numberOfDaysArray, year, month, day });
+        daysAnimate(true);
+      }
+    } else {
+      setShown({ days: numberOfDaysArray, year, month, day });
+      daysAnimate(true);
     }
     // eslint-disable-next-line
-  }, [year, month, day])
+  }, [numberOfDaysArray, fadedOut, year, month, day])
 
   async function setInterval() {
 
@@ -99,7 +115,6 @@ export default function Calendar(props) {
       1
     );
 
-    setMonthName(monthNames[newMonth.getMonth()]);
     props.setProps("monthName", monthNames[newMonth.getMonth()]);
     setMonth(newMonth.getMonth());
     props.setProps("month", newMonth.getMonth());
@@ -127,7 +142,13 @@ export default function Calendar(props) {
   }
 
   useEffect(() => {
-    daysAnimate(false);
+    let fadeTimer;
+    if (monthChanging) {
+      setFadedOut(false);
+      daysAnimate(false);
+      // The length of the opacity transition of #days
+      fadeTimer = setTimeout(() => setFadedOut(true), 500);
+    }
     let months = document.getElementById("months");
     if (months) {
       months.childNodes.forEach((li) => {
@@ -141,12 +162,9 @@ export default function Calendar(props) {
     // Today when it is in the shown month of the shown year, the first day otherwise
     const today = new Date();
     setDay(year === today.getFullYear() && month === today.getMonth() ? today.getDate() : 1);
+    return () => clearTimeout(fadeTimer);
     // eslint-disable-next-line
   }, [year, month])
-
-  useEffect(() => {
-    daysAnimate(true);
-  }, [numberOfDaysArray])
 
   useEffect(() => {
     // const days = document.querySelector("#days");
@@ -233,9 +251,9 @@ export default function Calendar(props) {
       <div className="col leftCol">
         <div className="content">
           <h1 className="date">
-            {dayName},
+            {shownDayName},
             <span>
-              {monthName} {day}
+              {monthNames[shown.month]} {shown.day}
             </span>
           </h1>
           <div className="notes">
@@ -317,7 +335,7 @@ export default function Calendar(props) {
           </ul>
           <div className="clearfix"></div>
           <ul className="days" id="days">
-            {numberOfDaysArray.map((item, index) => {
+            {shown.days.map((item, index) => {
               // A day with an all-day reservation is "full", one with other reservations "notfull"
               let addClass = "";
               if (item.services.some(reservation => reservation.allDay)) addClass = "full";
@@ -336,7 +354,7 @@ export default function Calendar(props) {
                     value={item.date.getDate() < 10 ? "0" + item.date.getDate() : item.date.getDate()}
                     datavalue={item.date.getDate()}
                     className={
-                      `${addClass} ${!notThisMonthDay && item.date.getDate() === day
+                      `${addClass} ${!notThisMonthDay && item.date.getDate() === shown.day
                         ? "selected"
                         : ""
                       } ${notThisMonthDay === true ? "greyDay" : ""}`
@@ -381,7 +399,7 @@ export default function Calendar(props) {
                     key={`hour_list_${daysWindowItem}_5`}
                     id={`hour_list_${daysWindowItem}_5`}
                     prefix={daysWindowMonth}
-                    services={numberOfDaysArray}
+                    services={shown.days}
                     timeUnits={minutes}
                     item={daysWindowItem}
                     openDetails={openDetails}
@@ -390,7 +408,7 @@ export default function Calendar(props) {
                     key={`hour_list_${daysWindowItem}_30`}
                     id={`hour_list_${daysWindowItem}_30`}
                     prefix={daysWindowMonth}
-                    services={numberOfDaysArray}
+                    services={shown.days}
                     timeUnits={halfHours}
                     item={daysWindowItem}
                     openDetails={openDetails}
@@ -399,7 +417,7 @@ export default function Calendar(props) {
                     key={`hour_list_${daysWindowItem}_60`}
                     id={`hour_list_${daysWindowItem}_60`}
                     prefix={daysWindowMonth}
-                    services={numberOfDaysArray}
+                    services={shown.days}
                     timeUnits={hours}
                     item={daysWindowItem}
                     openDetails={openDetails}
