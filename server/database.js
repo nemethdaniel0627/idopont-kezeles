@@ -35,6 +35,11 @@ class Database {
             client.release();
         }
     }
+
+    // Ends the connections, for scripts that should exit when done
+    async close() {
+        await _pool.end();
+    }
 }
 
 module.exports = new Database();

@@ -3,6 +3,14 @@ const SMALLINT_MAX = 32767;
 // A problem with the request itself, its message is shown to the user
 class ValidationError extends Error { }
 
+// An error with its own status code, its message is shown to the user (e.g. 401 for a failed login)
+class HttpError extends Error {
+    constructor(status, message) {
+        super(message);
+        this.status = status;
+    }
+}
+
 function toPositiveSmallint(value, message) {
     const number = Number(value);
     if (!Number.isInteger(number) || number < 1 || number > SMALLINT_MAX) {
@@ -32,4 +40,4 @@ function toId(value) {
     return Number.isInteger(id) && id > 0 ? id : null;
 }
 
-module.exports = { ValidationError, toPositiveSmallint, toDate, toTitle, toId };
+module.exports = { ValidationError, HttpError, toPositiveSmallint, toDate, toTitle, toId };
