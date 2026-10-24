@@ -1,55 +1,71 @@
 -- Creates the tables with sample data. Running it again starts over from the sample data.
+-- The sample reservations are placed relative to the current week, so they are always near today.
 DROP TABLE IF EXISTS services;
 DROP TABLE IF EXISTS serviceendson;
+DROP TABLE IF EXISTS reservations;
+DROP TABLE IF EXISTS resources;
 
-CREATE TABLE services (
+-- Something that can be reserved: a meeting room, a parking space...
+CREATE TABLE resources (
   id INTEGER NOT NULL GENERATED ALWAYS AS IDENTITY,
+  "title" TEXT NOT NULL,
+  "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+  -- Set when the resource is removed; removed resources are kept but hidden
+  "deletedAt" TIMESTAMP WITH TIME ZONE DEFAULT NULL,
+  PRIMARY KEY (id)
+);
+
+-- A booking of a resource. A repeating reservation repeats for at most 6 months from its first date.
+CREATE TABLE reservations (
+  id INTEGER NOT NULL GENERATED ALWAYS AS IDENTITY,
+  "resourceId" INTEGER NOT NULL REFERENCES resources(id),
+  "title" TEXT NOT NULL,
+  "description" TEXT NOT NULL DEFAULT '',
   "startDate" TIMESTAMP WITH TIME ZONE NOT NULL,
   "endDate" TIMESTAMP WITH TIME ZONE NOT NULL,
-  "allDay" BOOLEAN NOT NULL,
-  "title" TEXT NOT NULL,
-  "regularityMeasure" TEXT NOT NULL,
+  "allDay" BOOLEAN NOT NULL DEFAULT false,
+  "regularityMeasure" TEXT NOT NULL DEFAULT 'never'
+    CHECK ("regularityMeasure" IN ('never', 'day', 'week', 'month')),
   "regularityRepeatNumber" SMALLINT DEFAULT NULL,
+  -- Hungarian day names (hétfő ... vasárnap) for weekly repetition
   "regularityDays" TEXT[] DEFAULT NULL,
-  "regularityEndsOnId" INTEGER DEFAULT NULL,
-  "participants" SMALLINT NOT NULL,
-  "maxParticipants" SMALLINT NOT NULL,
-  PRIMARY KEY (id)
+  "endsOnType" TEXT DEFAULT NULL CHECK ("endsOnType" IN ('onDate', 'occurrence')),
+  "endsOnDate" TIMESTAMP WITH TIME ZONE DEFAULT NULL,
+  "endsOnOccurrence" SMALLINT DEFAULT NULL,
+  "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+  -- Set when the reservation is removed; removed reservations are kept but hidden
+  "deletedAt" TIMESTAMP WITH TIME ZONE DEFAULT NULL,
+  PRIMARY KEY (id),
+  CHECK ("startDate" <= "endDate")
 );
 
-CREATE TABLE serviceendson (
-  id INTEGER NOT NULL GENERATED ALWAYS AS IDENTITY,
-  "endsOnType" TEXT NOT NULL,
-  "endsOnDate" TIMESTAMP WITH TIME ZONE,
-  "endsOnOccurrence" SMALLINT,
-  PRIMARY KEY (id)
-);
+CREATE INDEX reservations_resource ON reservations ("resourceId") WHERE "deletedAt" IS NULL;
 
-ALTER TABLE services
-  ADD CONSTRAINT FK_services_serviceendson_id FOREIGN KEY ("regularityEndsOnId")
-    REFERENCES serviceendson(id) ON DELETE CASCADE ON UPDATE NO ACTION;
+INSERT INTO resources (title) VALUES ('Tárgyaló 1'), ('Tárgyaló 2'), ('Nagy tárgyaló'), ('Parkolóhely 1');
 
--- The services below refer to these rows, one row for each service
-INSERT INTO serviceendson
-("endsOnType", "endsOnDate")
-VALUES('onDate', TIMESTAMPTZ '2022-07-13 0:0:0 Europe/Budapest');
+-- Monday 00:00 of the current week, as the base of the sample dates
+CREATE TEMPORARY TABLE base AS SELECT date_trunc('week', now()) AS monday;
 
-INSERT INTO serviceendson ("endsOnType") VALUES('never');
-INSERT INTO serviceendson ("endsOnType") VALUES('never');
-INSERT INTO serviceendson ("endsOnType") VALUES('never');
+INSERT INTO reservations ("resourceId", title, description, "startDate", "endDate")
+SELECT 1, 'Csapatmegbeszélés', 'Heti tervezés', monday + interval '2 days 10 hours', monday + interval '2 days 11 hours 30 minutes' FROM base;
 
-INSERT INTO services
-("startDate", "endDate", "allDay", title, "regularityMeasure", "regularityRepeatNumber", "regularityEndsOnId", "participants", "maxParticipants")
-VALUES(TIMESTAMPTZ '2022-07-01 0:0:0 Europe/Budapest', TIMESTAMPTZ '2022-07-03 0:0:0 Europe/Budapest', true, 'Tárgyaló 1', 'day', 5, 1, 0, 1);
+INSERT INTO reservations ("resourceId", title, description, "startDate", "endDate",
+  "regularityMeasure", "regularityRepeatNumber", "regularityDays", "endsOnType", "endsOnDate")
+SELECT 1, 'Ügyfélhívás', 'Kéthetente hétfőn és szerdán', monday + interval '14 hours', monday + interval '15 hours',
+  'week', 2, '{hétfő, szerda}', 'onDate', monday + interval '3 months' FROM base;
 
-INSERT INTO services
-("startDate", "endDate", "allDay", title, "regularityMeasure", "regularityRepeatNumber", "regularityDays", "regularityEndsOnId", "participants", "maxParticipants")
-VALUES(TIMESTAMPTZ '2022-07-01 8:0:0 Europe/Budapest', TIMESTAMPTZ '2022-07-02 9:0:0 Europe/Budapest', false, 'Tárgyaló 2', 'week', 2, '{hétfő, péntek}', 2, 0, 1);
+INSERT INTO reservations ("resourceId", title, description, "startDate", "endDate",
+  "regularityMeasure", "regularityRepeatNumber", "endsOnType", "endsOnOccurrence")
+SELECT 2, 'Reggeli egyeztetés', 'Minden nap reggel, 10 alkalommal', monday + interval '8 hours 30 minutes', monday + interval '9 hours',
+  'day', 1, 'occurrence', 10 FROM base;
 
-INSERT INTO services
-("startDate", "endDate", "allDay", title, "regularityMeasure", "regularityRepeatNumber", "regularityEndsOnId", "participants", "maxParticipants")
-VALUES(TIMESTAMPTZ '2022-07-09 0:0:0 Europe/Budapest', TIMESTAMPTZ '2022-07-11 0:0:0 Europe/Budapest', true, 'Tárgyaló 3', 'month', 1, 3, 0, 1);
+INSERT INTO reservations ("resourceId", title, description, "startDate", "endDate", "allDay")
+SELECT 3, 'Tréning', 'Kétnapos képzés', monday + interval '3 days', monday + interval '4 days', true FROM base;
 
-INSERT INTO services
-("startDate", "endDate", "allDay", title, "regularityMeasure", "regularityRepeatNumber", "regularityEndsOnId", "participants", "maxParticipants")
-VALUES(TIMESTAMPTZ '2022-07-19 0:0:0 Europe/Budapest', TIMESTAMPTZ '2022-07-22 0:0:0 Europe/Budapest', true, 'Tárgyaló 4', 'year', 1, 4, 0, 1);
+INSERT INTO reservations ("resourceId", title, description, "startDate", "endDate",
+  "regularityMeasure", "regularityRepeatNumber", "endsOnType", "endsOnDate")
+SELECT 3, 'Havi összesítő', 'Minden hónapban', monday + interval '1 day 13 hours', monday + interval '1 day 15 hours',
+  'month', 1, 'onDate', monday + interval '1 day 6 months' FROM base;
+
+INSERT INTO reservations ("resourceId", title, description, "startDate", "endDate")
+SELECT 4, 'Vendég parkolás', 'Szállító érkezik', monday + interval '4 days 9 hours', monday + interval '4 days 12 hours' FROM base;

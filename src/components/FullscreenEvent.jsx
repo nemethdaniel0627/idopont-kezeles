@@ -10,8 +10,9 @@ export default function FullscreenEvent(props) {
 
     useEffect(() => {
         let eventColors = getComputedStyle(document.documentElement).getPropertyValue("--event-colors").toString().trim().split(",");
-        setBackgorundColor(props.serviceId !== -1 ? eventColors[props.serviceId - 1] : "");
-    }, [])
+        // One color per reservation, starting over after the last color
+        setBackgorundColor(props.serviceId !== -1 ? eventColors[(props.serviceId - 1) % eventColors.length].trim() : "");
+    }, [props.serviceId])
 
     return (
         <span onClick={props.serviceId !== -1 ? openDetails : () => { }} className={`fullscreen-calendar_event fullscreen-calendar_event_${props.type}-long${props.serviceId === -1 ? " ghost_event" : ""}`} style={{ backgroundColor: backgroundColor }}>

@@ -34,24 +34,12 @@
         flex-direction: column;
         align-items: center;
 
-        .MuiFormGroup-root {
-            display: inline-flex;
-            align-items: center;
-
-            .MuiFormControlLabel-root {
-                margin-left: 1.5rem;
-                flex-direction: row-reverse;
-                color: #ddd;
-
-                .MuiSvgIcon-root {
-                    font-size: 2.5rem;
-                }
-                .MuiTypography-root {
-                    font-size: 1.5rem;
-                    font-weight: bold;
-                    width: 15rem;
-                }
-            }
+        .fullscreen-calendar_resource-title {
+            margin: 2rem 1.5rem;
+            color: #ddd;
+            font-size: 2rem;
+            font-weight: bold;
+            text-align: center;
         }
     }
 

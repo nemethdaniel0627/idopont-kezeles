@@ -179,11 +179,54 @@
         }
     }
 
-    &_max-participants {
-        .MuiFilledInput-input {
-            padding: 1rem;
-            width: 6rem;
+    &_reservations {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+
+        h3 {
+            font-size: 1.5rem;
         }
+
+        ul {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        li {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            padding: 0.5rem 1rem;
+            border: 1px solid rgba(0, 0, 0, 0.12);
+            border-radius: 10px;
+
+            strong {
+                font-size: 1.1rem;
+            }
+        }
+
+        & > .MuiButton-root {
+            align-self: flex-start;
+        }
+    }
+
+    &_reservation-form {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        padding: 1rem;
+        border: 1px solid #555;
+        border-radius: 10px;
+    }
+
+    &_actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 1rem;
     }
 
     .MuiSelect-select,

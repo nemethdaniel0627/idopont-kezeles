@@ -5,25 +5,27 @@ import Calendar from "../modules/Calendar";
 
 export default function ServiceDetails(props) {
     const [name, setName] = useState();
-    const [serviceDef, setServiceDef] = useState();
+    const [description, setDescription] = useState("");
+    const [repeating, setRepeating] = useState(false);
     const [serviceStart, setServiceStart] = useState(new Date());
     const [serviceEnd, setServiceEnd] = useState(new Date());
-    const [serviceAllDay, setServiceAllDay] = useState(new Date());
-    const [maxParticipants, setMaxParticipants] = useState(-1);
+    const [serviceAllDay, setServiceAllDay] = useState(false);
+
+    // An all-day reservation ends at the start of the day after its last day; show that last day instead
+    const shownEnd = serviceAllDay ? new Date(serviceEnd.getFullYear(), serviceEnd.getMonth(), serviceEnd.getDate() - 1) : serviceEnd;
 
     useEffect(() => {
         const eventDetails = document.querySelector(".event-details_container");
         if (props.serviceDetails && eventDetails) {
             eventDetails.classList.add("event-details_hidden");
             eventDetails.addEventListener("animationend", (event) => {
-                console.log(event.animationName);
                 if (event.animationName === "detailsHidden") {
                     setName(props.serviceDetails.name);
-                    setServiceDef(props.serviceDetails.serviceDefiner);
+                    setDescription(props.serviceDetails.description || "");
+                    setRepeating(props.serviceDetails.repeating === true);
                     setServiceStart(props.serviceDetails.start);
                     setServiceEnd(props.serviceDetails.end);
-                    setServiceAllDay(props.serviceDetails.allDay);
-                    setMaxParticipants(props.serviceDetails.maxParticipants);
+                    setServiceAllDay(props.serviceDetails.allDay === true);
                     eventDetails.classList.add("event-details_appear");
                 }
             }, { once: true });
@@ -95,12 +97,10 @@ export default function ServiceDetails(props) {
                 </div>
                 <div className="event-details_content">
                     <h3>{name}</h3>
-                    <p>Időtartam: {Calendar.getDateWithFormat(serviceStart, !serviceAllDay)} - {Calendar.getDateWithFormat(serviceEnd, !serviceAllDay)}</p>
-                    <p>Munkaszüneti nap</p>
-                    <p>Ünnep</p>
-                    <p>Nyilvános</p>
-                    <p>{serviceDef}</p>
-                    <p>{maxParticipants}</p>
+                    <p>Időtartam: {Calendar.getDateWithFormat(serviceStart, !serviceAllDay)} - {Calendar.getDateWithFormat(shownEnd, !serviceAllDay)}</p>
+                    {serviceAllDay ? <p>Egész napos</p> : <></>}
+                    {repeating ? <p>Ismétlődő foglalás</p> : <></>}
+                    {description !== "" ? <p>{description}</p> : <></>}
                 </div>
             </div>
         </dialog>
