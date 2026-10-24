@@ -12,6 +12,8 @@
 
 .calendar {
     position: fixed;
+    // Above the page content; the full-screen calendar (101) and the details popup (102) are above this
+    z-index: 100;
     border-radius: 1rem;
     max-width: 800px;
     width: 80vw;

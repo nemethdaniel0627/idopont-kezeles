@@ -1,5 +1,7 @@
 .fullscreen-calendar {
-    position: absolute;
+    // Fixed to the screen, so it opens in view however far the page is scrolled, above the small calendar
+    position: fixed;
+    z-index: 101;
     max-width: 800px;
     width: 80vw;
     min-height: 45rem;
