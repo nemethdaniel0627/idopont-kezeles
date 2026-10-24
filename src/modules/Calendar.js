@@ -59,6 +59,14 @@ class Calendar {
         return new Date(year, month + 1, 0).getDate();
     }
 
+    // The last day a repeating reservation may fall on: 6 months after its first date, at the end of
+    // shorter months (31 August -> 28 February). The server applies the same rule in recurrence.js.
+    getRepeatLimit(firstStart) {
+        const year = firstStart.getFullYear();
+        const month = firstStart.getMonth() + 6;
+        return new Date(year, month, Math.min(firstStart.getDate(), this.getDaysInMonth(year, month)));
+    }
+
     // The time unit of a 5, 30 or 60 minute interval list an event starting at "h:m" belongs to,
     // and how many minutes after the start of that unit it begins
     getIntervalSlot(eventStart, intervalLength) {
@@ -68,6 +76,24 @@ class Calendar {
             timeUnit: intervalLength === 60 ? hour : `${hour}:${slotMinute}`,
             offset: minute - slotMinute
         };
+    }
+
+    getDateWithFormat(date, withTime = false) {
+        return withTime
+            ? `${date.getFullYear()}-${date.getMonth() + 1 < 10 ? `0${date.getMonth() + 1}` : date.getMonth() + 1}-${date.getDate() < 10 ? `0${date.getDate()}` : date.getDate()} ${date.getHours() < 10 ? `0${date.getHours()}` : date.getHours()}:${date.getMinutes() < 10 ? `0${date.getMinutes()}` : date.getMinutes()}`
+            : `${date.getFullYear()}-${date.getMonth() + 1 < 10 ? `0${date.getMonth() + 1}` : date.getMonth() + 1}-${date.getDate() < 10 ? `0${date.getDate()}` : date.getDate()}`;
+    }
+
+    convertDuration(duration) {
+        // { years: 0, months: 0, days: 0, hours: 0, minutes: 0, seconds: 0 }
+        const yearsInMin = duration.years * 525949.2;
+        const monthsInMin = duration.months * 43829.06;
+        const daysInMin = duration.days * 1440;
+        const hoursInMin = duration.hours * 60;
+        const minutesInMin = duration.minutes;
+        const secondsInMin = duration.seconds / 60;
+
+        return Math.round(yearsInMin + monthsInMin + daysInMin + hoursInMin + minutesInMin + secondsInMin);
     }
 }
 
