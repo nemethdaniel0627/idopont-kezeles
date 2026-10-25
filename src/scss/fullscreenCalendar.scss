@@ -66,16 +66,46 @@
         }
     }
 
-    // The booking rules, so they are known before choosing a time
+    // The booking rules, one per row, so they are known before choosing a time
     &_rules {
         display: flex;
         flex-direction: column;
-        gap: 0.2rem;
-        padding: 1rem 1.2rem;
+        gap: 0.8rem;
+        padding: 1.2rem;
         border-radius: 0.8rem;
         background: rgba(255, 255, 255, 0.08);
         color: #fff;
         font-size: 1.5rem;
+
+        h3 {
+            font-size: 1.2rem;
+            font-weight: normal;
+            color: #9fb9c0;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        dl {
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+        }
+
+        div {
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+
+        dt {
+            color: #b9cdd2;
+        }
+
+        dd {
+            margin: 0;
+            font-weight: bold;
+            text-align: right;
+        }
     }
 
     &_hint {
@@ -482,9 +512,30 @@
             }
         }
 
+        // Two rules per row, value under its label, so the calendar keeps most of the screen
         &_rules {
+            gap: 0.4rem;
             padding: 0.6rem 0.8rem;
             font-size: 1.3rem;
+
+            dl {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 0.4rem 1.2rem;
+            }
+
+            div {
+                flex-direction: column;
+                gap: 0;
+            }
+
+            dt {
+                font-size: 1.1rem;
+            }
+
+            dd {
+                text-align: left;
+            }
         }
 
         &_hint {

@@ -11,7 +11,7 @@ import LocalizationProvider from "@mui/lab/LocalizationProvider";
 import AdapterDateFns from '@mui/lab/AdapterDateFns';
 import { appTheme } from "../components/AuthPage";
 import { dayStatus, DAY_STATUS_TEXT } from "../modules/bookingRules";
-import { describeRules } from "../modules/reservationText";
+import { rulesParts } from "../modules/reservationText";
 
 const SHORT_MONTHS = ["jan.", "febr.", "márc.", "ápr.", "máj.", "jún.", "júl.", "aug.", "szept.", "okt.", "nov.", "dec."];
 
@@ -45,7 +45,7 @@ export default function FullscreenCalendar(props) {
     const [monthPickerValue, setMonthPickerValue] = useState(new Date(year, month));
     const monthNames = props.monthNames;
     const resource = props.selectedService;
-    const rulesText = resource.id !== undefined ? describeRules(resource) : "";
+    const rules = resource.id !== undefined ? rulesParts(resource) : [];
     const now = new Date();
 
     // Opens when a resource is chosen; starts from the month view of today
@@ -209,10 +209,14 @@ export default function FullscreenCalendar(props) {
                         )}
                     </ul>
                     : <></>}
-                <div className="fullscreen-calendar_rules">
-                    <span>Foglalható</span>
-                    {rulesText !== "" ? rulesText : "bármikor"}
-                </div>
+                <section className="fullscreen-calendar_rules" aria-label="Foglalási szabályok">
+                    <h3>Foglalási szabályok</h3>
+                    {rules.length !== 0
+                        ? <dl>
+                            {rules.map(rule => <div key={rule.label}><dt>{rule.label}</dt><dd>{rule.value}</dd></div>)}
+                        </dl>
+                        : <p>Bármikor foglalható.</p>}
+                </section>
                 <p className="fullscreen-calendar_hint">
                     {view === "month"
                         ? "Kattints egy napra: megnyílik a hete, ahol egy szabad időpontra kattintva foglalhatsz."

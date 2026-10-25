@@ -67,3 +67,18 @@ it("selects the dragged range only as far as the slots are free", () => {
     expect(dragRange(600, 480, free)).toEqual({ start: 540, end: 630 });
     expect(dragRange(600, 600, free)).toEqual({ start: 600, end: 630 });
 });
+
+it("splits the booking rules into labelled parts", () => {
+    const { rulesParts } = require("./reservationText");
+    expect(rulesParts({
+        minLengthMinutes: 30, maxLengthMinutes: 240, openFrom: "08:00", openTo: "18:00",
+        openDays: ["hétfő", "kedd", "szerda", "csütörtök", "péntek"], maxDaysAhead: 60,
+    })).toEqual([
+        { label: "Napok", value: "H–P" },
+        { label: "Nyitvatartás", value: "08:00–18:00" },
+        { label: "Foglalás hossza", value: "30–240 perc" },
+        { label: "Előre foglalható", value: "60 napig" },
+    ]);
+    expect(rulesParts({ minLengthMinutes: null, maxLengthMinutes: 90, openFrom: null, openTo: null, openDays: null, maxDaysAhead: null }))
+        .toEqual([{ label: "Foglalás hossza", value: "legfeljebb 90 perc" }]);
+});
