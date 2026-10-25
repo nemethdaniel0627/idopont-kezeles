@@ -15,6 +15,7 @@ import PollGrid from "../../components/polls/PollGrid";
 import AnswerDialog from "../../components/polls/AnswerDialog";
 import { useAuth } from "../../auth/AuthContext";
 import { errorMessage } from "../../modules/api";
+import { copyText } from "../../modules/clipboard";
 import Calendar from "../../modules/Calendar";
 import { describeDays, dayLabel, durationText, rangeText, toMinutes, toTime } from "../../modules/pollSlots";
 import { privateLink, remember, remembered } from "../../modules/pollStorage";
@@ -204,7 +205,7 @@ export default function PollPage() {
 
     const copy = async (text, done) => {
         try {
-            await navigator.clipboard.writeText(text);
+            await copyText(text);
             setMessage({ severity: "success", text: done });
         } catch (err) {
             setMessage({ severity: "warning", text: "Nem sikerült a vágólapra másolni; jelöld ki és másold ki kézzel." });

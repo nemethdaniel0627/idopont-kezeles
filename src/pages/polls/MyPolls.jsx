@@ -6,6 +6,7 @@ import AddIcon from '@mui/icons-material/Add';
 import LinkIcon from '@mui/icons-material/Link';
 import AdminPage from "../../components/AdminPage";
 import { errorMessage } from "../../modules/api";
+import { copyText } from "../../modules/clipboard";
 import { describeDays } from "../../modules/pollSlots";
 
 // The logged in user's own polls
@@ -21,7 +22,7 @@ export default function MyPolls() {
 
     const copyLink = async (key) => {
         try {
-            await navigator.clipboard.writeText(`${window.location.origin}/egyeztetes/${key}`);
+            await copyText(`${window.location.origin}/egyeztetes/${key}`);
             setMessage({ severity: "success", text: "A linket a vágólapra másoltuk." });
         } catch (err) {
             setMessage({ severity: "warning", text: "Nem sikerült a vágólapra másolni." });
