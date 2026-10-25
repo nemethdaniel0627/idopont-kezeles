@@ -25,6 +25,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import DoneIcon from '@mui/icons-material/Done';
 import AddIcon from '@mui/icons-material/Add';
 import Calendar from "../modules/Calendar";
+import { errorMessage } from "../modules/api";
 
 // The admin dialog of a resource: its name and its reservations.
 // Temporary until MVP step 3 replaces it with the designed admin page.
@@ -127,11 +128,6 @@ export default function EditSzolgaltatas(props) {
         setOpenSnackbar(true);
     };
 
-    // The server's message for a failed request, or a general one
-    const errorText = (err, fallback) => err.response && err.response.data && err.response.data.error
-        ? err.response.data.error
-        : fallback;
-
     const loadReservations = () => {
         if (isNewResource) return;
         axios.get(`/resources/${props.serviceDatas.id}/reservations`)
@@ -172,7 +168,7 @@ export default function EditSzolgaltatas(props) {
         try {
             await props.saveResource(isNewResource ? { title } : { id: props.serviceDatas.id, title });
         } catch (err) {
-            showMessage(errorText(err, "Nem sikerült menteni az erőforrást!"), "error");
+            showMessage(errorMessage(err, "Nem sikerült menteni az erőforrást!"), "error");
             return;
         } finally {
             setSaving(false);
@@ -242,7 +238,7 @@ export default function EditSzolgaltatas(props) {
                 await axios.put(`/reservations/${editedReservation.id}`, reservation);
             }
         } catch (err) {
-            showMessage(errorText(err, "Nem sikerült menteni a foglalást!"), "error");
+            showMessage(errorMessage(err, "Nem sikerült menteni a foglalást!"), "error");
             return;
         } finally {
             setSaving(false);

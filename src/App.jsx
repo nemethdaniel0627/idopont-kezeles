@@ -4,6 +4,12 @@ import "./scss/styles.scss";
 import { Routes, Route } from 'react-router-dom';
 import AdminSzolgaltatas from "./pages/AdminSzolgaltatas";
 import Nav from "./components/Nav"
+import AdminRoute from "./auth/AdminRoute";
+import Login from "./pages/auth/Login";
+import Register from "./pages/auth/Register";
+import ForgotPassword from "./pages/auth/ForgotPassword";
+import ResetPassword from "./pages/auth/ResetPassword";
+import Profile from "./pages/auth/Profile";
 import axios from "axios";
 
 export default function App() {
@@ -53,7 +59,12 @@ export default function App() {
       <Nav />
       <Routes>
         <Route path="/" element={<Home resources={resources} />} />
-        <Route path="/admin" element={<AdminSzolgaltatas resources={resources} saveResource={saveResource} />} />
+        <Route path="/admin" element={<AdminRoute><AdminSzolgaltatas resources={resources} saveResource={saveResource} /></AdminRoute>} />
+        <Route path="/bejelentkezes" element={<Login />} />
+        <Route path="/regisztracio" element={<Register />} />
+        <Route path="/elfelejtett-jelszo" element={<ForgotPassword />} />
+        <Route path="/jelszo-visszaallitas" element={<ResetPassword />} />
+        <Route path="/profil" element={<Profile />} />
       </Routes>
     </>
   );

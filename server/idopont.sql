@@ -4,6 +4,39 @@ DROP TABLE IF EXISTS services;
 DROP TABLE IF EXISTS serviceendson;
 DROP TABLE IF EXISTS reservations;
 DROP TABLE IF EXISTS resources;
+DROP TABLE IF EXISTS "passwordResets";
+DROP TABLE IF EXISTS sessions;
+DROP TABLE IF EXISTS users;
+
+-- A registered user. The first admin is made with: npm run make-admin -- email@example.com
+CREATE TABLE users (
+  id INTEGER NOT NULL GENERATED ALWAYS AS IDENTITY,
+  "email" TEXT NOT NULL UNIQUE CHECK ("email" = lower("email")),
+  "passwordHash" TEXT NOT NULL,
+  "name" TEXT NOT NULL DEFAULT '',
+  "phone" TEXT NOT NULL DEFAULT '',
+  "role" TEXT NOT NULL DEFAULT 'regular' CHECK ("role" IN ('regular', 'admin')),
+  "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+  PRIMARY KEY (id)
+);
+
+-- A login. The cookie holds a random token, only its SHA-256 hash is stored.
+CREATE TABLE sessions (
+  "tokenHash" TEXT NOT NULL,
+  "userId" INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+  "expiresAt" TIMESTAMP WITH TIME ZONE NOT NULL,
+  PRIMARY KEY ("tokenHash")
+);
+
+-- A single-use password reset link, valid for 1 hour. Only the token's hash is stored.
+CREATE TABLE "passwordResets" (
+  "tokenHash" TEXT NOT NULL,
+  "userId" INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  "expiresAt" TIMESTAMP WITH TIME ZONE NOT NULL,
+  "usedAt" TIMESTAMP WITH TIME ZONE DEFAULT NULL,
+  PRIMARY KEY ("tokenHash")
+);
 
 -- Something that can be reserved: a meeting room, a parking space...
 CREATE TABLE resources (

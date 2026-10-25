@@ -1,5 +1,19 @@
 nav {
-    background: gray;
+    background: var(--calendar-dark);
+    color: #fff;
     width: 100%;
-    height: 10vh;
+    min-height: 6.4rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.8rem;
+    padding: 0.8rem 1.6rem;
+
+    .nav_group {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+    }
 }
