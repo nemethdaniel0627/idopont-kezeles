@@ -104,3 +104,9 @@ input[type="number"] {
         display: inline;
     }
 }
+
+// Plain confirmation dialogs get a readable text size; dialogs with their own class set theirs (:where has no weight)
+:where(.MuiDialogContent-root) {
+    font-size: 1.5rem;
+    line-height: 1.5;
+}

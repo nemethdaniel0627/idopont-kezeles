@@ -26,7 +26,8 @@ function eventColor(id) {
 // the mouse dragged down (or up) the day, from where the button went down to where it is let go, like marking
 // times in a poll. The drag stops at closed hours and other bookings. On touch screens a tap starts a booking.
 // onSlotClick(day, start, end) gets the end only after a drag.
-export default function WeekView({ resource, weekStart, reloadKey, isAdmin, onSlotClick, onEventClick }) {
+// Without canBook the free times are shown but can't be clicked; the bookings still open their details
+export default function WeekView({ resource, weekStart, reloadKey, isAdmin, canBook = true, onSlotClick, onEventClick }) {
     const [days, setDays] = useState(() => Array.from({ length: 7 }, (_, i) => ({ date: addDays(weekStart, i), services: [], fullscreenServices: [] })));
     const now = new Date();
     // While dragging: { dayIndex, anchor, current }, start minutes of the first slot and the one under the pointer
@@ -79,7 +80,7 @@ export default function WeekView({ resource, weekStart, reloadKey, isAdmin, onSl
 
     const pointerDown = (event, dayIndex, minute) => {
         lastPointer.current = event.pointerType;
-        if (event.pointerType !== "mouse" || event.button !== 0 || !isFree(dayIndex, minute)) return;
+        if (!canBook || event.pointerType !== "mouse" || event.button !== 0 || !isFree(dayIndex, minute)) return;
         // No text selection while dragging
         event.preventDefault();
         setDrag({ dayIndex, anchor: minute, current: minute });
@@ -134,14 +135,14 @@ export default function WeekView({ resource, weekStart, reloadKey, isAdmin, onSl
                                 const time = new Date(day.date.getFullYear(), day.date.getMonth(), day.date.getDate(), Math.floor(minute / 60), minute % 60);
                                 const bookable = isBookableTime(resource, time, { isAdmin, now });
                                 return (
-                                    <button type="button" key={minute} className={`week-view_slot${bookable ? "" : " closed"}${minute % 60 === 0 ? " hour" : ""}`}
-                                        disabled={!bookable}
+                                    <button type="button" key={minute} className={`week-view_slot${bookable ? "" : " closed"}${canBook ? "" : " view-only"}${minute % 60 === 0 ? " hour" : ""}`}
+                                        disabled={!bookable || !canBook}
                                         onPointerDown={event => pointerDown(event, index, minute)}
                                         onPointerEnter={() => pointerEnter(index, minute)}
                                         // A mouse is handled when its button goes up; a tap or Enter books from here
                                         onClick={() => { if (lastPointer.current !== "mouse") onSlotClick(day.date, time); lastPointer.current = "keyboard"; }}
                                         aria-label={`${dayHeader(dayKey(day.date)).top} ${day.date.getDate()}. ${toTime(minute)} – foglalás`}
-                                        title={bookable ? "Kattints, vagy húzd az egeret a foglalás végéig" : undefined} />
+                                        title={bookable && canBook ? "Kattints, vagy húzd az egeret a foglalás végéig" : undefined} />
                                 );
                             })}
                             {layouts[index].timed.map(({ service, start, end, lane, lanes }) => {

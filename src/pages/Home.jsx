@@ -13,6 +13,8 @@ import BookingConfirmation from "../components/booking/BookingConfirmation";
 import ContactDialog from "../components/booking/ContactDialog";
 import CancelDialog from "../components/booking/CancelDialog";
 import { useAuth } from "../auth/AuthContext";
+import { useSettings } from "../auth/SettingsContext";
+import { bookingBlockedText } from "../modules/permissions";
 import { errorMessage } from "../modules/api";
 import { suggestTimes } from "../modules/bookingTimes";
 
@@ -35,6 +37,9 @@ export default function Home(props) {
     const [serviceDetails, setServiceDetails] = useState();
     const { user } = useAuth();
     const isAdmin = Boolean(user && user.role === "admin");
+    const { settings, can } = useSettings();
+    // Why booking is not possible for this viewer (the calendar shows it instead of the booking button), or null
+    const bookingBlocked = user === undefined ? null : bookingBlockedText(settings, user);
     // The booking form: null, { initial } for a new reservation or { reservation, contact } for an edit
     const [booking, setBooking] = useState(null);
     // The summary after a new booking: null or { reservation, resource }
@@ -92,6 +97,7 @@ export default function Home(props) {
     // A new booking on `day`, or at `time` when a time slot was clicked, until `endTime` when a range was
     // dragged in the week view; prefilled from the profile
     function newBooking(day, time = null, endTime = null) {
+        if (bookingBlocked) return;
         const suggested = suggestTimes(selectedService, day, time);
         const start = suggested.start;
         const end = endTime || suggested.end;
@@ -173,16 +179,33 @@ export default function Home(props) {
             <div className="home">
                 <header className="home_intro">
                     <h1>Időpontfoglaló</h1>
-                    <p>Válassz egy erőforrást, nézd meg a szabad időpontokat, és foglalj – regisztráció nélkül is.</p>
+                    {can.booking
+                        ? <p>Válassz egy erőforrást, nézd meg a szabad időpontokat, és foglalj{settings.guestsCanBook ? " – regisztráció nélkül is" : ""}.</p>
+                        : <p>A foglalás jelenleg nem elérhető.</p>}
+                    {!can.booking && can.createPolls
+                        ? <p>Közös időpontot az <Link to="/egyeztetesek">Egyeztetések</Link> oldalon kereshetsz másokkal.</p>
+                        : <></>}
                 </header>
 
                 {welcome
                     ? <Alert severity="success" className="home_welcome" onClose={() => setWelcome(false)}>
                         <AlertTitle>Üdv{user && user.name ? `, ${user.name}` : ""}! Sikeres regisztráció.</AlertTitle>
                         <ul>
-                            <li>Foglaláskor kitöltjük helyetted a nevedet, e-mail címedet és telefonszámodat.</li>
-                            <li>A foglalásaidat a <Link to="/foglalasaim">Foglalásaim</Link> oldalon találod, és e-mail cím nélkül módosíthatod.</li>
-                            <li>Az <Link to="/egyeztetesek">Egyeztetések</Link> oldalon közös időpontot kereshetsz másokkal: te megadod a napokat, ők bejelölik, mikor érnek rá.</li>
+                            {can.book
+                                ? <>
+                                    <li>Foglaláskor kitöltjük helyetted a nevedet, e-mail címedet és telefonszámodat.</li>
+                                    <li>A foglalásaidat a <Link to="/foglalasaim">Foglalásaim</Link> oldalon találod, és e-mail cím nélkül módosíthatod.</li>
+                                </>
+                                : <></>}
+                            {can.createPolls
+                                ? <li>Az <Link to="/egyeztetesek">Egyeztetések</Link> oldalon közös időpontot kereshetsz másokkal: te megadod a napokat, ők bejelölik, mikor érnek rá.</li>
+                                : <></>}
+                            {(settings.bookingEnabled && !can.book) || (settings.pollsEnabled && !can.createPolls)
+                                ? <li>{settings.bookingEnabled && !can.book && settings.pollsEnabled && !can.createPolls
+                                    ? "A foglaláshoz és az egyeztetések létrehozásához"
+                                    : settings.bookingEnabled && !can.book ? "A foglaláshoz" : "Az egyeztetések létrehozásához"} egy admin
+                                    jóváhagyása kell. Addig is megnézheted a szabad időpontokat, és válaszolhatsz a neked küldött egyeztetésekre.</li>
+                                : <></>}
                         </ul>
                     </Alert>
                     : <></>}
@@ -193,7 +216,7 @@ export default function Home(props) {
                             openCalendar={() => openCalendar(item)} />
                     )}
                 </div>
-                {props.resourcesLoaded && props.resources.length === 0 ? <p className="home_empty">Még nincs foglalható erőforrás.</p> : <></>}
+                {can.booking && props.resourcesLoaded && props.resources.length === 0 ? <p className="home_empty">Még nincs foglalható erőforrás.</p> : <></>}
             </div>
 
             <FullscreenCalendar
@@ -206,10 +229,11 @@ export default function Home(props) {
                 monthNames={MONTH_NAMES}
                 shortDayNames={SHORT_DAY_NAMES}
                 isAdmin={isAdmin}
+                bookingBlocked={bookingBlocked}
                 reloadKey={calendarOpenings}
                 newBooking={newBooking}
                 setProps={setProps} />
-            <ServiceDetails serviceDetails={serviceDetails} changeReservation={changeReservation} isAdmin={isAdmin} />
+            <ServiceDetails serviceDetails={serviceDetails} changeReservation={changeReservation} isAdmin={isAdmin} canBook={!bookingBlocked} />
             <BookingDialog resource={selectedService} booking={booking} onClose={() => setBooking(null)} onSaved={bookingSaved} />
             <BookingConfirmation confirmation={confirmation} user={user} onClose={() => setConfirmation(null)} />
             <ContactDialog request={contactRequest} onClose={() => setContactRequest(null)} onAccess={openChange} />

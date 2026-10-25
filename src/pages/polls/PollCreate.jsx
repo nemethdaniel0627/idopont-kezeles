@@ -2,7 +2,7 @@ import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import {
-    Accordion, AccordionDetails, AccordionSummary, Autocomplete, Button, Checkbox, FormControlLabel, MenuItem, Step, StepLabel, Stepper,
+    Accordion, AccordionDetails, AccordionSummary, Alert, Autocomplete, Button, Checkbox, FormControlLabel, MenuItem, Step, StepLabel, Stepper,
     TextField, ToggleButton, ToggleButtonGroup
 } from "@mui/material";
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -10,6 +10,7 @@ import { DateTimeField, HuLocalizationProvider } from "../../components/HuPicker
 import AdminPage from "../../components/AdminPage";
 import DayPicker from "../../components/polls/DayPicker";
 import { errorMessage } from "../../modules/api";
+import { useSettings } from "../../auth/SettingsContext";
 import { WEEK_DAYS, describeDays, durationText, timeOptions, toMinutes } from "../../modules/pollSlots";
 
 const DEFAULT_TIME_ZONE = "Europe/Budapest";
@@ -25,6 +26,7 @@ function timeZones() {
 // A new poll in two steps, like the reference: first the days, then the name and the times
 export default function PollCreate() {
     const navigate = useNavigate();
+    const { settings, can } = useSettings();
     const [step, setStep] = useState(1);
     const [mode, setMode] = useState("dates");
     const [dates, setDates] = useState(new Set());
@@ -89,6 +91,18 @@ export default function PollCreate() {
             setSaving(false);
         }
     };
+
+    if (!can.createPolls) {
+        return (
+            <AdminPage title="Új egyeztetés" back={{ to: "/egyeztetesek", label: "Egyeztetéseim" }}>
+                <Alert severity="info">
+                    {settings.pollsEnabled
+                        ? "Egyeztetést létrehozni egy admin jóváhagyása után tudsz. A neked küldött egyeztetésekre addig is válaszolhatsz."
+                        : "Az időpont-egyeztetés jelenleg nem elérhető."}
+                </Alert>
+            </AdminPage>
+        );
+    }
 
     return (
         <AdminPage title="Új egyeztetés" back={{ to: "/egyeztetesek", label: "Egyeztetéseim" }}>

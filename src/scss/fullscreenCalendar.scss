@@ -437,6 +437,11 @@
         }
 
         // Closed hours, closed days and the past
+        // No right to book: the free times show, but are not clickable
+        &.view-only {
+            cursor: default;
+        }
+
         &.closed {
             cursor: default;
             background-color: #f3f5f6;
@@ -652,4 +657,15 @@
     .fullscreen-calendar_header_actions .fullscreen-calendar_close {
         display: none;
     }
+}
+
+// Why booking is not possible for the viewer, in place of the booking button
+.fullscreen-calendar_blocked {
+    padding: 0.8rem 1rem;
+    border-radius: 0.6rem;
+    background: rgba(255, 196, 120, 0.16);
+    border-left: 0.4rem solid #ffc478;
+    color: #fff;
+    font-size: 1.4rem;
+    line-height: 1.4;
 }
