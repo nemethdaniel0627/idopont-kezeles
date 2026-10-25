@@ -8,10 +8,12 @@ import AdminPage from "../../components/AdminPage";
 import { errorMessage } from "../../modules/api";
 import { copyText } from "../../modules/clipboard";
 import { describeDays } from "../../modules/pollSlots";
+import { useSettings } from "../../auth/SettingsContext";
 
 // The logged in user's own polls
 export default function MyPolls() {
     const [polls, setPolls] = useState(null);
+    const { settings, can } = useSettings();
     const [message, setMessage] = useState(null);
 
     useEffect(() => {
@@ -31,10 +33,16 @@ export default function MyPolls() {
 
     return (
         <AdminPage title="Egyeztetéseim"
-            actions={<Button variant="outlined" color="inherit" startIcon={<AddIcon />} component={Link} to="/egyeztetesek/uj">Új egyeztetés</Button>}>
-            <p className="admin-page_intro">
-                Hozz létre egy egyeztetést, küldd el a linkjét, és a válaszokból kiderül, mikor ér rá mindenki.
-            </p>
+            actions={can.createPolls ? <Button variant="outlined" color="inherit" startIcon={<AddIcon />} component={Link} to="/egyeztetesek/uj">Új egyeztetés</Button> : null}>
+            {can.createPolls
+                ? <p className="admin-page_intro">
+                    Hozz létre egy egyeztetést, küldd el a linkjét, és a válaszokból kiderül, mikor ér rá mindenki.
+                </p>
+                : <Alert severity="info" className="admin-page_intro">
+                    {settings.pollsEnabled
+                        ? "Egyeztetést létrehozni egy admin jóváhagyása után tudsz. A neked küldött egyeztetésekre addig is válaszolhatsz."
+                        : "Az időpont-egyeztetés jelenleg nem elérhető."}
+                </Alert>}
             {polls === null ? <></> :
                 polls.length === 0
                     ? <p className="resources-admin_empty">Még nincs egyeztetésed.</p>

@@ -7,8 +7,9 @@ import { dayHeader, slotId, toMinutes, toTime } from "../../modules/pollSlots";
 //   however fast the mouse moves; on a touch screen each tap toggles a slot. A day's header fills or clears
 //   the whole day.
 // - viewing: each slot is as blue as the share of respondents available then (`counts`, `total`);
-//   clicking one shows who is available in `onSlotFocus`.
-export default function PollGrid({ days, times, slotMinutes, editing, selected, setSelected, counts, total, focusedSlot, onSlotFocus }) {
+//   clicking one shows who is available in `onSlotFocus`. When the answers are hidden from the viewer,
+//   `ownSlots` (a Set) marks only the viewer's own answer instead.
+export default function PollGrid({ days, times, slotMinutes, editing, selected, setSelected, counts, total, ownSlots, focusedSlot, onSlotFocus }) {
     // While dragging: { day, time } indexes of the first slot, the value it got, and the selection before the drag
     const [drag, setDrag] = useState(null);
     const lastPointer = useRef("mouse");
@@ -114,12 +115,12 @@ export default function PollGrid({ days, times, slotMinutes, editing, selected, 
                     <div className="poll-grid_time" role="rowheader">{time}</div>
                     {days.map((day, dayIndex) => {
                         const slot = slotId(day, time);
-                        const isSelected = editing && selected.has(slot);
+                        const isSelected = editing ? selected.has(slot) : Boolean(ownSlots && ownSlots.has(slot));
                         const end = toTime(toMinutes(time) + slotMinutes);
                         const label = `${day} ${time}–${end}`;
                         return (
                             <div key={slot} role="gridcell" tabIndex={0} data-slot={slot}
-                                aria-label={editing ? label : `${label}: ${counts[slot] || 0}/${total}`}
+                                aria-label={editing ? label : ownSlots ? `${label}: ${isSelected ? "ráérsz" : "nem jelölted be"}` : `${label}: ${counts[slot] || 0}/${total}`}
                                 aria-selected={editing ? isSelected : slot === focusedSlot}
                                 className={`poll-grid_cell${isSelected ? " marked" : ""}${!editing && slot === focusedSlot ? " focused" : ""}`}
                                 style={cellStyle(slot)}

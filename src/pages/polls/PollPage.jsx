@@ -10,6 +10,8 @@ import InsightsIcon from '@mui/icons-material/Insights';
 import LinkIcon from '@mui/icons-material/Link';
 import LockIcon from '@mui/icons-material/Lock';
 import DeleteIcon from '@mui/icons-material/Delete';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import AdminPage from "../../components/AdminPage";
 import PollGrid from "../../components/polls/PollGrid";
 import AnswerDialog from "../../components/polls/AnswerDialog";
@@ -212,10 +214,21 @@ export default function PollPage() {
         }
     };
 
+    // Hiding the answers is done at once; showing them to everyone is asked first, since people may have
+    // answered thinking only the organizer sees it
+    const setVisibility = (visible) => visible ? setConfirm("show") : manage("hide");
+
     const manage = async (action) => {
         setConfirm(null);
         try {
-            if (action === "close") {
+            if (action === "show" || action === "hide") {
+                await axios.put(`/polls/${key}`, { answersVisible: action === "show" });
+                setMessage({
+                    severity: "success",
+                    text: action === "show" ? "Mostantól mindenki látja a válaszokat és az eredményt." : "Mostantól a résztvevők csak a saját válaszukat látják.",
+                });
+                await load();
+            } else if (action === "close") {
                 await axios.post(`/polls/${key}/close`);
                 setMessage({ severity: "success", text: "Az egyeztetést lezártuk." });
                 await load();
@@ -248,6 +261,8 @@ export default function PollPage() {
     })() : null;
 
     const common = data.results ? data.results.common : [];
+    // Answers hidden from this viewer: the grid shows only their own answer
+    const hidden = !data.answers;
 
     // Sharing is the main action; closing and deleting are kept apart in a menu
     const actions = <>
@@ -264,6 +279,10 @@ export default function PollPage() {
             </Button>
             : <></>}
         <Menu anchorEl={menuAnchor} open={menuAnchor !== null} onClose={() => setMenuAnchor(null)}>
+            <MenuItem onClick={() => { setMenuAnchor(null); setVisibility(!poll.answersVisible); }}>
+                <ListItemIcon>{poll.answersVisible ? <VisibilityOffIcon fontSize="small" /> : <VisibilityIcon fontSize="small" />}</ListItemIcon>
+                {poll.answersVisible ? "Válaszok elrejtése a résztvevők elől" : "Válaszok megmutatása mindenkinek"}
+            </MenuItem>
             {!data.closed
                 ? <MenuItem onClick={() => { setMenuAnchor(null); setConfirm("close"); }}>
                     <ListItemIcon><LockIcon fontSize="small" /></ListItemIcon>Lezárás
@@ -315,8 +334,17 @@ export default function PollPage() {
                     </div>
 
                     {data.closed ? <Alert severity="info">Ez az egyeztetés lezárult, már nem lehet válaszolni.</Alert> : <></>}
-                    {!data.answers && !editing
-                        ? <Alert severity="info">A válaszokat és az eredményt csak a szervező és az adminok látják.</Alert>
+                    {hidden && !editing
+                        ? <Alert severity="info">
+                            A többiek válaszait és az eredményt csak a szervező és az adminok látják.
+                            {own ? " Kékkel a saját válaszodat látod." : ""}
+                        </Alert>
+                        : <></>}
+                    {data.canManage && !poll.answersVisible && !editing
+                        ? <Alert severity="info">
+                            A résztvevők csak a saját válaszukat látják; a többiekét és az eredményt csak te
+                            {data.isOrganizer ? " és az adminok" : " (adminként) és a szervező"} látjátok. A Továbbiak menüben megváltoztathatod.
+                        </Alert>
                         : <></>}
 
                     {editing
@@ -344,13 +372,16 @@ export default function PollPage() {
                     <div className="poll-answers_grid">
                         <PollGrid days={data.days} times={data.times} slotMinutes={poll.slotMinutes} editing={editing}
                             selected={selected} setSelected={setSelected} counts={data.results ? data.results.counts : {}}
-                            total={total} focusedSlot={focusedSlot} onSlotFocus={slotClicked} />
+                            total={total} ownSlots={hidden ? new Set(own ? own.slots : []) : null}
+                            focusedSlot={focusedSlot} onSlotFocus={slotClicked} />
                     </div>
                     <p className="admin-section_hint poll-answers_zone">Az időpontok {poll.timeZone} időzóna szerint értendők.</p>
 
                     {!editing && focused
                         ? <p className="poll-answers_focused" role="status">
-                            <strong>{focused.label}</strong>: {total === 0
+                            <strong>{focused.label}</strong>: {hidden
+                                ? own && own.slots.includes(focusedSlot) ? "ráérsz." : own ? "ekkor nem jelölted be, hogy ráérsz." : "még nem válaszoltál."
+                                : total === 0
                                 ? "még senki sem válaszolt."
                                 : <>{focused.names.length}/{total} ráér{focused.names.length ? ` – ${focused.names.join(", ")}` : ""}</>}
                         </p>
@@ -422,16 +453,18 @@ export default function PollPage() {
             </Dialog>
 
             <Dialog open={confirm !== null} onClose={() => setConfirm(null)}>
-                <DialogTitle>{confirm === "close" ? "Egyeztetés lezárása" : "Egyeztetés törlése"}</DialogTitle>
+                <DialogTitle>{confirm === "show" ? "Válaszok megmutatása" : confirm === "close" ? "Egyeztetés lezárása" : "Egyeztetés törlése"}</DialogTitle>
                 <DialogContent>
-                    {confirm === "close"
+                    {confirm === "show"
+                        ? "Mindenki, akinél megvan a link, látni fogja, ki mikor ér rá – az eddigi válaszokat is, amelyeket rejtett válaszokkal adtak. Az elérhetőségeket továbbra is csak a szervező és az adminok látják."
+                        : confirm === "close"
                         ? "Lezárás után már senki sem válaszolhat. Az eredmény megmarad."
                         : "Az egyeztetés eltűnik, a linkje nem fog működni. Biztosan törlöd?"}
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={() => setConfirm(null)}>Mégse</Button>
                     <Button variant="contained" color={confirm === "delete" ? "error" : "primary"} onClick={() => manage(confirm)}>
-                        {confirm === "close" ? "Lezárás" : "Törlés"}
+                        {confirm === "show" ? "Megmutatom" : confirm === "close" ? "Lezárás" : "Törlés"}
                     </Button>
                 </DialogActions>
             </Dialog>

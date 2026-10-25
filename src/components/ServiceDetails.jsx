@@ -83,7 +83,7 @@ export default function ServiceDetails(props) {
 
     const direct = details && (details.mine || props.isAdmin);
     const buttons = <>
-        <Button startIcon={<EditIcon />} onClick={() => change("edit")} size={direct ? "medium" : "small"}>Módosítás</Button>
+        {props.canBook === false ? <></> : <Button startIcon={<EditIcon />} onClick={() => change("edit")} size={direct ? "medium" : "small"}>Módosítás</Button>}
         <Button color="error" startIcon={<EventBusyIcon />} onClick={() => change("cancel")} size={direct ? "medium" : "small"}>Lemondás</Button>
     </>;
 

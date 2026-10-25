@@ -20,11 +20,16 @@ import ResetPassword from "./pages/auth/ResetPassword";
 import Profile from "./pages/auth/Profile";
 import MyBookings from "./pages/MyBookings";
 import axios from "axios";
+import { useAuth } from "./auth/AuthContext";
+import { useSettings } from "./auth/SettingsContext";
 
 export default function App() {
 
   const [resources, setResources] = useState([]);
   const [resourcesLoaded, setResourcesLoaded] = useState(false);
+  const { user } = useAuth();
+  const { settings } = useSettings();
+  const isAdmin = Boolean(user && user.role === "admin");
 
   // Creates the resource, or updates it when it has an id, and returns it. Errors are left to the caller to show.
   const saveResource = async (resource) => {
@@ -48,6 +53,8 @@ export default function App() {
     return res.data.result;
   };
 
+  // Loaded again when booking is turned on or off, or an admin logs in or out: only admins see the resources
+  // while booking is off
   useEffect(() => {
     axios.get("/resources")
       .then(res => {
@@ -57,6 +64,9 @@ export default function App() {
       .catch(err => {
         console.error(err);
       })
+  }, [isAdmin, settings.bookingEnabled])
+
+  useEffect(() => {
 
 
     const checkMobileBrowser = () => {

@@ -10,6 +10,7 @@ import LoginIcon from '@mui/icons-material/Login';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import { appTheme } from "./AuthPage";
 import { useAuth } from "../auth/AuthContext";
+import { useSettings } from "../auth/SettingsContext";
 
 // "Kiss Anna" -> "KA", "anna@example.hu" -> "A"
 function initials(user) {
@@ -31,6 +32,7 @@ function NavButton({ icon, label, caption, active, className = "", ...props }) {
 
 export default function Nav() {
     const { user, logout } = useAuth();
+    const { can } = useSettings();
     const navigate = useNavigate();
     const { pathname } = useLocation();
     // The page's own button is highlighted; a poll's page belongs to "Egyeztetések"
@@ -46,11 +48,11 @@ export default function Nav() {
             <nav className="nav">
                 <div className="nav_group">
                     <NavButton component={Link} to="/" icon={<HomeIcon />} label="Főoldal" active={isActive("/")} />
-                    {user
-                        ? <>
-                            <NavButton component={Link} to="/foglalasaim" icon={<EventNoteIcon />} label="Foglalásaim" active={isActive("/foglalasaim")} />
-                            <NavButton component={Link} to="/egyeztetesek" icon={<GroupsIcon />} label="Egyeztetések" caption="Egyeztetés" active={isActive("/egyeztetes")} />
-                        </>
+                    {user && can.booking
+                        ? <NavButton component={Link} to="/foglalasaim" icon={<EventNoteIcon />} label="Foglalásaim" active={isActive("/foglalasaim")} />
+                        : <></>}
+                    {user && can.createPolls
+                        ? <NavButton component={Link} to="/egyeztetesek" icon={<GroupsIcon />} label="Egyeztetések" caption="Egyeztetés" active={isActive("/egyeztetes")} />
                         : <></>}
                     {user && user.role === "admin"
                         ? <NavButton component={Link} to="/admin" icon={<AdminPanelSettingsIcon />} label="Admin" active={isActive("/admin")} />

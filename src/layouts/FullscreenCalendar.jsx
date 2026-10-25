@@ -227,13 +227,18 @@ export default function FullscreenCalendar(props) {
                         </dl>
                         : <p>Bármikor foglalható.</p>}
                 </section>
+                {props.bookingBlocked
+                    ? <p className="fullscreen-calendar_blocked">{props.bookingBlocked}</p>
+                    : <></>}
                 <p className="fullscreen-calendar_hint-short">
-                    {view === "month" ? "Koppints egy napra a hetéért." : "Koppints egy szabad időpontra a foglaláshoz."}
+                    {view === "month" ? "Koppints egy napra a hetéért." : props.bookingBlocked ? "Koppints egy foglalásra a részleteiért." : "Koppints egy szabad időpontra a foglaláshoz."}
                 </p>
                 <p className="fullscreen-calendar_hint">
-                    {view === "month"
-                        ? "Kattints egy napra: megnyílik a hete, ahol egy szabad időpontra kattintva foglalhatsz."
-                        : "Kattints egy szabad időpontra, vagy húzd végig rajta az egeret a foglalás teljes idején. Egy foglalásra kattintva látod a részleteit."}
+                    {props.bookingBlocked
+                        ? view === "month" ? "Kattints egy napra: megnyílik a hete, az időpontokkal." : "Egy foglalásra kattintva látod a részleteit."
+                        : view === "month"
+                            ? "Kattints egy napra: megnyílik a hete, ahol egy szabad időpontra kattintva foglalhatsz."
+                            : "Kattints egy szabad időpontra, vagy húzd végig rajta az egeret a foglalás teljes idején. Egy foglalásra kattintva látod a részleteit."}
                 </p>
             </div>
             <div className="fullscreen-calendar_left-col">
@@ -282,10 +287,12 @@ export default function FullscreenCalendar(props) {
                                 <ToggleButton value="month">Hónap</ToggleButton>
                                 <ToggleButton value="week">Hét</ToggleButton>
                             </ToggleButtonGroup>
-                            <Button variant="contained" size="small" startIcon={<AddIcon />} onClick={bookShown}
-                                className="fullscreen-calendar_new-booking" aria-label="Új foglalás">
-                                <span className="fullscreen-calendar_new-booking_text">Új foglalás</span>
-                            </Button>
+                            {props.bookingBlocked
+                                ? <></>
+                                : <Button variant="contained" size="small" startIcon={<AddIcon />} onClick={bookShown}
+                                    className="fullscreen-calendar_new-booking" aria-label="Új foglalás">
+                                    <span className="fullscreen-calendar_new-booking_text">Új foglalás</span>
+                                </Button>}
                             <Tooltip title="Bezárás">
                                 <IconButton size="large" onClick={closeCalendar} className="fullscreen-calendar_close" aria-label="Bezárás">
                                     <CloseIcon />
@@ -296,7 +303,7 @@ export default function FullscreenCalendar(props) {
                 </div>
                 <div className="fullscreen-calendar_body">
                 {view === "week"
-                    ? <WeekView resource={resource} weekStart={weekStart} reloadKey={props.reloadKey} isAdmin={props.isAdmin}
+                    ? <WeekView resource={resource} weekStart={weekStart} reloadKey={props.reloadKey} isAdmin={props.isAdmin} canBook={!props.bookingBlocked}
                         onSlotClick={props.newBooking} onEventClick={openDetails} />
                     : <div className="fullscreen-calendar_days">
                         {numberOfDaysArray.map((item, index) => {

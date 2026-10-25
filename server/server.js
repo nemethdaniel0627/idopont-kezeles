@@ -9,6 +9,7 @@ const reservations = require('./reservations');
 const auth = require('./auth');
 const users = require('./users');
 const polls = require('./polls');
+const settings = require('./settings');
 const mailer = require('./mailer');
 const { AttemptLimiter } = require('./limiter');
 const { ValidationError, HttpError, toId } = require('./validation');
@@ -168,12 +169,45 @@ app.post("/auth/password-reset/confirm", async (req, res) => {
 
 const notFound = (res, message) => res.status(404).json({ error: message });
 const isAdmin = req => Boolean(req.user && req.user.role === "admin");
+
+// ----- Site-wide switches and permissions -----
+
+// Answers with the reason and returns false when the viewer may not do `what` (see settings.permissions)
+async function allowed(req, res, what) {
+  const current = await settings.get();
+  if (settings.permissions(current, req.user)[what]) return true;
+  const denied = what === "book" ? settings.bookingDenied(current, req.user)
+    : what === "createPolls" ? settings.pollCreationDenied(current)
+    : what === "polls" ? { status: 403, error: "Az időpont-egyeztetés jelenleg nem elérhető." }
+    : { status: 403, error: "A foglalás jelenleg nem elérhető." };
+  res.status(denied.status).json({ error: denied.error });
+  return false;
+}
+
+// Anyone: the app shows or hides the features by these
+app.get("/settings", async (req, res) => {
+  try {
+    res.json({ result: await settings.get() });
+  } catch (err) {
+    sendError(res, err, "Nem sikerült betölteni a beállításokat!");
+  }
+})
+
+// { bookingEnabled, pollsEnabled, guestsCanBook }, any of them
+app.put("/settings", auth.requireAdmin, async (req, res) => {
+  try {
+    res.json({ result: await settings.update(req.body) });
+  } catch (err) {
+    sendError(res, err, "Nem sikerült menteni a beállítást!");
+  }
+})
 const NO_RESOURCE = "Nincs ilyen erőforrás!";
 const NO_RESERVATION = "Nincs ilyen foglalás!";
 
 app.get("/resources", async (req, res) => {
   try {
-    res.json({ result: await resources.getAll() });
+    const current = await settings.get();
+    res.json({ result: settings.permissions(current, req.user).booking ? await resources.getAll() : [] });
   } catch (err) {
     sendError(res, err, "Nem sikerült betölteni az erőforrásokat!");
   }
@@ -212,6 +246,7 @@ app.get("/resources/:id/reservations", auth.requireAdmin, async (req, res) => {
 // Every occurrence between ?from and ?to, repeating reservations expanded
 app.get("/resources/:id/occurrences", async (req, res) => {
   try {
+    if (!await allowed(req, res, "booking")) return;
     const id = toId(req.params.id);
     if (id === null || !await resources.exists(id)) return notFound(res, NO_RESOURCE);
     res.json({ result: await reservations.occurrences(id, req.query.from, req.query.to, req.user) });
@@ -220,9 +255,10 @@ app.get("/resources/:id/occurrences", async (req, res) => {
   }
 })
 
-// Anyone can book. Admins may book outside the resource's booking rules.
+// Those allowed to book (see settings.permissions). Admins may book outside the resource's booking rules.
 app.post("/resources/:id/reservations", async (req, res) => {
   try {
+    if (!await allowed(req, res, "book")) return;
     const id = toId(req.params.id);
     const result = id === null ? null : await reservations.create(id, req.body, { isAdmin: isAdmin(req), user: req.user });
     if (result === null) return notFound(res, NO_RESOURCE);
@@ -235,6 +271,7 @@ app.post("/resources/:id/reservations", async (req, res) => {
 // The logged-in user's upcoming bookings
 app.get("/reservations/mine", auth.requireUser, async (req, res) => {
   try {
+    if (!await allowed(req, res, "booking")) return;
     res.json({ result: await reservations.listMine(req.user) });
   } catch (err) {
     sendError(res, err, "Nem sikerült betölteni a foglalásaidat!");
@@ -266,6 +303,7 @@ async function withContact(req, action) {
 
 app.post("/reservations/:id/access", async (req, res) => {
   try {
+    if (!await allowed(req, res, "booking")) return;
     const result = await withContact(req, (id, options) => reservations.access(id, options));
     if (result === null) return notFound(res, NO_RESERVATION);
     res.json({ result });
@@ -276,6 +314,7 @@ app.post("/reservations/:id/access", async (req, res) => {
 
 app.put("/reservations/:id", async (req, res) => {
   try {
+    if (!await allowed(req, res, "book")) return;
     const result = await withContact(req, (id, options) => reservations.update(id, req.body, options));
     if (result === null) return notFound(res, NO_RESERVATION);
     res.json({ result });
@@ -311,6 +350,7 @@ app.delete("/resources/:id", auth.requireAdmin, async (req, res) => {
 // Soft delete; a repeating reservation is cancelled with all its occurrences
 app.delete("/reservations/:id", async (req, res) => {
   try {
+    if (!await allowed(req, res, "booking")) return;
     const result = await withContact(req, (id, options) => reservations.remove(id, options));
     if (result === null || result === false) return notFound(res, NO_RESERVATION);
     res.json({ result });
@@ -339,6 +379,18 @@ app.put("/users/:id/role", auth.requireAdmin, async (req, res) => {
   }
 })
 
+// Allows or forbids booking and creating polls: { canBook, canPoll }, either or both
+app.put("/users/:id/permissions", auth.requireAdmin, async (req, res) => {
+  try {
+    const id = toId(req.params.id);
+    const result = id === null ? null : await users.setPermissions(id, req.body);
+    if (result === null) return notFound(res, "Nincs ilyen felhasználó!");
+    res.json({ result });
+  } catch (err) {
+    sendError(res, err, "Nem sikerült menteni a jogosultságot!");
+  }
+})
+
 // Pages of the app (e.g. /admin, /profil, the password reset link) load the app when opened directly
 // ----- Polls (common time scheduling) -----
 
@@ -347,6 +399,7 @@ const NOT_ALLOWED = "Ehhez nincs jogosultságod!";
 
 // The poll behind :key for its organizer or an admin; otherwise answers 404/403 and returns null
 async function pollToManage(req, res) {
+  if (!await allowed(req, res, "polls")) return null;
   const poll = await polls.getByKey(req.params.key);
   if (poll === null) {
     notFound(res, NO_POLL);
@@ -361,6 +414,7 @@ async function pollToManage(req, res) {
 
 app.post("/polls", auth.requireUser, async (req, res) => {
   try {
+    if (!await allowed(req, res, "createPolls")) return;
     const poll = await polls.create(req.user.id, req.body);
     res.status(201).json({ result: { publicKey: poll.publicKey } });
   } catch (err) {
@@ -370,6 +424,7 @@ app.post("/polls", auth.requireUser, async (req, res) => {
 
 app.get("/polls/mine", auth.requireUser, async (req, res) => {
   try {
+    if (!await allowed(req, res, "polls")) return;
     res.json({ result: await polls.listByOrganizer(req.user.id) });
   } catch (err) {
     sendError(res, err, "Nem sikerült betölteni az egyeztetéseket!");
@@ -387,6 +442,7 @@ app.get("/admin/polls", auth.requireAdmin, async (req, res) => {
 // Anyone with the link. What it contains depends on the viewer (see polls.view).
 app.get("/polls/:key", async (req, res) => {
   try {
+    if (!await allowed(req, res, "polls")) return;
     const poll = await polls.getByKey(req.params.key);
     if (poll === null) return notFound(res, NO_POLL);
     res.json({ result: await polls.view(poll, req.user) });
@@ -398,6 +454,7 @@ app.get("/polls/:key", async (req, res) => {
 // The answer of the private edit key; the key is sent in the body, so it stays out of logs
 app.post("/polls/:key/my-answer", async (req, res) => {
   try {
+    if (!await allowed(req, res, "polls")) return;
     const poll = await polls.getByKey(req.params.key);
     if (poll === null) return notFound(res, NO_POLL);
     const answer = await polls.answerByKey(poll, req.body.editKey);
@@ -410,6 +467,7 @@ app.post("/polls/:key/my-answer", async (req, res) => {
 
 app.put("/polls/:key/answer", async (req, res) => {
   try {
+    if (!await allowed(req, res, "polls")) return;
     const poll = await polls.getByKey(req.params.key);
     if (poll === null) return notFound(res, NO_POLL);
     res.json({ result: await polls.saveAnswer(poll, req.body, req.user) });

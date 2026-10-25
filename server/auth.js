@@ -10,7 +10,7 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_PATTERN = /^[0-9+\-()/ ]*$/;
 const UNIQUE_VIOLATION = '23505';
 
-const USER_COLUMNS = 'id, email, name, phone, role';
+const USER_COLUMNS = 'id, email, name, phone, role, "canBook", "canPoll"';
 
 // Hashed once, so checking an unknown email takes as long as a wrong password
 const dummyHash = hashPassword('nem-letezo-felhasznalo');

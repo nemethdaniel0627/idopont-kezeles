@@ -9,6 +9,7 @@ DROP TABLE IF EXISTS resources;
 DROP TABLE IF EXISTS "passwordResets";
 DROP TABLE IF EXISTS sessions;
 DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS settings;
 
 -- A registered user. The first admin is made with: npm run make-admin -- email@example.com
 CREATE TABLE users (
@@ -18,8 +19,18 @@ CREATE TABLE users (
   "name" TEXT NOT NULL DEFAULT '',
   "phone" TEXT NOT NULL DEFAULT '',
   "role" TEXT NOT NULL DEFAULT 'regular' CHECK ("role" IN ('regular', 'admin')),
+  -- May book and create polls; new users may not until an admin allows it. Admins may anyway.
+  "canBook" BOOLEAN NOT NULL DEFAULT false,
+  "canPoll" BOOLEAN NOT NULL DEFAULT false,
   "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
   PRIMARY KEY (id)
+);
+
+-- The site-wide switches (see settings.js); a missing row means the default
+CREATE TABLE settings (
+  "key" TEXT NOT NULL,
+  "value" BOOLEAN NOT NULL,
+  PRIMARY KEY ("key")
 );
 
 -- A login. The cookie holds a random token, only its SHA-256 hash is stored.

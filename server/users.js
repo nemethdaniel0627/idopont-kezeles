@@ -3,8 +3,10 @@ const { ValidationError } = require('./validation');
 
 const ROLES = ['regular', 'admin'];
 
+const COLUMNS = 'id, email, name, phone, role, "canBook", "canPoll", "createdAt"';
+
 async function getAll() {
-    return database.query(`SELECT id, email, name, phone, role, "createdAt" FROM users ORDER BY "createdAt", id`);
+    return database.query(`SELECT ${COLUMNS} FROM users ORDER BY "createdAt", id`);
 }
 
 // Makes the user an admin or a regular user. An admin cannot take their own admin right away, so there is
@@ -13,8 +15,20 @@ async function setRole(currentUserId, userId, role) {
     if (!ROLES.includes(role)) throw new ValidationError('Hibás jogosultság!');
     if (userId === currentUserId && role !== 'admin') throw new ValidationError('A saját admin jogodat nem veheted el!');
     const rows = await database.query(
-        `UPDATE users SET role = $2 WHERE id = $1 RETURNING id, email, name, phone, role, "createdAt"`, [userId, role]);
+        `UPDATE users SET role = $2 WHERE id = $1 RETURNING ${COLUMNS}`, [userId, role]);
     return rows[0] || null;
 }
 
-module.exports = { getAll, setRole };
+// Allows or forbids booking and creating polls: { canBook, canPoll }, either or both.
+// Returns null when there is no such user.
+async function setPermissions(userId, changes) {
+    const columns = ['canBook', 'canPoll'].filter(key => changes && key in changes);
+    if (columns.length === 0) throw new ValidationError('Nincs mit menteni!');
+    if (columns.some(key => typeof changes[key] !== 'boolean')) throw new ValidationError('Hibás jogosultság!');
+    const rows = await database.query(
+        `UPDATE users SET ${columns.map((key, i) => `"${key}" = $${i + 2}`).join(', ')} WHERE id = $1 RETURNING ${COLUMNS}`,
+        [userId, ...columns.map(key => changes[key])]);
+    return rows[0] || null;
+}
+
+module.exports = { getAll, setRole, setPermissions };

@@ -60,6 +60,7 @@
 }
 
 .admin-tile {
+    position: relative;
     display: flex;
     flex-direction: column;
     background: #fff;
@@ -71,9 +72,68 @@
     transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
 
     &:hover,
-    &:focus-visible {
+    &:focus-within {
         transform: translateY(-0.4rem);
         box-shadow: 0 1.2rem 2.4rem rgba(0, 0, 0, 0.45);
+    }
+
+    // The title link covers the whole tile, so the tile opens wherever it is clicked
+    &_link {
+        color: inherit;
+        text-decoration: none;
+
+        &::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+        }
+
+        &:focus-visible {
+            outline: none;
+        }
+    }
+
+    &:has(.admin-tile_link:focus-visible) {
+        outline: 3px solid var(--calendar-blue);
+        outline-offset: 2px;
+    }
+
+    &_title-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+
+        h2 {
+            margin-bottom: 0;
+        }
+    }
+
+    // Above the link, so switching never opens the page
+    &_switch.MuiFormControlLabel-root {
+        position: relative;
+        z-index: 1;
+        flex-shrink: 0;
+        margin: 0 -0.8rem 0 0;
+
+        .MuiFormControlLabel-label {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: var(--calendar-dark);
+        }
+    }
+
+    &_off {
+        margin-top: 0.8rem;
+        font-size: 1.4rem;
+        font-weight: bold;
+        color: #a33a1c !important;
+    }
+
+    // Turned off: the picture fades, so it shows at a glance
+    &.off img {
+        filter: grayscale(1);
+        opacity: 0.5;
     }
 
     img {
@@ -90,6 +150,10 @@
         h2 {
             font-size: 2.2rem;
             margin-bottom: 0.4rem;
+        }
+
+        p {
+            margin-top: 0.4rem;
         }
 
         p {
@@ -302,10 +366,33 @@
         font-size: 1.5rem;
     }
 
-    // On phones only name, email and the switch fit
+    // The guests row: the site-wide switch, set apart from the people
+    .users-table_guests .MuiTableCell-root {
+        background: #f3f6fb;
+    }
+
+    .users-table_sub {
+        display: block;
+        font-size: 1.3rem;
+        color: #666;
+
+        &.phone-only {
+            display: none;
+        }
+    }
+
+    // On phones only the name (with the email under it) and the switches fit
     @media only screen and (max-width: 600px) {
         .users-table_optional {
             display: none;
+        }
+
+        .users-table_sub.phone-only {
+            display: block;
+        }
+
+        .MuiTableHead-root .MuiTableCell-root {
+            font-size: 1.2rem;
         }
 
         .MuiTableCell-root {
@@ -385,4 +472,8 @@
     .resources-admin.has-detail .resources-admin_list {
         display: none;
     }
+}
+
+.users-admin_off {
+    margin-bottom: 1.6rem;
 }

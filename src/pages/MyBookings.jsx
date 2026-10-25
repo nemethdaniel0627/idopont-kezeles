@@ -9,12 +9,15 @@ import AdminPage from "../components/AdminPage";
 import BookingDialog from "../components/booking/BookingDialog";
 import CancelDialog from "../components/booking/CancelDialog";
 import { errorMessage } from "../modules/api";
+import { useSettings } from "../auth/SettingsContext";
 import { describeReservation, describeTime } from "../modules/reservationText";
 
 // The logged in user's upcoming bookings: made while logged in, or with the account's email.
 // They are changed or cancelled here without giving the email again.
 export default function MyBookings({ resources }) {
     const [bookings, setBookings] = useState(null);
+    // Without the right to book, bookings can only be cancelled
+    const { can } = useSettings();
     const [editing, setEditing] = useState(null);
     const [cancelRequest, setCancelRequest] = useState(null);
     const [message, setMessage] = useState(null);
@@ -67,7 +70,7 @@ export default function MyBookings({ resources }) {
                                         {repeating ? <Chip size="small" label={describeReservation(booking).split(", ").slice(1).join(", ")} /> : <></>}
                                     </div>
                                     <div className="my-bookings_actions">
-                                        <Button startIcon={<EditIcon />} onClick={() => setEditing(booking)}>Módosítás</Button>
+                                        {can.book ? <Button startIcon={<EditIcon />} onClick={() => setEditing(booking)}>Módosítás</Button> : <></>}
                                         <Button color="error" startIcon={<EventBusyIcon />} onClick={() => setCancelRequest({ reservation: booking, contact: "" })}>
                                             Lemondás
                                         </Button>
