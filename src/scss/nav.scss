@@ -9,11 +9,77 @@ nav {
     flex-wrap: wrap;
     gap: 0.8rem;
     padding: 0.8rem 1.6rem;
+    box-shadow: 0 0.2rem 0.8rem rgba(0, 0, 0, 0.25);
 
     .nav_group {
         display: flex;
         align-items: center;
         flex-wrap: wrap;
         gap: 0.4rem;
+    }
+
+    .nav_link {
+        border-radius: 0.8rem;
+        padding: 0.6rem 1.2rem;
+        transition: background-color 0.2s;
+
+        &:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        // The page you are on: lighter, with the page's light blue under it
+        &.active {
+            background-color: rgba(255, 255, 255, 0.16);
+            box-shadow: inset 0 -0.3rem 0 var(--calendar-light);
+        }
+
+        // The icons only, not the avatar's letters
+        .MuiButton-startIcon > svg {
+            font-size: 2.2rem;
+        }
+
+        // MUI sizes whatever is first in the icon slot; the avatar's letters stay small, with room around them
+        .MuiButton-startIcon > .nav_avatar {
+            font-size: 1.3rem;
+        }
+    }
+
+    .nav_profile {
+        text-transform: none;
+        max-width: 26rem;
+
+        .nav_label {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+    }
+
+    .nav_avatar {
+        width: 3.2rem;
+        height: 3.2rem;
+        letter-spacing: 0.05em;
+        font-weight: bold;
+        background-color: var(--calendar-blue);
+        color: #fff;
+    }
+
+    // Phones: icons only, so the bar stays one row
+    @media only screen and (max-width: 600px) {
+        flex-wrap: nowrap;
+        padding: 0.8rem;
+
+        .nav_link {
+            min-width: 0;
+            padding: 0.8rem;
+
+            .MuiButton-startIcon {
+                margin: 0;
+            }
+        }
+
+        .nav_label {
+            display: none;
+        }
     }
 }

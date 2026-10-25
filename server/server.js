@@ -8,6 +8,7 @@ const resources = require('./resources');
 const reservations = require('./reservations');
 const auth = require('./auth');
 const users = require('./users');
+const polls = require('./polls');
 const mailer = require('./mailer');
 const { AttemptLimiter } = require('./limiter');
 const { ValidationError, HttpError, toId } = require('./validation');
@@ -17,6 +18,28 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 const buildPath = path.join(__dirname, '..', 'build');
+
+// Earlier builds installed a caching service worker, so a normal reload showed an old build. Browsers check
+// this file for updates on every visit: this one empties the caches, removes itself and reloads the open
+// pages, which then load the current build. It is never cached itself.
+const SERVICE_WORKER_REMOVAL = `
+self.addEventListener('install', () => self.skipWaiting());
+self.addEventListener('activate', event => {
+  event.waitUntil((async () => {
+    await self.clients.claim();
+    const keys = await caches.keys();
+    await Promise.all(keys.map(key => caches.delete(key)));
+    await self.registration.unregister();
+    const pages = await self.clients.matchAll({ type: 'window' });
+    pages.forEach(page => page.navigate(page.url));
+  })());
+});
+`;
+app.get("/service-worker.js", (req, res) => {
+  res.set("Cache-Control", "no-store");
+  res.type("application/javascript").send(SERVICE_WORKER_REMOVAL);
+})
+
 app.use(express.static(buildPath));
 app.use(express.json());
 app.use(cors());
@@ -304,6 +327,114 @@ app.put("/users/:id/role", auth.requireAdmin, async (req, res) => {
 })
 
 // Pages of the app (e.g. /admin, /profil, the password reset link) load the app when opened directly
+// ----- Polls (common time scheduling) -----
+
+const NO_POLL = "Nincs ilyen egyeztetés!";
+const NOT_ALLOWED = "Ehhez nincs jogosultságod!";
+
+// The poll behind :key for its organizer or an admin; otherwise answers 404/403 and returns null
+async function pollToManage(req, res) {
+  const poll = await polls.getByKey(req.params.key);
+  if (poll === null) {
+    notFound(res, NO_POLL);
+    return null;
+  }
+  if (!polls.canManage(poll, req.user)) {
+    res.status(req.user ? 403 : 401).json({ error: req.user ? NOT_ALLOWED : "Ehhez be kell jelentkezned!" });
+    return null;
+  }
+  return poll;
+}
+
+app.post("/polls", auth.requireUser, async (req, res) => {
+  try {
+    const poll = await polls.create(req.user.id, req.body);
+    res.status(201).json({ result: { publicKey: poll.publicKey } });
+  } catch (err) {
+    sendError(res, err, "Nem sikerült létrehozni az egyeztetést!");
+  }
+})
+
+app.get("/polls/mine", auth.requireUser, async (req, res) => {
+  try {
+    res.json({ result: await polls.listByOrganizer(req.user.id) });
+  } catch (err) {
+    sendError(res, err, "Nem sikerült betölteni az egyeztetéseket!");
+  }
+})
+
+app.get("/admin/polls", auth.requireAdmin, async (req, res) => {
+  try {
+    res.json({ result: await polls.listAll() });
+  } catch (err) {
+    sendError(res, err, "Nem sikerült betölteni az egyeztetéseket!");
+  }
+})
+
+// Anyone with the link. What it contains depends on the viewer (see polls.view).
+app.get("/polls/:key", async (req, res) => {
+  try {
+    const poll = await polls.getByKey(req.params.key);
+    if (poll === null) return notFound(res, NO_POLL);
+    res.json({ result: await polls.view(poll, req.user) });
+  } catch (err) {
+    sendError(res, err, "Nem sikerült betölteni az egyeztetést!");
+  }
+})
+
+// The answer of the private edit key; the key is sent in the body, so it stays out of logs
+app.post("/polls/:key/my-answer", async (req, res) => {
+  try {
+    const poll = await polls.getByKey(req.params.key);
+    if (poll === null) return notFound(res, NO_POLL);
+    const answer = await polls.answerByKey(poll, req.body.editKey);
+    if (answer === null) return notFound(res, "Nincs ilyen válasz!");
+    res.json({ result: answer });
+  } catch (err) {
+    sendError(res, err, "Nem sikerült betölteni a választ!");
+  }
+})
+
+app.put("/polls/:key/answer", async (req, res) => {
+  try {
+    const poll = await polls.getByKey(req.params.key);
+    if (poll === null) return notFound(res, NO_POLL);
+    res.json({ result: await polls.saveAnswer(poll, req.body, req.user) });
+  } catch (err) {
+    sendError(res, err, "Nem sikerült menteni a választ!");
+  }
+})
+
+app.put("/polls/:key", async (req, res) => {
+  try {
+    const poll = await pollToManage(req, res);
+    if (poll !== null) res.json({ result: await polls.update(poll, req.body) });
+  } catch (err) {
+    sendError(res, err, "Nem sikerült menteni az egyeztetést!");
+  }
+})
+
+app.post("/polls/:key/close", async (req, res) => {
+  try {
+    const poll = await pollToManage(req, res);
+    if (poll !== null) res.json({ result: await polls.close(poll) });
+  } catch (err) {
+    sendError(res, err, "Nem sikerült lezárni az egyeztetést!");
+  }
+})
+
+// Soft delete
+app.delete("/polls/:key", async (req, res) => {
+  try {
+    const poll = await pollToManage(req, res);
+    if (poll === null) return;
+    await polls.remove(poll);
+    res.json({ result: true });
+  } catch (err) {
+    sendError(res, err, "Nem sikerült törölni az egyeztetést!");
+  }
+})
+
 app.get("*", (req, res, next) => {
   if (!req.accepts("html")) return next();
   res.sendFile(path.join(buildPath, "index.html"));

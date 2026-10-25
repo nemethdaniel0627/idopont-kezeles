@@ -4,6 +4,11 @@ import "./scss/styles.scss";
 import { Routes, Route } from 'react-router-dom';
 import Nav from "./components/Nav"
 import AdminRoute from "./auth/AdminRoute";
+import UserRoute from "./auth/UserRoute";
+import MyPolls from "./pages/polls/MyPolls";
+import PollCreate from "./pages/polls/PollCreate";
+import PollPage from "./pages/polls/PollPage";
+import PollOverview from "./pages/polls/PollOverview";
 import AdminHome from "./pages/admin/AdminHome";
 import ResourcesAdmin from "./pages/admin/ResourcesAdmin";
 import UsersAdmin from "./pages/admin/UsersAdmin";
@@ -82,6 +87,10 @@ export default function App() {
         <Route path="/elfelejtett-jelszo" element={<ForgotPassword />} />
         <Route path="/jelszo-visszaallitas" element={<ResetPassword />} />
         <Route path="/profil" element={<Profile />} />
+        <Route path="/egyeztetesek" element={<UserRoute><MyPolls /></UserRoute>} />
+        <Route path="/egyeztetesek/uj" element={<UserRoute><PollCreate /></UserRoute>} />
+        <Route path="/egyeztetes/:key" element={<PollPage />} />
+        <Route path="/egyeztetes/:key/attekintes" element={<PollOverview />} />
       </Routes>
     </>
   );

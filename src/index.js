@@ -2,7 +2,6 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import App from './App.jsx';
 import { BrowserRouter as Router } from 'react-router-dom';
-import registerServiceWorker from './registerServiceWorker';
 import { AuthProvider } from './auth/AuthContext';
 
 
@@ -15,4 +14,3 @@ ReactDOM.render(
   document.getElementById('root')
 );
 
-registerServiceWorker();

@@ -1,0 +1,352 @@
+// The poll pages: creating, answering, the overview, my polls
+// The page's blue (--calendar-blue) and its light tints
+$available: #39a2db;
+$available-pale: #e8f4fb;
+$available-hover: #cde7f6;
+
+.poll-page {
+    display: flex;
+    flex-direction: column;
+    gap: 2.4rem;
+}
+
+.poll-info {
+    gap: 1.2rem;
+
+    &_status {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1.2rem;
+        color: #555;
+    }
+
+    &_description {
+        white-space: pre-line;
+    }
+
+    &_settings {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(18rem, 100%), 1fr));
+        gap: 1.2rem 2.4rem;
+
+        dt {
+            font-size: 1.3rem;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        dd {
+            margin: 0;
+            word-break: break-word;
+        }
+    }
+}
+
+.poll-answers {
+    &_header {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1.2rem;
+
+        .MuiButton-root {
+            margin-left: auto;
+        }
+    }
+
+    &_count {
+        color: #666;
+    }
+
+    &_editing {
+        padding: 1.2rem 1.6rem;
+        border-radius: 0.8rem;
+        background: $available-pale;
+        display: flex;
+        flex-direction: column;
+        gap: 0.8rem;
+
+        .admin-section_hint {
+            margin-top: 0;
+        }
+    }
+
+    &_editing-actions {
+        display: flex;
+        justify-content: flex-end;
+        flex-wrap: wrap;
+        gap: 0.8rem;
+    }
+
+    // Many days scroll sideways, the times stay in place
+    &_grid {
+        overflow-x: auto;
+        padding-bottom: 0.4rem;
+    }
+
+    &_zone {
+        margin-top: -0.8rem;
+    }
+
+    &_focused {
+        padding: 0.8rem 1.2rem;
+        border-left: 4px solid $available;
+        background: $available-pale;
+    }
+
+    &_own {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.8rem;
+        padding-top: 1.2rem;
+        border-top: 1px solid #e3e8f2;
+    }
+
+    &_link {
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+        width: 100%;
+    }
+}
+
+.poll-grid {
+    display: grid;
+    width: max-content;
+    min-width: 100%;
+    user-select: none;
+    -webkit-user-select: none;
+    font-size: 1.3rem;
+
+    &_corner,
+    &_time {
+        position: sticky;
+        left: 0;
+        z-index: 1;
+        background: #fff;
+    }
+
+    &_time {
+        padding-right: 0.8rem;
+        text-align: right;
+        color: #555;
+        // The time is at the top edge of its slot
+        transform: translateY(-0.7em);
+    }
+
+    &_day {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 0.4rem 0.2rem 0.8rem;
+        border: none;
+        background: none;
+        font: inherit;
+        color: var(--calendar-dark);
+
+        &:not(:disabled) {
+            cursor: pointer;
+            border-radius: 0.6rem;
+
+            &:hover {
+                background: $available-pale;
+            }
+        }
+    }
+
+    &_day-top {
+        font-weight: bold;
+        text-transform: capitalize;
+    }
+
+    &_day-bottom {
+        color: #666;
+    }
+
+    &_cell {
+        height: 2.6rem;
+        border-left: 1px solid #d8dee9;
+        border-top: 1px solid #d8dee9;
+        cursor: pointer;
+
+        &:focus-visible {
+            outline: 2px solid var(--calendar-dark);
+            outline-offset: -2px;
+        }
+
+        &.focused {
+            outline: 2px solid var(--calendar-dark);
+            outline-offset: -2px;
+        }
+    }
+
+    &_editing &_cell:hover {
+        background-color: $available-hover;
+    }
+
+    &_editing &_cell.marked {
+        background-color: $available;
+    }
+}
+
+.poll-create {
+    &_week-days {
+        flex-wrap: wrap;
+    }
+
+    &_count {
+        margin-top: 0;
+    }
+
+    &_actions {
+        gap: 1rem;
+    }
+}
+
+.day-picker {
+    max-width: 42rem;
+
+    &_header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    &_month {
+        font-size: 1.8rem;
+        font-weight: bold;
+        color: var(--calendar-dark);
+    }
+
+    &_grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 0.4rem;
+        justify-items: center;
+    }
+
+    &_weekday {
+        font-size: 1.3rem;
+        color: #666;
+        padding: 0.4rem 0;
+    }
+
+    &_day {
+        width: 4.2rem;
+        height: 4.2rem;
+        border-radius: 50%;
+        border: 1px solid transparent;
+        background: none;
+        font: inherit;
+        cursor: pointer;
+
+        &:hover:not(:disabled) {
+            background: $available-pale;
+        }
+
+        &.today {
+            border-color: #9aa5b1;
+        }
+
+        &.marked {
+            background: $available;
+            color: #fff;
+        }
+
+        &:disabled {
+            color: #bbb;
+            cursor: default;
+        }
+    }
+}
+
+.poll-overview {
+    &_days {
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+
+        li {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.8rem 1.6rem;
+        }
+
+        strong {
+            min-width: 14rem;
+            text-transform: capitalize;
+        }
+    }
+
+    &_ranges {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.6rem;
+
+        .MuiChip-root {
+            background-color: $available;
+            color: #fff;
+        }
+    }
+
+    &_people {
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+
+        li {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem 1.2rem;
+            padding: 0.8rem 0;
+            border-bottom: 1px solid #e3e8f2;
+        }
+
+        span {
+            color: #666;
+        }
+    }
+
+    &_contact {
+        word-break: break-word;
+    }
+}
+
+.my-polls {
+    background: #fff;
+    border: 1px solid #e3e8f2;
+    border-radius: 1.2rem;
+
+    &_item {
+        gap: 0.4rem;
+        padding-right: 1.2rem;
+
+        .MuiListItemButton-root {
+            gap: 1rem;
+            border-radius: 1.2rem;
+        }
+
+        .MuiListItemText-root {
+            min-width: 0;
+            word-break: break-word;
+        }
+
+        .MuiChip-root {
+            flex-shrink: 0;
+        }
+    }
+
+    &_link {
+        flex-shrink: 0;
+    }
+}
+
+.polls-admin_actions {
+    white-space: nowrap;
+}
