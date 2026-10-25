@@ -11,6 +11,7 @@ import { useSettings } from "../../auth/SettingsContext";
 import { errorMessage } from "../../modules/api";
 
 const RIGHTS = { canBook: "foglalhat", canPoll: "egyeztetést hozhat létre" };
+const NEW_USERS_RIGHTS = { canBook: "foglalhatnak", canPoll: "egyeztetést hozhatnak létre" };
 
 // Admins grant or take away the rights to book, to create polls and admin rights here.
 // Guests (not logged in) have their own booking switch in the first row.
@@ -70,6 +71,28 @@ export default function UsersAdmin() {
         }
     };
 
+    // The rights a newly registered user starts with; the users already registered keep theirs
+    const toggleNewUsers = async (key, right) => {
+        const value = !settings[key];
+        try {
+            await saveSettings({ [key]: value });
+            setMessage({
+                severity: "success",
+                text: `Az új regisztrálók mostantól ${value ? "" : "nem "}${NEW_USERS_RIGHTS[right]}. A meglévő felhasználók jogai nem változtak.`,
+            });
+        } catch (err) {
+            setMessage({ severity: "error", text: errorMessage(err, "Nem sikerült menteni a beállítást!") });
+        }
+    };
+
+    // In the column's header: the column's right for new users
+    const newUsersSwitch = (key, right, label) =>
+        <label className="users-table_new-users" title="Ezzel a joggal indulnak az újonnan regisztrálók">
+            <Switch size="small" checked={Boolean(settings[key])} onChange={() => toggleNewUsers(key, right)}
+                inputProps={{ "aria-label": `Új regisztrálók ${label}` }} />
+            <span className="label-long">új regisztrálóknak</span><span className="label-short">újaknak</span>
+        </label>;
+
     // Admins may do everything: a switch that is on and can't be changed
     const rightCell = (user, right, label) => user.role === "admin"
         ? <Switch checked disabled title="Az adminok mindig" inputProps={{ "aria-label": `${user.name || user.email} ${label} (admin, mindig)` }} />
@@ -80,8 +103,8 @@ export default function UsersAdmin() {
         <AdminPage title="Felhasználók és jogosultságok" back={{ to: "/admin", label: "Adminisztráció" }}>
             <p className="admin-page_intro">
                 <strong>Foglalás</strong>: foglalhat az erőforrásokra. <strong>Egyeztetés</strong>: létrehozhat időpont-egyeztetést
-                (válaszolni linkkel bárki tud). Az új felhasználók egyiket sem tehetik, amíg itt meg nem adod.
-                Az adminok mindent kezelhetnek.
+                (válaszolni linkkel bárki tud). Az oszlopok fejlécében állíthatod be, melyik joggal indulnak az új regisztrálók;
+                utána itt, egyenként módosíthatod. Az adminok mindent kezelhetnek.
             </p>
             {!settings.bookingEnabled || !settings.pollsEnabled
                 ? <Alert severity="info" className="users-admin_off">
@@ -99,8 +122,14 @@ export default function UsersAdmin() {
                                 <TableCell className="users-table_optional">E-mail</TableCell>
                                 <TableCell className="users-table_optional">Telefon</TableCell>
                                 <TableCell className="users-table_optional">Regisztrált</TableCell>
-                                <TableCell align="center">Foglalás</TableCell>
-                                <TableCell align="center">Egyeztetés</TableCell>
+                                <TableCell align="center">
+                                    Foglalás
+                                    {newUsersSwitch("newUsersCanBook", "canBook", "foglalhatnak")}
+                                </TableCell>
+                                <TableCell align="center">
+                                    Egyeztetés
+                                    {newUsersSwitch("newUsersCanPoll", "canPoll", "egyeztetést hozhatnak létre")}
+                                </TableCell>
                                 <TableCell align="center">Admin</TableCell>
                             </TableRow>
                         </TableHead>
