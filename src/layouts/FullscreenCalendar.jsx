@@ -205,7 +205,13 @@ export default function FullscreenCalendar(props) {
     return (
         <div className="fullscreen-calendar hidden" role="dialog" aria-label={`${resource.title || ""} naptára`}>
             <div className="fullscreen-calendar_right-col">
-                <h2 className="fullscreen-calendar_resource-title">{resource.title}</h2>
+                <div className="fullscreen-calendar_title-row">
+                    <h2 className="fullscreen-calendar_resource-title">{resource.title}</h2>
+                    {/* Phones: the close button sits in the panel's corner, where people look for it */}
+                    <IconButton onClick={closeCalendar} className="fullscreen-calendar_close-top" aria-label="Bezárás">
+                        <CloseIcon />
+                    </IconButton>
+                </div>
                 {resource.customFields && resource.customFields.length !== 0
                     ? <ul className="fullscreen-calendar_resource-fields">
                         {resource.customFields.map((field, index) =>
