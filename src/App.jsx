@@ -18,6 +18,7 @@ import Register from "./pages/auth/Register";
 import ForgotPassword from "./pages/auth/ForgotPassword";
 import ResetPassword from "./pages/auth/ResetPassword";
 import Profile from "./pages/auth/Profile";
+import MyBookings from "./pages/MyBookings";
 import axios from "axios";
 
 export default function App() {
@@ -67,8 +68,11 @@ export default function App() {
     };
 
     if (checkMobileBrowser()) {
-      let vh = window.innerHeight * 0.01;
-      document.documentElement.style.setProperty("--mobileBrowserBar", `${vh}px`);
+      // Measured again on every resize (rotating the phone, the browser bar showing or hiding)
+      const setBrowserBar = () => document.documentElement.style.setProperty("--mobileBrowserBar", `${window.innerHeight * 0.01}px`);
+      setBrowserBar();
+      window.addEventListener("resize", setBrowserBar);
+      return () => window.removeEventListener("resize", setBrowserBar);
     }
   }, [])
 
@@ -76,7 +80,7 @@ export default function App() {
     <>
       <Nav />
       <Routes>
-        <Route path="/" element={<Home resources={resources} />} />
+        <Route path="/" element={<Home resources={resources} resourcesLoaded={resourcesLoaded} />} />
         <Route path="/admin" element={<AdminRoute><AdminHome /></AdminRoute>} />
         <Route path="/admin/eroforrasok" element={<AdminRoute><ResourcesAdmin resources={resources} resourcesLoaded={resourcesLoaded} saveResource={saveResource} removeResource={removeResource} /></AdminRoute>} />
         <Route path="/admin/eroforrasok/:id" element={<AdminRoute><ResourcesAdmin resources={resources} resourcesLoaded={resourcesLoaded} saveResource={saveResource} removeResource={removeResource} /></AdminRoute>} />
@@ -87,6 +91,7 @@ export default function App() {
         <Route path="/elfelejtett-jelszo" element={<ForgotPassword />} />
         <Route path="/jelszo-visszaallitas" element={<ResetPassword />} />
         <Route path="/profil" element={<Profile />} />
+        <Route path="/foglalasaim" element={<UserRoute><MyBookings resources={resources} /></UserRoute>} />
         <Route path="/egyeztetesek" element={<UserRoute><MyPolls /></UserRoute>} />
         <Route path="/egyeztetesek/uj" element={<UserRoute><PollCreate /></UserRoute>} />
         <Route path="/egyeztetes/:key" element={<PollPage />} />

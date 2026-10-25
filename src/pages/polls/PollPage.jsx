@@ -2,8 +2,9 @@ import React, { useCallback, useEffect, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import {
-    Alert, Button, Chip, Dialog, DialogActions, DialogContent, DialogTitle, Snackbar, TextField
+    Alert, AlertTitle, Button, Chip, Dialog, DialogActions, DialogContent, DialogTitle, ListItemIcon, Menu, MenuItem, Snackbar, TextField
 } from "@mui/material";
+import MoreVertIcon from '@mui/icons-material/MoreVert';
 import EventAvailableIcon from '@mui/icons-material/EventAvailable';
 import InsightsIcon from '@mui/icons-material/Insights';
 import LinkIcon from '@mui/icons-material/Link';
@@ -14,8 +15,9 @@ import PollGrid from "../../components/polls/PollGrid";
 import AnswerDialog from "../../components/polls/AnswerDialog";
 import { useAuth } from "../../auth/AuthContext";
 import { errorMessage } from "../../modules/api";
+import { copyText } from "../../modules/clipboard";
 import Calendar from "../../modules/Calendar";
-import { describeDays, dayLabel, durationText, toMinutes, toTime } from "../../modules/pollSlots";
+import { describeDays, dayLabel, durationText, rangeText, toMinutes, toTime } from "../../modules/pollSlots";
 import { privateLink, remember, remembered } from "../../modules/pollStorage";
 
 const nameKey = name => name.trim().replace(/\s+/g, " ").toLowerCase();
@@ -66,10 +68,19 @@ export default function PollPage() {
     const [newLink, setNewLink] = useState(false);
     const [confirm, setConfirm] = useState(null);
     const [message, setMessage] = useState(null);
+    // Right after creating: the link to send is shown at the top
+    const [created, setCreated] = useState(Boolean(location.state && location.state.created));
+    // The slot clicked before answering, marked once the name is given
+    const [pendingSlot, setPendingSlot] = useState(null);
+    const [confirmEmpty, setConfirmEmpty] = useState(false);
+    const [linkDialog, setLinkDialog] = useState(false);
+    const [menuAnchor, setMenuAnchor] = useState(null);
 
-    // The key leaves the address bar once it is remembered
+    // The key leaves the address bar once it is remembered; "created" is shown once
     useEffect(() => {
-        if (new URLSearchParams(location.search).has("valasz")) navigate(location.pathname, { replace: true });
+        if (new URLSearchParams(location.search).has("valasz") || (location.state && location.state.created)) {
+            navigate(location.pathname, { replace: true, state: null });
+        }
     }, [location, navigate]);
 
     const editKey = stored ? stored.editKey : undefined;
@@ -123,7 +134,18 @@ export default function PollPage() {
         setDialogOpen(false);
         const earlier = data.answers ? data.answers.find(answer => nameKey(answer.name) === nameKey(values.name)) : undefined;
         if (earlier) setMessage({ severity: "info", text: `Már van válasz ${earlier.name} névvel, most azt módosítod.` });
-        startEditing(values, earlier ? earlier.slots : []);
+        startEditing(values, earlier ? earlier.slots : pendingSlot ? [pendingSlot] : []);
+        setPendingSlot(null);
+    };
+
+    // Clicking the grid before answering starts answering, with that slot marked; otherwise it shows who is free then
+    const slotClicked = (slot) => {
+        if (slot !== null && !data.closed && !own && !editing) {
+            setPendingSlot(slot);
+            setDialogOpen(true);
+            return;
+        }
+        setFocusedSlot(slot);
     };
 
     // While editing the dialog only changes the name and contacts
@@ -142,7 +164,13 @@ export default function PollPage() {
         setDialogOpen(true);
     };
 
-    const save = async () => {
+    // An answer with no slot means "never available", which leaves no common time for anyone: asked first
+    const save = async (emptyConfirmed = false) => {
+        if (selected.size === 0 && !emptyConfirmed) {
+            setConfirmEmpty(true);
+            return;
+        }
+        setConfirmEmpty(false);
         setSaving(true);
         setSaveError("");
         try {
@@ -152,6 +180,8 @@ export default function PollPage() {
             remember(key, next);
             setStored(next);
             setNewLink(Boolean(newKey));
+            // The private link can't be missed: it opens in front
+            if (newKey) setLinkDialog(true);
             setOwn(answer);
             setEditing(false);
             setMessage({ severity: "success", text: "A válaszodat elmentettük." });
@@ -162,9 +192,20 @@ export default function PollPage() {
         setSaving(false);
     };
 
+    // The phone's share sheet when the browser has one (most phones), copying the link otherwise
+    const canShare = typeof navigator.share === "function";
+    const share = async (text, title) => {
+        if (!canShare) return copy(text, "A linket a vágólapra másoltuk.");
+        try {
+            await navigator.share({ title, url: text });
+        } catch (err) {
+            // Closing the share sheet is not an error
+        }
+    };
+
     const copy = async (text, done) => {
         try {
-            await navigator.clipboard.writeText(text);
+            await copyText(text);
             setMessage({ severity: "success", text: done });
         } catch (err) {
             setMessage({ severity: "warning", text: "Nem sikerült a vágólapra másolni; jelöld ki és másold ki kézzel." });
@@ -206,25 +247,61 @@ export default function PollPage() {
         return { label: `${dayLabel(day)} ${time}–${toTime(toMinutes(time) + poll.slotMinutes)}`, names };
     })() : null;
 
+    const common = data.results ? data.results.common : [];
+
+    // Sharing is the main action; closing and deleting are kept apart in a menu
     const actions = <>
         <Button variant="outlined" color="inherit" startIcon={<InsightsIcon />} component={Link} to={`/egyeztetes/${key}/attekintes`}>
             Áttekintés
         </Button>
-        <Button variant="outlined" color="inherit" startIcon={<LinkIcon />} onClick={() => copy(pollLink, "A linket a vágólapra másoltuk.")}>
-            Link másolása
+        <Button variant="contained" startIcon={<LinkIcon />} onClick={() => share(pollLink, poll.title)}>
+            {canShare ? "Megosztás" : "Link másolása"}
         </Button>
-        {data.canManage && !data.closed
-            ? <Button variant="outlined" color="inherit" startIcon={<LockIcon />} onClick={() => setConfirm("close")}>Lezárás</Button>
-            : <></>}
         {data.canManage
-            ? <Button variant="outlined" color="inherit" startIcon={<DeleteIcon />} onClick={() => setConfirm("delete")}>Törlés</Button>
+            ? <Button variant="outlined" color="inherit" endIcon={<MoreVertIcon />} onClick={event => setMenuAnchor(event.currentTarget)}
+                aria-haspopup="menu" aria-expanded={menuAnchor !== null}>
+                Továbbiak
+            </Button>
             : <></>}
+        <Menu anchorEl={menuAnchor} open={menuAnchor !== null} onClose={() => setMenuAnchor(null)}>
+            {!data.closed
+                ? <MenuItem onClick={() => { setMenuAnchor(null); setConfirm("close"); }}>
+                    <ListItemIcon><LockIcon fontSize="small" /></ListItemIcon>Lezárás
+                </MenuItem>
+                : null}
+            <MenuItem onClick={() => { setMenuAnchor(null); setConfirm("delete"); }} className="poll-menu_danger">
+                <ListItemIcon><DeleteIcon fontSize="small" color="error" /></ListItemIcon>Törlés
+            </MenuItem>
+        </Menu>
     </>;
 
     return (
         <AdminPage title={poll.title} back={user ? { to: "/egyeztetesek", label: "Egyeztetéseim" } : undefined} actions={actions}>
             <div className="poll-page">
+                {created
+                    ? <Alert severity="success" onClose={() => setCreated(false)} className="poll-created">
+                        <AlertTitle>Kész az egyeztetés!</AlertTitle>
+                        <p>Küldd el ezt a linket a résztvevőknek. Belépés nélkül megnyithatják, és bejelölhetik, mikor érnek rá.</p>
+                        <div className="poll-answers_link">
+                            <TextField size="small" fullWidth value={pollLink} InputProps={{ readOnly: true }} onFocus={event => event.target.select()}
+                                inputProps={{ "aria-label": "Az egyeztetés linkje" }} />
+                            <Button variant="contained" startIcon={<LinkIcon />} onClick={() => share(pollLink, poll.title)}>{canShare ? "Megosztás" : "Másolás"}</Button>
+                        </div>
+                    </Alert>
+                    : <></>}
                 <PollInfo data={data} />
+
+                {data.results && data.results.respondents > 0
+                    ? <section className="admin-section poll-common">
+                        <h2>Mindenkinek megfelelő időpontok</h2>
+                        {common.length === 0
+                            ? <p className="admin-section_empty">Még nincs olyan időpont, amely mind a(z) {data.results.respondents} válaszolónak megfelel.</p>
+                            : <div className="poll-overview_ranges">
+                                {common.map(range => <Chip key={`${range.day}_${range.from}`} label={rangeText(range)} />)}
+                            </div>}
+                        <Link to={`/egyeztetes/${key}/attekintes`} className="poll-common_more">Részletek az áttekintésben</Link>
+                    </section>
+                    : <></>}
 
                 <section className="admin-section poll-answers">
                     <div className="poll-answers_header">
@@ -245,15 +322,21 @@ export default function PollPage() {
                     {editing
                         ? <div className="poll-answers_editing" role="status">
                             <p><strong>{respondent.name}</strong>, jelöld be, mikor érsz rá!</p>
-                            <p className="admin-section_hint">
-                                Egérrel húzva több idősávot is kijelölhetsz vagy törölhetsz; érintőképernyőn koppints az idősávokra.
+                            <p className="admin-section_hint poll-answers_hint-mouse">
+                                Egérrel húzva több idősávot is kijelölhetsz vagy törölhetsz.
                                 A nap nevére kattintva az egész napot kijelölöd vagy törlöd.
                             </p>
+                            <p className="admin-section_hint poll-answers_hint-touch">Koppints az idősávokra, vagy a nap nevére az egész naphoz.</p>
                             {saveError !== "" ? <p className="reservation-form_error" role="alert">{saveError}</p> : <></>}
                             <div className="poll-answers_editing-actions">
                                 <Button onClick={() => setEditing(false)} disabled={saving}>Mégse</Button>
-                                <Button onClick={() => setDialogOpen(true)} disabled={saving}>Név és elérhetőség</Button>
-                                <Button variant="contained" onClick={save} disabled={saving}>Mentés ({selected.size} sáv)</Button>
+                                {/* Shorter labels on phones, so the three buttons fit in one row */}
+                                <Button onClick={() => setDialogOpen(true)} disabled={saving} aria-label="Név, e-mail, telefon">
+                                    <span className="label-long">Név, e-mail, telefon</span><span className="label-short">Adataim</span>
+                                </Button>
+                                <Button variant="contained" onClick={() => save()} disabled={saving} aria-label={`Mentés (${selected.size} sáv)`}>
+                                    <span className="label-long">Mentés ({selected.size} sáv)</span><span className="label-short">Mentés ({selected.size})</span>
+                                </Button>
                             </div>
                         </div>
                         : <></>}
@@ -261,18 +344,22 @@ export default function PollPage() {
                     <div className="poll-answers_grid">
                         <PollGrid days={data.days} times={data.times} slotMinutes={poll.slotMinutes} editing={editing}
                             selected={selected} setSelected={setSelected} counts={data.results ? data.results.counts : {}}
-                            total={total} focusedSlot={focusedSlot} onSlotFocus={setFocusedSlot} />
+                            total={total} focusedSlot={focusedSlot} onSlotFocus={slotClicked} />
                     </div>
                     <p className="admin-section_hint poll-answers_zone">Az időpontok {poll.timeZone} időzóna szerint értendők.</p>
 
                     {!editing && focused
                         ? <p className="poll-answers_focused" role="status">
-                            <strong>{focused.label}</strong>: {focused.names.length}/{total} ráér
-                            {focused.names.length ? ` – ${focused.names.join(", ")}` : ""}
+                            <strong>{focused.label}</strong>: {total === 0
+                                ? "még senki sem válaszolt."
+                                : <>{focused.names.length}/{total} ráér{focused.names.length ? ` – ${focused.names.join(", ")}` : ""}</>}
                         </p>
                         : <></>}
                     {!editing && data.answers && data.answers.length
                         ? <p className="admin-section_hint">Minél kékebb egy idősáv, annál többen érnek rá; kattints rá, hogy lásd, kik.</p>
+                        : <></>}
+                    {!editing && !own && !data.closed
+                        ? <p className="admin-section_hint">Kattints egy idősávra, vagy az „Időpontjaim megadása” gombra a válaszadáshoz.</p>
                         : <></>}
 
                     {own && !editing
@@ -301,8 +388,38 @@ export default function PollPage() {
                     name: stored && stored.name ? stored.name : (user && user.name) || "",
                     contactEmail: user ? user.email : "", contactPhone: user ? user.phone : "",
                 }}
-                onClose={() => setDialogOpen(false)}
+                existingNames={data.answers && !editing ? data.answers.map(answer => answer.name) : []}
+                onClose={() => { setDialogOpen(false); setPendingSlot(null); }}
                 onContinue={dialogContinue} />
+
+            <Dialog open={confirmEmpty} onClose={() => setConfirmEmpty(false)} maxWidth="xs">
+                <DialogTitle>Egyik időpontot sem jelölted be</DialogTitle>
+                <DialogContent>
+                    Így úgy számít, hogy egyik időpontban sem érsz rá, és nem lesz mindenkinek megfelelő időpont. Így mented?
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setConfirmEmpty(false)} variant="contained">Vissza a jelöléshez</Button>
+                    <Button onClick={() => save(true)}>Mentés így</Button>
+                </DialogActions>
+            </Dialog>
+
+            <Dialog open={linkDialog && Boolean(editKey)} onClose={() => setLinkDialog(false)} fullWidth maxWidth="sm">
+                <DialogTitle>Elmentettük a válaszodat</DialogTitle>
+                <DialogContent className="contact-dialog">
+                    <p>Ezzel a privát linkkel bármelyik böngészőből módosíthatod később. Mentsd el, vagy küldd el magadnak:</p>
+                    {editKey
+                        ? <div className="poll-answers_link">
+                            <TextField size="small" fullWidth value={privateLink(key, editKey)} InputProps={{ readOnly: true }}
+                                onFocus={event => event.target.select()} inputProps={{ "aria-label": "Privát szerkesztő link" }} />
+                            <Button variant="contained" onClick={() => copy(privateLink(key, editKey), "A privát linket a vágólapra másoltuk.")}>Másolás</Button>
+                        </div>
+                        : <></>}
+                    <p className="admin-section_hint">Ebben a böngészőben enélkül is megtaláljuk a válaszodat.</p>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setLinkDialog(false)}>Rendben</Button>
+                </DialogActions>
+            </Dialog>
 
             <Dialog open={confirm !== null} onClose={() => setConfirm(null)}>
                 <DialogTitle>{confirm === "close" ? "Egyeztetés lezárása" : "Egyeztetés törlése"}</DialogTitle>

@@ -3,7 +3,7 @@ process.env.TZ = "Europe/Budapest";
 
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { checkRules, checkConflicts, matchesContact } = require("./booking");
+const { checkRules, checkConflicts, isOwner, matchesContact } = require("./booking");
 const { expand } = require("./recurrence");
 const { ValidationError, HttpError } = require("./validation");
 
@@ -139,4 +139,14 @@ test("a reservation is opened with its email in any case or its phone in any for
 
 test("rule errors are validation errors", () => {
     assert.throws(() => checkRules(office, false, once(at(24, 9), at(24, 10)), now), ValidationError);
+});
+
+test("the owner is the logged-in booker, or the user whose email is the booking's contact", () => {
+    const user = { id: 3, email: "toth.eszter@example.hu" };
+    assert.equal(isOwner({ userId: 3, contactEmail: "" }, user), true);
+    assert.equal(isOwner({ userId: null, contactEmail: "toth.eszter@example.hu" }, user), true);
+    assert.equal(isOwner({ userId: 4, contactEmail: "masik@example.hu" }, user), false);
+    // No contact email is never "the same" as anything
+    assert.equal(isOwner({ userId: null, contactEmail: "" }, { id: 5, email: "" }), false);
+    assert.equal(isOwner({ userId: 3, contactEmail: "" }, null), false);
 });

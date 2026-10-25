@@ -214,7 +214,7 @@ app.get("/resources/:id/occurrences", async (req, res) => {
   try {
     const id = toId(req.params.id);
     if (id === null || !await resources.exists(id)) return notFound(res, NO_RESOURCE);
-    res.json({ result: await reservations.occurrences(id, req.query.from, req.query.to) });
+    res.json({ result: await reservations.occurrences(id, req.query.from, req.query.to, req.user) });
   } catch (err) {
     sendError(res, err, "Nem sikerült betölteni a foglalásokat!");
   }
@@ -224,7 +224,7 @@ app.get("/resources/:id/occurrences", async (req, res) => {
 app.post("/resources/:id/reservations", async (req, res) => {
   try {
     const id = toId(req.params.id);
-    const result = id === null ? null : await reservations.create(id, req.body, { isAdmin: isAdmin(req) });
+    const result = id === null ? null : await reservations.create(id, req.body, { isAdmin: isAdmin(req), user: req.user });
     if (result === null) return notFound(res, NO_RESOURCE);
     res.status(201).json({ result });
   } catch (err) {
@@ -232,21 +232,34 @@ app.post("/resources/:id/reservations", async (req, res) => {
   }
 })
 
+// The logged-in user's upcoming bookings
+app.get("/reservations/mine", auth.requireUser, async (req, res) => {
+  try {
+    res.json({ result: await reservations.listMine(req.user) });
+  } catch (err) {
+    sendError(res, err, "Nem sikerült betölteni a foglalásaidat!");
+  }
+})
+
 // Without admin rights a reservation is opened, edited or cancelled with the email or phone number
 // given at booking ({ contact }). Wrong guesses are limited per IP and reservation.
 const contactAttempts = new AttemptLimiter(5, 15 * 60 * 1000);
 
-// Runs action(id, { isAdmin, contact }); null for an invalid id
+// Runs action(id, { isAdmin, contact, user }); null for an invalid id. The booking's owner needs no contact.
 async function withContact(req, action) {
   const id = toId(req.params.id);
   if (id === null) return null;
-  if (isAdmin(req)) return action(id, { isAdmin: true });
+  if (isAdmin(req)) return action(id, { isAdmin: true, user: req.user });
   const key = `${req.ip}|${id}`;
-  if (contactAttempts.isLimited(key)) throw new HttpError(429, TOO_MANY);
+  // While limited, a typed contact is not even tried; the booking's owner still gets through
+  const limited = contactAttempts.isLimited(key);
   try {
-    return await action(id, { isAdmin: false, contact: req.body.contact });
+    return await action(id, { isAdmin: false, contact: limited ? undefined : req.body.contact, user: req.user });
   } catch (err) {
-    if (err instanceof HttpError && err.status === 403) contactAttempts.record(key);
+    if (err instanceof HttpError && err.status === 403) {
+      if (limited) throw new HttpError(429, TOO_MANY);
+      contactAttempts.record(key);
+    }
     throw err;
   }
 }

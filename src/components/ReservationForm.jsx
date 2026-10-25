@@ -9,15 +9,16 @@ import {
     MenuItem,
     Radio,
     RadioGroup,
+    Switch,
     TextField,
     ToggleButton,
     ToggleButtonGroup
 } from "@mui/material";
-import { DatePicker, DateTimePicker, LocalizationProvider } from "@mui/lab";
-import AdapterDateFns from '@mui/lab/AdapterDateFns';
+import { DateTimeField, HuLocalizationProvider } from "./HuPickers";
 import Calendar from "../modules/Calendar";
 import { errorMessage } from "../modules/api";
 import { describeRules } from "../modules/reservationText";
+import { dayStatus, ruleProblem } from "../modules/bookingRules";
 
 const regularityOptions = [
     { value: 'never', label: 'Ne ismétlődjön' },
@@ -74,14 +75,34 @@ function initialState(reservation, initial = {}) {
 }
 
 // Creates a reservation for the resource, or edits `reservation`. Repeats for at most 6 months.
-// For users (not on the admin pages) `forUser` is set: a contact is required, `rules` (the resource) are shown,
-// and an edit sends along `contact`, the email or phone the user opened the reservation with.
-export default function ReservationForm({ resourceId, reservation, initial, forUser = false, rules, contact, onSaved, onCancel }) {
+// For users (not on the admin pages) `forUser` is set: a contact is required, `rules` (the resource) are shown
+// and checked while typing, repetition is behind a switch, and an edit sends along `contact`, the email or phone
+// the user opened the reservation with. `onDirty` is called at every change.
+export default function ReservationForm({ resourceId, reservation, initial, forUser = false, rules, contact, onSaved, onCancel, onDirty }) {
     const [form, setForm] = useState(() => initialState(reservation, initial));
     const [error, setError] = useState("");
     const [saving, setSaving] = useState(false);
-    const set = (field, value) => setForm(previous => ({ ...previous, [field]: value }));
+    const update = changes => {
+        if (onDirty) onDirty();
+        setForm(previous => ({ ...previous, ...(typeof changes === "function" ? changes(previous) : changes) }));
+    };
+    const set = (field, value) => update({ [field]: value });
     const change = field => event => set(field, event.target.value);
+
+    // A new start keeps the length: the end moves with it
+    const changeStart = value => update(previous => {
+        const valid = date => date instanceof Date && !isNaN(date);
+        if (!valid(value) || !valid(previous.start) || !valid(previous.end)) return { start: value };
+        return { start: value, end: new Date(value.getTime() + (previous.end - previous.start)) };
+    });
+
+    // Weekly repetition starts with the week day of the first occurrence chosen
+    const changeRegularity = value => update(previous => ({
+        regularity: value,
+        days: value === "week" && previous.days.length === 0 && previous.start instanceof Date && !isNaN(previous.start)
+            ? [weekDays[(previous.start.getDay() + 6) % 7].value]
+            : previous.days,
+    }));
 
     const validStart = form.start instanceof Date && !isNaN(form.start);
     const repeatLimit = validStart ? Calendar.getRepeatLimit(form.start) : new Date();
@@ -99,6 +120,9 @@ export default function ReservationForm({ resourceId, reservation, initial, forU
     }, [form.regularity, form.repeatsEvery, form.days, form.start, validStart]);
 
     const rulesText = rules ? describeRules(rules) : "";
+    // What the resource's rules say about this time, before sending it (the server checks it again)
+    const problem = forUser && rules ? ruleProblem(rules, form.start, form.end, form.allDay) : "";
+    const unavailableDay = day => forUser && rules ? dayStatus(rules, day) !== "open" : false;
 
     const save = async (event) => {
         event.preventDefault();
@@ -143,36 +167,41 @@ export default function ReservationForm({ resourceId, reservation, initial, forU
             <h3>{isNew ? "Új foglalás" : "Foglalás szerkesztése"}</h3>
             {rulesText !== "" ? <p className="reservation-form_rules">Foglalható: {rulesText}</p> : <></>}
             {error !== "" ? <p className="reservation-form_error" role="alert">{error}</p> : <></>}
-            <TextField label="Foglalás neve" required value={form.title} onChange={change("title")} autoFocus
-                helperText={forUser ? "A naptárban mások is ezt látják, a leírással együtt." : undefined} />
+            <TextField label="Megnevezés" required value={form.title} onChange={change("title")} autoFocus
+                helperText={forUser ? "Ezt mások is látják a naptárban, pl. Csapatmegbeszélés." : undefined} />
             <TextField label="Leírás" multiline minRows={2} value={form.description} onChange={change("description")} />
 
-            <LocalizationProvider dateAdapter={AdapterDateFns}>
+            <HuLocalizationProvider>
                 <div className="reservation-form_row">
                     {form.allDay
                         ? <>
-                            <DatePicker label="Első nap" value={form.start} inputFormat="yyyy-MM-dd"
-                                onChange={value => set("start", value)}
-                                renderInput={params => <TextField {...params} error={timeError} />} />
-                            <DatePicker label="Utolsó nap" value={form.end} inputFormat="yyyy-MM-dd"
-                                onChange={value => set("end", value)}
-                                renderInput={params => <TextField {...params} error={timeError} />} />
+                            <DateTimeField withTime={false} label="Első nap" value={form.start}
+                                onChange={changeStart} shouldDisableDate={unavailableDay} error={timeError} />
+                            <DateTimeField withTime={false} label="Utolsó nap" value={form.end}
+                                onChange={value => set("end", value)} shouldDisableDate={unavailableDay} error={timeError}
+                                helperText={timeError ? "Az utolsó nap ne legyen az első előtt." : undefined} />
                         </>
                         : <>
-                            <DateTimePicker label="Kezdés" value={form.start} ampm={false} inputFormat="yyyy-MM-dd HH:mm"
-                                onChange={value => set("start", value)}
-                                renderInput={params => <TextField {...params} error={timeError} />} />
-                            <DateTimePicker label="Befejezés" value={form.end} ampm={false} inputFormat="yyyy-MM-dd HH:mm"
-                                onChange={value => set("end", value)}
-                                renderInput={params => <TextField {...params} error={timeError} />} />
+                            <DateTimeField label="Kezdés" value={form.start}
+                                onChange={changeStart} shouldDisableDate={unavailableDay} error={timeError} />
+                            <DateTimeField label="Befejezés" value={form.end}
+                                onChange={value => set("end", value)} shouldDisableDate={unavailableDay} error={timeError}
+                                helperText={timeError ? "A befejezés a kezdés után legyen." : undefined} />
                         </>
                     }
                 </div>
+                {problem !== "" ? <p className="reservation-form_problem" role="status">{problem}</p> : <></>}
                 <FormControlLabel label="Egész napos"
                     control={<Checkbox checked={form.allDay} onChange={() => set("allDay", !form.allDay)} />} />
 
+                {forUser
+                    ? <FormControlLabel label="Ismétlődő foglalás"
+                        control={<Switch checked={repeats} onChange={() => changeRegularity(repeats ? "never" : "week")} />} />
+                    : <></>}
+
+                {!forUser || repeats ? <>
                 <div className="reservation-form_row">
-                    <TextField select label="Ismétlődés" value={form.regularity} onChange={change("regularity")}>
+                    <TextField select label="Ismétlődés" value={form.regularity} onChange={event => changeRegularity(event.target.value)}>
                         {regularityOptions.map(option => <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>)}
                     </TextField>
                     {repeats
@@ -196,10 +225,9 @@ export default function ReservationForm({ resourceId, reservation, initial, forU
                             <FormControlLabel value="sixMonths" control={<Radio />} label="6 hónap után" />
                             <div className="reservation-form_choice">
                                 <FormControlLabel value="onDate" control={<Radio />} label="Ezen a napon:" />
-                                <DatePicker value={form.repeatEndDate} inputFormat="yyyy-MM-dd" disabled={form.repeatEnd !== "onDate"}
-                                    minDate={validStart ? form.start : undefined} maxDate={repeatLimit}
-                                    onChange={value => set("repeatEndDate", value)}
-                                    renderInput={params => <TextField {...params} size="small" />} />
+                                <DateTimeField withTime={false} value={form.repeatEndDate} disabled={form.repeatEnd !== "onDate"}
+                                    minDate={validStart ? form.start : undefined} maxDate={repeatLimit} size="small"
+                                    onChange={value => set("repeatEndDate", value)} />
                             </div>
                             <div className="reservation-form_choice">
                                 <FormControlLabel value="occurrence" control={<Radio />} label="Ennyi alkalom után:" />
@@ -209,19 +237,24 @@ export default function ReservationForm({ resourceId, reservation, initial, forU
                         </RadioGroup>
                     </FormControl>
                     : <></>}
-            </LocalizationProvider>
+                </> : <></>}
+            </HuLocalizationProvider>
 
+            {forUser
+                ? <div className="reservation-form_contact-head">
+                    <strong>Elérhetőség *</strong>
+                    <span>E-mail vagy telefonszám, legalább az egyik. Csak az adminok látják; ezzel tudod később módosítani vagy lemondani a foglalást.</span>
+                </div>
+                : <></>}
             <div className="reservation-form_row">
-                <TextField label="Kapcsolattartó e-mail" type="email" value={form.contactEmail} onChange={change("contactEmail")}
-                    helperText={forUser
-                        ? "Csak az adminok látják. Ezzel (vagy a telefonszámmal) tudod később módosítani vagy lemondani a foglalást."
-                        : "Csak adminok látják. Erre küldünk értesítést, ha az erőforrás megszűnik."} />
-                <TextField label="Kapcsolattartó telefon" type="tel" value={form.contactPhone} onChange={change("contactPhone")} />
+                <TextField label={forUser ? "E-mail cím" : "Kapcsolattartó e-mail"} type="email" value={form.contactEmail} onChange={change("contactEmail")}
+                    helperText={forUser ? undefined : "Csak adminok látják. Erre küldünk értesítést, ha az erőforrás megszűnik."} />
+                <TextField label={forUser ? "Telefonszám" : "Kapcsolattartó telefon"} type="tel" value={form.contactPhone} onChange={change("contactPhone")} />
             </div>
 
             <div className="reservation-form_actions">
                 <Button onClick={onCancel} disabled={saving}>Mégse</Button>
-                <Button type="submit" variant="contained" disabled={saving}>{isNew ? "Létrehozás" : "Mentés"}</Button>
+                <Button type="submit" variant="contained" disabled={saving || timeError || problem !== ""}>{isNew ? "Foglalás" : "Mentés"}</Button>
             </div>
         </form>
     );

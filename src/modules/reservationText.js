@@ -45,10 +45,44 @@ export function describeRules(resource) {
     const when = [resource.openDays ? describeDays(resource.openDays) : "", resource.openFrom ? `${resource.openFrom}–${resource.openTo}` : ""]
         .filter(part => part !== "").join(" ");
     if (when !== "") parts.push(when);
-    const { minLengthMinutes: min, maxLengthMinutes: max } = resource;
-    if (min && max) parts.push(`${min}–${max} perc`);
-    else if (min) parts.push(`legalább ${min} perc`);
-    else if (max) parts.push(`legfeljebb ${max} perc`);
+    const length = lengthLimit(resource);
+    if (length !== "") parts.push(length);
     if (resource.maxDaysAhead) parts.push(`legfeljebb ${resource.maxDaysAhead} nappal előre`);
     return parts.join(" · ");
+}
+
+// "30–240 perc", "legalább 60 perc", "legfeljebb 90 perc", or "" without a length limit
+function lengthLimit({ minLengthMinutes: min, maxLengthMinutes: max }) {
+    if (min && max) return `${min}–${max} perc`;
+    if (min) return `legalább ${min} perc`;
+    if (max) return `legfeljebb ${max} perc`;
+    return "";
+}
+
+// The same rules as labelled parts, for a list: [{ label: "Napok", value: "H–P" }, ...]; empty without rules
+export function rulesParts(resource) {
+    const parts = [];
+    if (resource.openDays) parts.push({ label: "Napok", value: describeDays(resource.openDays) });
+    if (resource.openFrom) parts.push({ label: "Nyitvatartás", value: `${resource.openFrom}–${resource.openTo}` });
+    const length = lengthLimit(resource);
+    if (length !== "") parts.push({ label: "Foglalás hossza", value: length });
+    if (resource.maxDaysAhead) parts.push({ label: "Előre foglalható", value: `${resource.maxDaysAhead} napig` });
+    return parts;
+}
+
+const WEEK_DAY_NAMES = ["vasárnap", "hétfő", "kedd", "szerda", "csütörtök", "péntek", "szombat"];
+const two = number => String(number).padStart(2, "0");
+const longDay = date => `${date.getFullYear()}. ${two(date.getMonth() + 1)}. ${two(date.getDate())}., ${WEEK_DAY_NAMES[date.getDay()]}`;
+const clock = date => `${two(date.getHours())}:${two(date.getMinutes())}`;
+
+// One occurrence's time in one line: "2026. 10. 27., kedd 14:00–15:00", "2026. 10. 27., kedd, egész nap",
+// or with both days when it runs over midnight. For an all-day one `end` is the start of the day after it.
+export function describeTime(start, end, allDay) {
+    if (allDay) {
+        const lastDay = new Date(end.getFullYear(), end.getMonth(), end.getDate() - 1);
+        return sameDay(start, lastDay) ? `${longDay(start)}, egész nap` : `${longDay(start)} – ${longDay(lastDay)}, egész nap`;
+    }
+    return sameDay(start, end)
+        ? `${longDay(start)} ${clock(start)}–${clock(end)}`
+        : `${longDay(start)} ${clock(start)} – ${longDay(end)} ${clock(end)}`;
 }

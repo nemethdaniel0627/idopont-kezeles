@@ -350,3 +350,162 @@ $available-hover: #cde7f6;
 .polls-admin_actions {
     white-space: nowrap;
 }
+
+// Right after creating a poll: the link to send
+.poll-created {
+    font-size: 1.5rem;
+
+    p {
+        margin-bottom: 0.8rem;
+    }
+}
+
+.poll-common {
+    gap: 1rem;
+
+    .MuiChip-root {
+        font-size: 1.4rem;
+    }
+
+    &_more {
+        align-self: flex-start;
+        color: var(--calendar-dark);
+        font-size: 1.4rem;
+    }
+}
+
+.poll-menu_danger {
+    color: #d32f2f;
+}
+
+// While answering, the save bar stays in view however long the grid is
+.poll-answers_editing {
+    position: sticky;
+    top: 0;
+    z-index: 4;
+    box-shadow: 0 0.4rem 0.8rem rgba(0, 0, 0, 0.08);
+}
+
+// The closing time under the last slot: a short row, so its label stays inside the grid
+.poll-grid_end-time {
+    height: 1.6rem;
+}
+
+.poll-grid_end {
+    height: 1.6rem;
+    border-top: 1px solid #d8dee9;
+}
+
+.poll-create_steps {
+    margin-bottom: 2rem;
+
+    .MuiStepLabel-label {
+        font-size: 1.5rem;
+    }
+}
+
+.poll-create_mode-hint,
+.poll-create_field-hint {
+    margin-top: 0;
+}
+
+.poll-create_days {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.4rem 1rem;
+    color: #444;
+}
+
+.poll-create_more {
+    border: 1px solid #e3e8f2;
+    border-radius: 0.8rem !important;
+
+    &::before {
+        display: none;
+    }
+
+    .MuiAccordionSummary-content {
+        font-size: 1.5rem;
+        color: #444;
+    }
+}
+
+// ----- Phones and touch screens -----
+// The day picker's days shrink with the screen instead of running out of their box
+.day-picker_grid {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.day-picker_day {
+    width: 100%;
+    max-width: 4.2rem;
+    height: auto;
+    aspect-ratio: 1;
+}
+
+// A link with its button: the button goes under the link when they don't fit side by side
+.poll-answers_link {
+    flex-wrap: wrap;
+
+    .MuiTextField-root {
+        flex: 1 1 18rem;
+        min-width: 0;
+    }
+}
+
+// The hint that fits the pointer: mouse or touch
+.poll-answers_hint-touch {
+    display: none;
+}
+
+@media (pointer: coarse) {
+    .poll-answers_hint-mouse {
+        display: none;
+    }
+
+    .poll-answers_hint-touch {
+        display: block;
+    }
+
+    // Slots big enough for a fingertip
+    .poll-grid_cell {
+        height: 3.6rem;
+    }
+}
+
+@media only screen and (max-width: 600px) {
+    // The step's buttons stay in view at the bottom
+    .poll-create .admin-section_actions {
+        position: sticky;
+        bottom: 0;
+        z-index: 2;
+        margin: 0 -2.4rem -2.4rem;
+        padding: 1.2rem 2.4rem;
+        background: #fff;
+        border-top: 1px solid #e3e8f2;
+        border-radius: 0 0 1.2rem 1.2rem;
+    }
+
+    // The answering bar stays small, so most of the screen is the grid
+    .poll-answers_editing {
+        gap: 0.4rem;
+        padding: 0.8rem 1rem;
+
+        p {
+            font-size: 1.3rem;
+        }
+    }
+
+    .poll-answers_editing-actions {
+        flex-wrap: wrap;
+        gap: 0.4rem;
+
+        .MuiButton-root {
+            min-width: 0;
+            padding: 0.4rem 0.8rem;
+            font-size: 1.3rem;
+            white-space: nowrap;
+        }
+    }
+}

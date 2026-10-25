@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Avatar, Button, ThemeProvider } from "@mui/material";
 import HomeIcon from '@mui/icons-material/Home';
 import GroupsIcon from '@mui/icons-material/Groups';
+import EventNoteIcon from '@mui/icons-material/EventNote';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import LogoutIcon from '@mui/icons-material/Logout';
 import LoginIcon from '@mui/icons-material/Login';
@@ -16,12 +17,14 @@ function initials(user) {
     return words.slice(0, 2).map(word => word[0]).join("").toUpperCase();
 }
 
-// A nav button with its icon. On phones only the icon shows; the label stays for screen readers and as a tooltip.
-function NavButton({ icon, label, active, className = "", ...props }) {
+// A nav button with its icon. On phones the icon gets a short caption (`caption`, or the label) under it instead
+// of the label beside it.
+function NavButton({ icon, label, caption, active, className = "", ...props }) {
     return (
         <Button color="inherit" startIcon={icon} title={label} aria-label={label} aria-current={active ? "page" : undefined}
             className={`nav_link${active ? " active" : ""} ${className}`} {...props}>
             <span className="nav_label">{label}</span>
+            <span className="nav_caption" aria-hidden="true">{caption || label}</span>
         </Button>
     );
 }
@@ -44,7 +47,10 @@ export default function Nav() {
                 <div className="nav_group">
                     <NavButton component={Link} to="/" icon={<HomeIcon />} label="Főoldal" active={isActive("/")} />
                     {user
-                        ? <NavButton component={Link} to="/egyeztetesek" icon={<GroupsIcon />} label="Egyeztetések" active={isActive("/egyeztetes")} />
+                        ? <>
+                            <NavButton component={Link} to="/foglalasaim" icon={<EventNoteIcon />} label="Foglalásaim" active={isActive("/foglalasaim")} />
+                            <NavButton component={Link} to="/egyeztetesek" icon={<GroupsIcon />} label="Egyeztetések" caption="Egyeztetés" active={isActive("/egyeztetes")} />
+                        </>
                         : <></>}
                     {user && user.role === "admin"
                         ? <NavButton component={Link} to="/admin" icon={<AdminPanelSettingsIcon />} label="Admin" active={isActive("/admin")} />
@@ -55,12 +61,12 @@ export default function Nav() {
                     <div className="nav_group">
                         {user
                             ? <>
-                                <NavButton component={Link} to="/profil" label={user.name || user.email} active={isActive("/profil")}
+                                <NavButton component={Link} to="/profil" label={user.name || user.email} caption="Profil" active={isActive("/profil")}
                                     icon={<Avatar className="nav_avatar">{initials(user)}</Avatar>} className="nav_profile" />
-                                <NavButton icon={<LogoutIcon />} label="Kijelentkezés" onClick={logoutAndLeave} />
+                                <NavButton icon={<LogoutIcon />} label="Kijelentkezés" caption="Kilépés" onClick={logoutAndLeave} />
                             </>
                             : <>
-                                <NavButton component={Link} to="/bejelentkezes" icon={<LoginIcon />} label="Bejelentkezés" active={isActive("/bejelentkezes")} />
+                                <NavButton component={Link} to="/bejelentkezes" icon={<LoginIcon />} label="Bejelentkezés" caption="Belépés" active={isActive("/bejelentkezes")} />
                                 <NavButton component={Link} to="/regisztracio" icon={<PersonAddIcon />} label="Regisztráció" variant="outlined"
                                     active={isActive("/regisztracio")} />
                             </>

@@ -83,3 +83,31 @@ nav {
         }
     }
 }
+
+// The short caption under an icon, only on phones
+nav .nav_caption {
+    display: none;
+}
+
+@media only screen and (max-width: 600px) {
+    nav .nav_link {
+        flex-direction: column;
+        gap: 0.2rem;
+        padding: 0.4rem 0.6rem;
+        min-width: 4.6rem;
+    }
+
+    nav .nav_caption {
+        display: block;
+        font-size: 1rem;
+        line-height: 1.1;
+        text-transform: none;
+        letter-spacing: 0;
+        white-space: nowrap;
+    }
+
+    nav .nav_group {
+        flex-wrap: nowrap;
+        gap: 0;
+    }
+}

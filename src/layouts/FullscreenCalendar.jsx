@@ -1,22 +1,38 @@
 import React, { useEffect, useRef, useState } from "react";
-import FullscreenExitIcon from '@mui/icons-material/FullscreenExit';
-import { Button, IconButton, TextField, ThemeProvider } from "@mui/material";
+import { Button, IconButton, TextField, ThemeProvider, ToggleButton, ToggleButtonGroup, Tooltip } from "@mui/material";
 import AddIcon from '@mui/icons-material/Add';
-import { ArrowBackIosNew, ArrowForwardIos } from "@mui/icons-material";
+import { ArrowBackIosNew, ArrowForwardIos, ArrowDropDown } from "@mui/icons-material";
 import CloseIcon from '@mui/icons-material/Close';
-import ListItem from "../components/ListItem";
 import FullscreenEvent from "../components/FullscreenEvent";
+import WeekView from "../components/WeekView";
 import Calendar from "../modules/Calendar";
 import DatePicker from "@mui/lab/DatePicker";
-import LocalizationProvider from "@mui/lab/LocalizationProvider";
-import AdapterDateFns from '@mui/lab/AdapterDateFns';
+import { HuLocalizationProvider, pickerTexts } from "../components/HuPickers";
 import { appTheme } from "../components/AuthPage";
-import { isPastDay } from "../modules/bookingTimes";
+import { dayStatus, DAY_STATUS_TEXT } from "../modules/bookingRules";
+import { rulesParts } from "../modules/reservationText";
 
+const SHORT_MONTHS = ["jan.", "febr.", "márc.", "ápr.", "máj.", "jún.", "júl.", "aug.", "szept.", "okt.", "nov.", "dec."];
+
+// The Monday of the date's week
+function mondayOf(date) {
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate() - Calendar.getWeekdayIndex(date));
+}
+
+// "okt. 26. – nov. 1."
+function weekLabel(monday) {
+    const sunday = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + 6);
+    return `${monday.getFullYear()}. ${SHORT_MONTHS[monday.getMonth()]} ${monday.getDate()}. – ${SHORT_MONTHS[sunday.getMonth()]} ${sunday.getDate()}.`;
+}
+
+// The open resource's calendar, over the whole screen: a month view, and a week view where reservations are
+// placed within the hours. Days and times that can't be booked are greyed out and can't be clicked.
 export default function FullscreenCalendar(props) {
     const [year, setYear] = useState(new Date().getFullYear());
-    const [monthName, setMonthName] = useState("");
+    const [monthName, setMonthName] = useState(props.monthName);
     const [month, setMonth] = useState(new Date().getMonth());
+    const [view, setView] = useState("month");
+    const [weekStart, setWeekStart] = useState(() => mondayOf(new Date()));
     // The shown days with the open resource's reservations (built by Home). During a month change the old
     // month stays until it has faded out and the new month's days have arrived, then both swap together.
     const [numberOfDaysArray, setNumberOfDaysArray] = useState(props.numberOfDaysArray);
@@ -27,74 +43,68 @@ export default function FullscreenCalendar(props) {
     const [monthPickerOpen, setMonthPickerOpen] = useState(false);
     const [monthPickerValue, setMonthPickerValue] = useState(new Date(year, month));
     const monthNames = props.monthNames;
-    let isDialogClick = false;
+    const resource = props.selectedService;
+    const rules = resource.id !== undefined ? rulesParts(resource) : [];
+    const now = new Date();
 
-
-    const exitFullScreen = () => {
+    // Opens when a resource is chosen; starts from the month view of today
+    useEffect(() => {
         const fullscreen = document.querySelector(".fullscreen-calendar");
-        const calendar = document.querySelector("#calendar");
-        const body = document.querySelector("body");
-
-        if (fullscreen && calendar && body) {
-            body.style.overflow = "unset";
-            fullscreen.setAttribute("closing", "");
-            fullscreen.removeAttribute("open");
-            calendar.setAttribute("closing", "");
-            calendar.removeAttribute("open");
-            fullscreen.classList.add("hidden");
-            fullscreen.addEventListener("animationend", () => {
-                fullscreen.removeAttribute("closing");
-                calendar.removeAttribute("closing");
-            }, { once: true });
-
-        }
-    }
+        if (!props.open || !fullscreen) return;
+        setView("month");
+        setWeekStart(mondayOf(new Date()));
+        document.body.style.overflow = "hidden";
+        fullscreen.setAttribute("open", "");
+        fullscreen.classList.remove("hidden");
+    }, [props.open]);
 
     const closeCalendar = () => {
         const fullscreen = document.querySelector(".fullscreen-calendar");
-        const calendar = document.querySelector("#calendar");
-        const body = document.querySelector("body");
+        if (!fullscreen) return;
+        document.body.style.overflow = "unset";
+        fullscreen.setAttribute("closing", "");
+        fullscreen.removeAttribute("open");
+        fullscreen.classList.add("hidden");
+        props.setProps("open", false);
+        fullscreen.addEventListener("animationend", () => fullscreen.removeAttribute("closing"), { once: true });
+    }
 
-        if (fullscreen && calendar && body) {
-            body.style.overflow = "unset";
-            fullscreen.setAttribute("closing", "");
-            fullscreen.removeAttribute("open");
-            calendar.setAttribute("closing", "");
-            calendar.removeAttribute("open");
-            fullscreen.classList.add("hidden");
-            props.setProps("open", false);
-            fullscreen.addEventListener("animationend", () => {
-                fullscreen.removeAttribute("closing");
-                calendar.removeAttribute("closing");
-            }, { once: true });
+    const showMonthOf = (date) => {
+        props.setProps("year", date.getFullYear());
+        props.setProps("month", date.getMonth());
+        props.setProps("monthName", monthNames[date.getMonth()]);
+    }
 
+    // ‹ and ›: a month in the month view, a week in the week view
+    const step = (direction) => {
+        if (view === "week") {
+            setWeekStart(previous => new Date(previous.getFullYear(), previous.getMonth(), previous.getDate() + 7 * direction));
+        } else {
+            showMonthOf(new Date(year, month + direction, 1));
         }
     }
 
-    const monthChange = (monthEvent) => {
-        let tmpMonthNumber;
-        switch (monthEvent.target.id) {
-            case "prev":
-                tmpMonthNumber = month - 1;
-                break;
+    const goToToday = () => {
+        if (view === "week") setWeekStart(mondayOf(new Date()));
+        else showMonthOf(new Date());
+    }
 
-            case "next":
-                tmpMonthNumber = month + 1;
-                break;
-
-            default:
-                break;
+    const changeView = (event, value) => {
+        if (value === null) return;
+        if (value === "week") {
+            // The current week when it is in the shown month, otherwise the month's first week
+            const today = new Date();
+            setWeekStart(mondayOf(today.getFullYear() === year && today.getMonth() === month ? today : new Date(year, month, 1)));
+        } else {
+            showMonthOf(weekStart);
         }
-        let newMonth = new Date(
-            year,
-            Number(tmpMonthNumber),
-            1
-        );
-        props.setProps("month", newMonth.getMonth());
-        props.setProps("monthName", monthNames[newMonth.getMonth()]);
+        setView(value);
+    }
 
-
-
+    // A day of the month view opens its week, where the free hours are seen and booked
+    const openWeekOf = (date) => {
+        setWeekStart(mondayOf(date));
+        setView("week");
     }
 
     // Calls handler when the days' own animation `name` ends (children's animation ends bubble up too)
@@ -117,6 +127,7 @@ export default function FullscreenCalendar(props) {
         if (!waitingForMonth.current || !daysAreForNewMonth) return;
 
         waitingForMonth.current = false;
+        setYear(newYear);
         setMonthName(newMonthName);
         setMonth(newMonth);
         setNumberOfDaysArray(days);
@@ -140,6 +151,11 @@ export default function FullscreenCalendar(props) {
                 waitingForMonth.current = true;
                 showNewMonth();
             });
+        } else {
+            // The week view is shown: nothing to fade
+            setYear(props.year);
+            setMonth(props.month);
+            setMonthName(props.monthName);
         }
 
         setMonthPickerValue(new Date(props.year, props.month));
@@ -161,190 +177,169 @@ export default function FullscreenCalendar(props) {
         // eslint-disable-next-line
     }, [props.numberOfDaysArray])
 
-    useEffect(() => {
-        const calendarDays = document.querySelector(".fullscreen-calendar_days");
-        if (props) {
-            setYear(props.year);
-        }
-        if (props.monthName && props.month && !calendarDays.classList.contains("days-change-out")) {
-            setMonthName(props.monthName);
-            setMonth(props.month);
-            setMonthPickerValue(new Date(props.year, props.month));
-        }
-    }, [props])
-
-    // useEffect(() => {
-    //     console.log("full");
-    //     setNumberOfDaysArray(props.numberOfDays());
-    // }, [])
-
-    const openDetails = (passedProps) => {
-        const tmpEventDetails = document.querySelector(".event-details");
-
-        if (tmpEventDetails) {
-            tmpEventDetails.setAttribute("open", "");
-            props.setProps("serviceDetails", passedProps);
-            // setServiceDetails(passedProps);
+    const openDetails = (details) => {
+        const eventDetails = document.querySelector(".event-details");
+        if (eventDetails) {
+            eventDetails.setAttribute("open", "");
+            props.setProps("serviceDetails", details);
         }
     }
 
-    const checkClick = () => {
-        if (isDialogClick === true) {
-            isDialogClick = false;
-        }
-        else {
-            setMonthPickerOpen(false);
-        }
-    }
-
-    const openMonthPicker = () => {
-        isDialogClick = true;
-        if (monthPickerOpen === false)
-            setMonthPickerOpen(true);
-    }
-
-    // "+ Új foglalás": today in the current month, otherwise the shown month's first day that is not over yet
-    const bookShownMonth = () => {
+    // "+ Új foglalás": the first bookable day from what is shown (or from today, if that is later), so the form
+    // doesn't open on a closed day
+    const bookShown = () => {
         const today = new Date();
-        const first = new Date(year, month, 1);
-        props.newBooking(first < today ? today : first);
+        const shownFirst = view === "week" ? weekStart : new Date(year, month, 1);
+        let day = shownFirst < today ? new Date(today.getFullYear(), today.getMonth(), today.getDate()) : shownFirst;
+        for (let i = 0; i < 31 && dayStatus(resource, day, { isAdmin: props.isAdmin }) !== "open"; i++) {
+            day = new Date(day.getFullYear(), day.getMonth(), day.getDate() + 1);
+        }
+        props.newBooking(day);
     }
 
     const monthPickerChange = (value) => {
-        props.setProps('year', value.getFullYear());
-        props.setProps('month', value.getMonth());
-        props.setProps("monthName", monthNames[value.getMonth()]);
+        setMonthPickerOpen(false);
+        showMonthOf(value);
     }
 
     return (
-        <div onClick={checkClick} className="fullscreen-calendar hidden">
+        <div className="fullscreen-calendar hidden" role="dialog" aria-label={`${resource.title || ""} naptára`}>
             <div className="fullscreen-calendar_right-col">
-                <h2 className="fullscreen-calendar_resource-title">{props.selectedService.title}</h2>
-                {props.selectedService.customFields && props.selectedService.customFields.length !== 0
+                <div className="fullscreen-calendar_title-row">
+                    <h2 className="fullscreen-calendar_resource-title">{resource.title}</h2>
+                    {/* Phones: the close button sits in the panel's corner, where people look for it */}
+                    <IconButton onClick={closeCalendar} className="fullscreen-calendar_close-top" aria-label="Bezárás">
+                        <CloseIcon />
+                    </IconButton>
+                </div>
+                {resource.customFields && resource.customFields.length !== 0
                     ? <ul className="fullscreen-calendar_resource-fields">
-                        {props.selectedService.customFields.map((field, index) =>
+                        {resource.customFields.map((field, index) =>
                             <li key={index}><span>{field.label}</span>{field.value}</li>
                         )}
                     </ul>
                     : <></>}
+                <section className="fullscreen-calendar_rules" aria-label="Foglalási szabályok">
+                    <h3>Foglalási szabályok</h3>
+                    {rules.length !== 0
+                        ? <dl>
+                            {rules.map(rule => <div key={rule.label}><dt>{rule.label}</dt><dd>{rule.value}</dd></div>)}
+                        </dl>
+                        : <p>Bármikor foglalható.</p>}
+                </section>
+                <p className="fullscreen-calendar_hint-short">
+                    {view === "month" ? "Koppints egy napra a hetéért." : "Koppints egy szabad időpontra a foglaláshoz."}
+                </p>
+                <p className="fullscreen-calendar_hint">
+                    {view === "month"
+                        ? "Kattints egy napra: megnyílik a hete, ahol egy szabad időpontra kattintva foglalhatsz."
+                        : "Kattints egy szabad időpontra, vagy húzd végig rajta az egeret a foglalás teljes idején. Egy foglalásra kattintva látod a részleteit."}
+                </p>
             </div>
             <div className="fullscreen-calendar_left-col">
-                <h2 className="fullscreen-calendar_header">
-                    <div>
-                        <IconButton size="large" id="prev" className="fullscreen-calendar_month-switch" onClick={monthChange}>
-                            <ArrowBackIosNew />
-                        </IconButton>
-                        <IconButton size="large" id="next" className="fullscreen-calendar_month-switch" onClick={monthChange}>
-                            <ArrowForwardIos />
-                        </IconButton>
-                        <span className="fullscreen-calendar_header_month-picker" onClick={openMonthPicker}>
-                            {year}. {monthName}
-                            <LocalizationProvider dateAdapter={AdapterDateFns}>
-                                <DatePicker
-                                    value={monthPickerValue}
-                                    onChange={(newValue) => {
-                                        monthPickerChange(newValue);
-                                    }}
-                                    views={['year', 'month']}
-                                    openTo={'month'}
-                                    minDate={new Date(year - 2, 1, 1)}
-                                    maxDate={new Date(year + 12, 12, 31)}
-                                    open={monthPickerOpen}
-                                    renderInput={(params) => <TextField {...params} />}
-                                />
-                            </LocalizationProvider>
-                        </span>
-
+                <div className="fullscreen-calendar_header">
+                    <div className="fullscreen-calendar_header_nav">
+                        <Tooltip title={view === "week" ? "Előző hét" : "Előző hónap"}>
+                            <IconButton size="large" className="fullscreen-calendar_month-switch" onClick={() => step(-1)}
+                                aria-label={view === "week" ? "Előző hét" : "Előző hónap"}>
+                                <ArrowBackIosNew />
+                            </IconButton>
+                        </Tooltip>
+                        <Tooltip title={view === "week" ? "Következő hét" : "Következő hónap"}>
+                            <IconButton size="large" className="fullscreen-calendar_month-switch" onClick={() => step(1)}
+                                aria-label={view === "week" ? "Következő hét" : "Következő hónap"}>
+                                <ArrowForwardIos />
+                            </IconButton>
+                        </Tooltip>
+                        {view === "month"
+                            ? <span className="fullscreen-calendar_header_month-picker">
+                                <button type="button" onClick={() => setMonthPickerOpen(true)} aria-label={`${year}. ${monthName} – hónap választása`}>
+                                    {year}. {monthName}
+                                    <ArrowDropDown />
+                                </button>
+                                <HuLocalizationProvider>
+                                    <DatePicker
+                                        {...pickerTexts}
+                                        toolbarTitle="Hónap választása"
+                                        value={monthPickerValue}
+                                        onChange={monthPickerChange}
+                                        onClose={() => setMonthPickerOpen(false)}
+                                        views={['year', 'month']}
+                                        openTo={'month'}
+                                        minDate={new Date(year - 2, 1, 1)}
+                                        maxDate={new Date(year + 12, 12, 31)}
+                                        open={monthPickerOpen}
+                                        renderInput={(params) => <TextField {...params} />}
+                                    />
+                                </HuLocalizationProvider>
+                            </span>
+                            : <span className="fullscreen-calendar_header_week">{weekLabel(weekStart)}</span>}
                     </div>
-                    <div className="fullscreen-calendar_header_actions">
-                        <ThemeProvider theme={appTheme}>
-                            <Button variant="contained" size="small" startIcon={<AddIcon />} onClick={bookShownMonth}
+                    <ThemeProvider theme={appTheme}>
+                        <div className="fullscreen-calendar_header_actions">
+                            <Button size="small" onClick={goToToday} className="fullscreen-calendar_today">Ma</Button>
+                            <ToggleButtonGroup exclusive size="small" value={view} onChange={changeView} aria-label="Nézet">
+                                <ToggleButton value="month">Hónap</ToggleButton>
+                                <ToggleButton value="week">Hét</ToggleButton>
+                            </ToggleButtonGroup>
+                            <Button variant="contained" size="small" startIcon={<AddIcon />} onClick={bookShown}
                                 className="fullscreen-calendar_new-booking" aria-label="Új foglalás">
                                 <span className="fullscreen-calendar_new-booking_text">Új foglalás</span>
                             </Button>
-                        </ThemeProvider>
-                        <IconButton size="large" onClick={exitFullScreen} className="fullscreen-calendar_exit-fullscreen">
-                            <FullscreenExitIcon />
-                        </IconButton>
-                        <IconButton size="large" onClick={closeCalendar} className="fullscreen-calendar_exit-fullscreen">
-                            <CloseIcon />
-                        </IconButton>
-                    </div>
-                </h2>
-                <div className="fullscreen-calendar_days">
-                    {
-                        numberOfDaysArray.map((item, index) => {
-
-                            const tmpDate = month === new Date().getMonth() ? new Date().getDate() : undefined;
-
-                            let notThisMonthDay = false;
-                            if (index < 8 && item.date.getDate() > 8) notThisMonthDay = true;
-                            if (index > 20 && item.date.getDate() < 8) notThisMonthDay = true;
-                            // A day that is not over yet is booked by clicking it (outside its reservations)
-                            const bookable = !isPastDay(item.date);
+                            <Tooltip title="Bezárás">
+                                <IconButton size="large" onClick={closeCalendar} className="fullscreen-calendar_close" aria-label="Bezárás">
+                                    <CloseIcon />
+                                </IconButton>
+                            </Tooltip>
+                        </div>
+                    </ThemeProvider>
+                </div>
+                <div className="fullscreen-calendar_body">
+                {view === "week"
+                    ? <WeekView resource={resource} weekStart={weekStart} reloadKey={props.reloadKey} isAdmin={props.isAdmin}
+                        onSlotClick={props.newBooking} onEventClick={openDetails} />
+                    : <div className="fullscreen-calendar_days">
+                        {numberOfDaysArray.map((item, index) => {
+                            const notThisMonthDay = item.date.getMonth() !== month;
+                            const isToday = Calendar.getPrefix(item.date) === Calendar.getPrefix(now);
+                            // Days that can't be booked are greyed out; the others open their week
+                            const status = resource.id !== undefined ? dayStatus(resource, item.date, { isAdmin: props.isAdmin, now }) : "open";
+                            const open = status === "open";
                             return (
                                 <div
                                     key={`fullscreen_${item.date.getDate()}_${index}`}
-                                    id={`fullscreen_${item.date.getDate()}_${index}`}
-                                    className={`fullscreen-calendar_days_day${bookable ? " bookable" : ""}`}
-                                    onClick={bookable ? () => props.newBooking(item.date) : undefined}
-                                    title={bookable ? "Foglalás erre a napra" : undefined}
+                                    className={`fullscreen-calendar_days_day${open ? " bookable" : ` unavailable ${status}`}`}
+                                    onClick={() => openWeekOf(item.date)}
+                                    title={open ? "A hét megnyitása" : DAY_STATUS_TEXT[status]}
                                 >
-                                    <h3>
-                                        {
-                                            index < 7
-                                                ?
-                                                props.shortDayNames.map((header, dayIndex) => {
-                                                    return index === dayIndex
-                                                        ? <ListItem key={`full_${header}_${index}`} itemContent={header} datavalue="1" isWeekDay={true} />
-                                                        : <React.Fragment key={`full_${header}_${index}_${dayIndex}`}></React.Fragment>
-                                                })
-                                                : <React.Fragment key={`full_h3_${index}`}></React.Fragment>
-                                        }
-                                    </h3>
-                                    <p className={
-                                        `${tmpDate !== undefined && item.date.getDate().toString() === tmpDate.toString()
-                                            ? "selected"
-                                            : ""
-                                        }${notThisMonthDay === true ? "greyDay" : ""} ${item.date.getDate() === 1 ? " no-ar" : ""}`
-                                    }>
+                                    {index < 7 ? <h3>{props.shortDayNames[index]}</h3> : <></>}
+                                    <p className={`fullscreen-calendar_date${isToday ? " today" : ""}${notThisMonthDay ? " other-month" : ""}${item.date.getDate() === 1 ? " no-ar" : ""}`}>
                                         {item.date.getDate() === 1 ? `${monthNames[item.date.getMonth()].slice(0, (item.date.getMonth() === 8 ? 5 : 3))}. ${item.date.getDate()}.` : item.date.getDate()}
                                     </p>
-                                    {
-
-                                        item.fullscreenServices.length !== 0 ?
-                                            item.fullscreenServices.map((sameDate, sameIndex) => {
-                                                return Calendar.getPrefix(sameDate.serviceDate) === Calendar.getPrefix(item.date) ?
-                                                    <FullscreenEvent
-                                                        key={`${sameDate.name}_${index}_${sameIndex}`}
-                                                        name={sameDate.name}
-                                                        serviceId={sameDate.id}
-                                                        serviceDate={sameDate.serviceDate}
-                                                        start={sameDate.start}
-                                                        end={sameDate.end}
-                                                        openDetails={openDetails}
-                                                        type={sameDate.type}
-                                                        allDay={sameDate.allDay}
-                                                        description={sameDate.description}
-                                                        repeating={sameDate.repeating}
-                                                    />
-                                                    : <React.Fragment key={`${item.date}_${index}__${sameIndex}`} />
-                                            })
-                                            : <React.Fragment key={`${item.date}_${index}`} />
-
-                                    }
-                                    {/* {item === 1
-                                        ? <FullscreenEvent
-                                            name={`Próba_${item}_${index}`}
-                                            openDetails={openDetails} />
-                                        : <></>} */}
+                                    {item.fullscreenServices.map((sameDate, sameIndex) =>
+                                        Calendar.getPrefix(sameDate.serviceDate) === Calendar.getPrefix(item.date)
+                                            ? <FullscreenEvent
+                                                key={`${sameDate.name}_${index}_${sameIndex}`}
+                                                name={sameDate.name}
+                                                serviceId={sameDate.id}
+                                                serviceDate={sameDate.serviceDate}
+                                                start={sameDate.start}
+                                                end={sameDate.end}
+                                                openDetails={openDetails}
+                                                type={sameDate.type}
+                                                allDay={sameDate.allDay}
+                                                description={sameDate.description}
+                                                repeating={sameDate.repeating}
+                                                mine={sameDate.mine}
+                                            />
+                                            : <React.Fragment key={`${item.date}_${index}__${sameIndex}`} />
+                                    )}
                                 </div>
                             )
-                        })
-                    }
+                        })}
+                    </div>}
                 </div>
             </div>
-            {/* <ServiceDetails serviceDetails={serviceDetails} /> */}
         </div>
     )
 }

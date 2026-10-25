@@ -1,21 +1,16 @@
 import React, { useEffect, useState } from "react";
-import { Button, IconButton, ThemeProvider } from "@mui/material";
+import { Button, IconButton, ThemeProvider, Tooltip } from "@mui/material";
 import CloseIcon from '@mui/icons-material/Close';
 import EditIcon from '@mui/icons-material/Edit';
 import EventBusyIcon from '@mui/icons-material/EventBusy';
+import RepeatIcon from '@mui/icons-material/Repeat';
 import { appTheme } from "./AuthPage";
-import Calendar from "../modules/Calendar";
+import { describeTime } from "../modules/reservationText";
 
+// A reservation's details over the calendar. Its owner and admins change or cancel it straight away; for others
+// the same buttons sit under a question, since they first have to give the booking's email or phone.
 export default function ServiceDetails(props) {
-    const [name, setName] = useState();
-    const [description, setDescription] = useState("");
-    const [repeating, setRepeating] = useState(false);
-    const [serviceStart, setServiceStart] = useState(new Date());
-    const [serviceEnd, setServiceEnd] = useState(new Date());
-    const [serviceAllDay, setServiceAllDay] = useState(false);
-
-    // An all-day reservation ends at the start of the day after its last day; show that last day instead
-    const shownEnd = serviceAllDay ? new Date(serviceEnd.getFullYear(), serviceEnd.getMonth(), serviceEnd.getDate() - 1) : serviceEnd;
+    const [details, setDetails] = useState(null);
 
     useEffect(() => {
         const eventDetails = document.querySelector(".event-details_container");
@@ -23,12 +18,7 @@ export default function ServiceDetails(props) {
             eventDetails.classList.add("event-details_hidden");
             eventDetails.addEventListener("animationend", (event) => {
                 if (event.animationName === "detailsHidden") {
-                    setName(props.serviceDetails.name);
-                    setDescription(props.serviceDetails.description || "");
-                    setRepeating(props.serviceDetails.repeating === true);
-                    setServiceStart(props.serviceDetails.start);
-                    setServiceEnd(props.serviceDetails.end);
-                    setServiceAllDay(props.serviceDetails.allDay === true);
+                    setDetails(props.serviceDetails);
                     eventDetails.classList.add("event-details_appear");
                 }
             }, { once: true });
@@ -52,71 +42,77 @@ export default function ServiceDetails(props) {
                 tmpEventDetails.removeAttribute("closing");
                 recreateNode(eventDetails);
             }, { once: true })
-
         }
     }
+
+    // Escape or a tap outside closes the details (a tap on another booking opens that one instead)
+    useEffect(() => {
+        const isOpen = () => {
+            const dialog = document.querySelector(".event-details");
+            return dialog && dialog.hasAttribute("open") && !dialog.hasAttribute("closing");
+        };
+        const onKey = event => {
+            if (event.key === "Escape" && isOpen()) closeEventDetails();
+        };
+        const onPointer = event => {
+            if (!isOpen()) return;
+            const target = event.target;
+            if (target.closest(".event-details, .week-view_event, .fullscreen-calendar_event, .MuiDialog-root")) return;
+            closeEventDetails();
+        };
+        document.addEventListener("keydown", onKey);
+        document.addEventListener("pointerdown", onPointer);
+        return () => {
+            document.removeEventListener("keydown", onKey);
+            document.removeEventListener("pointerdown", onPointer);
+        };
+    });
 
     // Closes the details, then opens the edit form or the cancel confirmation ("edit" or "cancel")
     const change = (action) => {
-        const details = props.serviceDetails;
+        const current = props.serviceDetails;
         closeEventDetails();
-        props.changeReservation(details, action);
+        props.changeReservation(current, action);
     }
 
-    function recreateNode(el, withChildren) {
-        if (withChildren) {
-            el.parentNode.replaceChild(el.cloneNode(true), el);
-        }
-        else {
-            var newEl = el.cloneNode(false);
-            while (el.hasChildNodes()) newEl.appendChild(el.firstChild);
-            el.parentNode.replaceChild(newEl, el);
-        }
+    function recreateNode(el) {
+        const newEl = el.cloneNode(false);
+        while (el.hasChildNodes()) newEl.appendChild(el.firstChild);
+        el.parentNode.replaceChild(newEl, el);
     }
 
-    // useEffect(() => {
-
-
-    //     if (eventDetails) {
-    //         observer.observe(eventDetails, {
-    //             attributes: true,
-    //             attributeFilter: ['name'],
-    //             childList: true,
-    //             characterData: false,
-    //         })
-    //     }
-    // }, [eventDetails])
-
-
-    // useEffect(() => {
-    //     console.log(name);
-    //     if (eventDetails) {
-
-    //     }
-    // }, [name])
-
-
+    const direct = details && (details.mine || props.isAdmin);
+    const buttons = <>
+        <Button startIcon={<EditIcon />} onClick={() => change("edit")} size={direct ? "medium" : "small"}>Módosítás</Button>
+        <Button color="error" startIcon={<EventBusyIcon />} onClick={() => change("cancel")} size={direct ? "medium" : "small"}>Lemondás</Button>
+    </>;
 
     return (
-        <dialog className="event-details">
-            <div className="event-details_container" name={name}>
+        <dialog className="event-details" aria-labelledby="event-details-title">
+            <div className="event-details_container">
                 <div className="event-details_action-header">
-                    <IconButton size="large" onClick={closeEventDetails}>
-                        <CloseIcon />
-                    </IconButton>
+                    <Tooltip title="Bezárás">
+                        <IconButton size="large" onClick={closeEventDetails} aria-label="Bezárás">
+                            <CloseIcon />
+                        </IconButton>
+                    </Tooltip>
                 </div>
-                <div className="event-details_content">
-                    <h3>{name}</h3>
-                    <p>Időtartam: {Calendar.getDateWithFormat(serviceStart, !serviceAllDay)} - {Calendar.getDateWithFormat(shownEnd, !serviceAllDay)}</p>
-                    {serviceAllDay ? <p>Egész napos</p> : <></>}
-                    {repeating ? <p>Ismétlődő foglalás</p> : <></>}
-                    {description !== "" ? <p>{description}</p> : <></>}
-                </div>
-                <ThemeProvider theme={appTheme}>
-                    <div className="event-details_actions">
-                        <Button startIcon={<EditIcon />} onClick={() => change("edit")}>Módosítás</Button>
-                        <Button color="error" startIcon={<EventBusyIcon />} onClick={() => change("cancel")}>Lemondás</Button>
+                {details
+                    ? <div className="event-details_content">
+                        <h3 id="event-details-title">{details.name}</h3>
+                        <p className="event-details_time">{describeTime(details.start, details.end, details.allDay === true)}</p>
+                        {details.repeating ? <p className="event-details_repeat"><RepeatIcon fontSize="small" /> Ismétlődő foglalás</p> : <></>}
+                        {details.description ? <p className="event-details_description">{details.description}</p> : <></>}
+                        {details.mine ? <p className="event-details_mine">Ez a te foglalásod.</p> : <></>}
                     </div>
+                    : <></>}
+                <ThemeProvider theme={appTheme}>
+                    {direct
+                        ? <div className="event-details_actions">{buttons}</div>
+                        : <div className="event-details_actions others">
+                            <span>Ez a te foglalásod? A foglaláskor megadott e-mail címmel vagy telefonszámmal:</span>
+                            <div>{buttons}</div>
+                        </div>}
                 </ThemeProvider>
             </div>
         </dialog>

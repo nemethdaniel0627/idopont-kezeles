@@ -24,7 +24,8 @@ export default function Register() {
         setError("");
         try {
             await register({ name: form.name, email: form.email, phone: form.phone, password: form.password });
-            navigate("/", { replace: true });
+            // The home page greets new users and tells what they can do now
+            navigate("/", { replace: true, state: { welcome: true } });
         } catch (err) {
             setError(errorMessage(err, "Nem sikerült a regisztráció!"));
             setSaving(false);
