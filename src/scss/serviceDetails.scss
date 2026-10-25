@@ -1,4 +1,7 @@
 .event-details {
+    // Fixed to the screen like the calendars, and above them
+    position: fixed;
+    z-index: 102;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%) scale(0);

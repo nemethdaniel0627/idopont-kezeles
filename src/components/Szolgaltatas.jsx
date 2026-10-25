@@ -1,11 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect } from "react";
 import SzolgTitle from "./SzolgTitle";
 import EditSzolgaltatas from "../layouts/EditSzolgaltatas";
 
 
 export default function Szolgaltatas(props) {
-
-    const [elementOpen, setElementOpen] = useState(false);
 
     function openCalendar() {
         props.openCalendar();
@@ -32162,8 +32160,7 @@ bDpZUmVzb2x1dGlvbgA3Mi8xdO+JvQAAAABJRU5ErkJggg==" />
                 serviceDatas={props.serviceDatas}
                 id={props.id}
                 title={props.title}
-                open={setElementOpen}
-                saveService={props.saveService} />
+                saveResource={props.saveResource} />
         </>
     )
 }

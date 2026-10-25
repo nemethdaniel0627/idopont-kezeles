@@ -59,6 +59,14 @@ class Calendar {
         return new Date(year, month + 1, 0).getDate();
     }
 
+    // The last day a repeating reservation may fall on: 6 months after its first date, at the end of
+    // shorter months (31 August -> 28 February). The server applies the same rule in recurrence.js.
+    getRepeatLimit(firstStart) {
+        const year = firstStart.getFullYear();
+        const month = firstStart.getMonth() + 6;
+        return new Date(year, month, Math.min(firstStart.getDate(), this.getDaysInMonth(year, month)));
+    }
+
     // The time unit of a 5, 30 or 60 minute interval list an event starting at "h:m" belongs to,
     // and how many minutes after the start of that unit it begins
     getIntervalSlot(eventStart, intervalLength) {

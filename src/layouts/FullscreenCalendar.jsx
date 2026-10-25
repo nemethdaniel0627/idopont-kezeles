@@ -1,38 +1,30 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import FullscreenExitIcon from '@mui/icons-material/FullscreenExit';
-import { Checkbox, FormControlLabel, FormGroup, IconButton, TextField } from "@mui/material";
-import { ArrowBackIosNew, ArrowForwardIos, Visibility, VisibilityOff } from "@mui/icons-material";
+import { IconButton, TextField } from "@mui/material";
+import { ArrowBackIosNew, ArrowForwardIos } from "@mui/icons-material";
 import CloseIcon from '@mui/icons-material/Close';
 import ListItem from "../components/ListItem";
 import FullscreenEvent from "../components/FullscreenEvent";
-import ServiceDetails from "../components/ServiceDetails";
 import Calendar from "../modules/Calendar";
 import DatePicker from "@mui/lab/DatePicker";
 import LocalizationProvider from "@mui/lab/LocalizationProvider";
 import AdapterDateFns from '@mui/lab/AdapterDateFns';
-import { useRef } from "react";
 
 export default function FullscreenCalendar(props) {
     const [year, setYear] = useState(new Date().getFullYear());
     const [monthName, setMonthName] = useState("");
     const [month, setMonth] = useState(new Date().getMonth());
-    const [day, setDay] = useState(0);
-    const [dayName, setDayName] = useState("");
-    const [years, setYears] = useState([]);
-    const [numberOfDaysArray, setNumberOfDaysArray] = useState([]);
-    const [serviceDetails, setServiceDetails] = useState();
-    const [services, setServices] = useState([]);
-    const [selectedService, setSelectedService] = useState({});
-    const [showOthers, setShowOthers] = useState();
+    // The shown days with the open resource's reservations (built by Home). During a month change the old
+    // month stays until it has faded out and the new month's days have arrived, then both swap together.
+    const [numberOfDaysArray, setNumberOfDaysArray] = useState(props.numberOfDaysArray);
+    const latest = useRef({});
+    latest.current = { days: props.numberOfDaysArray, year: props.year, month: props.month, monthName: props.monthName };
+    // True from the end of a fade-out until the new month is shown
+    const waitingForMonth = useRef(false);
     const [monthPickerOpen, setMonthPickerOpen] = useState(false);
     const [monthPickerValue, setMonthPickerValue] = useState(new Date(year, month));
     const monthNames = props.monthNames;
-    const dayNames = props.dayNames;
     let isDialogClick = false;
-    const refBody = useRef(document.querySelector("body"));
-    // The animationend listeners outlive the render that added them, so they read the latest numberOfDays from here
-    const numberOfDaysRef = useRef(props.numberOfDays);
-    numberOfDaysRef.current = props.numberOfDays;
 
 
     const exitFullScreen = () => {
@@ -90,7 +82,6 @@ export default function FullscreenCalendar(props) {
             default:
                 break;
         }
-        let pastMonth = new Date(year, month, day);
         let newMonth = new Date(
             year,
             Number(tmpMonthNumber),
@@ -103,25 +94,49 @@ export default function FullscreenCalendar(props) {
 
     }
 
+    // Calls handler when the days' own animation `name` ends (children's animation ends bubble up too)
+    const onDaysAnimationEnd = (calendarDays, name, handler) => {
+        const listener = (event) => {
+            if (event.target === calendarDays && event.animationName === name) {
+                calendarDays.removeEventListener("animationend", listener);
+                handler();
+            }
+        };
+        calendarDays.addEventListener("animationend", listener);
+    };
+
+    // After the fade-out, shows the new month as soon as its days are there
+    const showNewMonth = () => {
+        const { days, year: newYear, month: newMonth, monthName: newMonthName } = latest.current;
+        // The 15th day of the grid is always in the month the grid is for
+        const daysAreForNewMonth = days.length > 15
+            && days[15].date.getFullYear() === newYear && days[15].date.getMonth() === newMonth;
+        if (!waitingForMonth.current || !daysAreForNewMonth) return;
+
+        waitingForMonth.current = false;
+        setMonthName(newMonthName);
+        setMonth(newMonth);
+        setNumberOfDaysArray(days);
+        const calendarDays = document.querySelector(".fullscreen-calendar_days");
+        if (calendarDays) {
+            calendarDays.classList.add("days-change-in");
+            onDaysAnimationEnd(calendarDays, "fullDaysChangeIn", () => {
+                calendarDays.classList.remove("days-change-in");
+                calendarDays.classList.remove("days-change-out");
+            });
+        }
+    };
+
     useEffect(() => {
         const calendarDays = document.querySelector(".fullscreen-calendar_days");
 
         if (calendarDays) {
+            calendarDays.classList.remove("days-change-in");
             calendarDays.classList.add("days-change-out");
-            calendarDays.addEventListener("animationend", (event) => {
-                if (event.animationName === "fullDaysChangeOut") {
-                    setMonthName(props.monthName);
-                    setMonth(props.month);
-                    setNumberOfDaysArray(numberOfDaysRef.current());
-                    calendarDays.classList.add("days-change-in");
-                }
-            }, { once: true })
-            calendarDays.addEventListener("animationend", (event) => {
-                if (event.animationName === "fullDaysChangeIn") {
-                    calendarDays.classList.remove("days-change-in");
-                    calendarDays.classList.remove("days-change-out");
-                }
-            })
+            onDaysAnimationEnd(calendarDays, "fullDaysChangeOut", () => {
+                waitingForMonth.current = true;
+                showNewMonth();
+            });
         }
 
         setMonthPickerValue(new Date(props.year, props.month));
@@ -131,13 +146,22 @@ export default function FullscreenCalendar(props) {
 
     useEffect(() => {
         const calendarDays = document.querySelector(".fullscreen-calendar_days");
+        const fadingOut = calendarDays
+            && calendarDays.classList.contains("days-change-out") && !calendarDays.classList.contains("days-change-in");
+        if (waitingForMonth.current) {
+            showNewMonth();
+        } else if (!fadingOut) {
+            // Not during a month change (e.g. a resource was opened): show right away
+            setNumberOfDaysArray(props.numberOfDaysArray);
+        }
+        // While fading out the old month stays; the new one is shown when the fade-out ends
+        // eslint-disable-next-line
+    }, [props.numberOfDaysArray])
+
+    useEffect(() => {
+        const calendarDays = document.querySelector(".fullscreen-calendar_days");
         if (props) {
             setYear(props.year);
-            setDay(props.day);
-            setDayName(props.dayName);
-            setYears(props.years);
-            setSelectedService(props.selectedService);
-            setShowOthers(props.showOtherss);
         }
         if (props.monthName && props.month && !calendarDays.classList.contains("days-change-out")) {
             setMonthName(props.monthName);
@@ -145,16 +169,6 @@ export default function FullscreenCalendar(props) {
             setMonthPickerValue(new Date(props.year, props.month));
         }
     }, [props])
-
-    // Services are fetched after mount, so recalculate the days when they arrive
-    useEffect(() => {
-        setNumberOfDaysArray(props.numberOfDays());
-        // eslint-disable-next-line
-    }, [props.services])
-
-    useEffect(() => {
-        // eslint-disable-next-line
-    }, [numberOfDaysArray, props.service])
 
     // useEffect(() => {
     //     console.log("full");
@@ -169,10 +183,6 @@ export default function FullscreenCalendar(props) {
             props.setProps("serviceDetails", passedProps);
             // setServiceDetails(passedProps);
         }
-    }
-
-    const changeServiceVisibility = () => {
-        props.setProps("showOthers", !props.showOthers);
     }
 
     const checkClick = () => {
@@ -199,14 +209,7 @@ export default function FullscreenCalendar(props) {
     return (
         <div onClick={checkClick} className="fullscreen-calendar hidden">
             <div className="fullscreen-calendar_right-col">
-                <FormGroup>
-                    <FormControlLabel
-                        control={
-                            <Checkbox icon={<VisibilityOff />} checkedIcon={<Visibility />} checked={props.showOthers} onChange={changeServiceVisibility} />
-                        }
-                        label="Összes szolgáltatás látszódjon?"
-                    />
-                </FormGroup>
+                <h2 className="fullscreen-calendar_resource-title">{props.selectedService.title}</h2>
             </div>
             <div className="fullscreen-calendar_left-col">
                 <h2 className="fullscreen-calendar_header">
@@ -284,7 +287,7 @@ export default function FullscreenCalendar(props) {
 
                                         item.fullscreenServices.length !== 0 ?
                                             item.fullscreenServices.map((sameDate, sameIndex) => {
-                                                return (sameDate.id === selectedService.id || props.showOthers === true) && Calendar.getPrefix(sameDate.serviceDate) === Calendar.getPrefix(item.date) ?
+                                                return Calendar.getPrefix(sameDate.serviceDate) === Calendar.getPrefix(item.date) ?
                                                     <FullscreenEvent
                                                         key={`${sameDate.name}_${index}_${sameIndex}`}
                                                         name={sameDate.name}
@@ -294,9 +297,9 @@ export default function FullscreenCalendar(props) {
                                                         end={sameDate.end}
                                                         openDetails={openDetails}
                                                         type={sameDate.type}
-                                                        serviceDefiner={sameDate.serviceDefiner}
                                                         allDay={sameDate.allDay}
-                                                        maxParticipants={sameDate.maxParticipants}
+                                                        description={sameDate.description}
+                                                        repeating={sameDate.repeating}
                                                     />
                                                     : <React.Fragment key={`${item.date}_${index}__${sameIndex}`} />
                                             })

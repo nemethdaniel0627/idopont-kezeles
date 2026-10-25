@@ -1,5 +1,7 @@
 .fullscreen-calendar {
-    position: absolute;
+    // Fixed to the screen, so it opens in view however far the page is scrolled, above the small calendar
+    position: fixed;
+    z-index: 101;
     max-width: 800px;
     width: 80vw;
     min-height: 45rem;
@@ -34,24 +36,12 @@
         flex-direction: column;
         align-items: center;
 
-        .MuiFormGroup-root {
-            display: inline-flex;
-            align-items: center;
-
-            .MuiFormControlLabel-root {
-                margin-left: 1.5rem;
-                flex-direction: row-reverse;
-                color: #ddd;
-
-                .MuiSvgIcon-root {
-                    font-size: 2.5rem;
-                }
-                .MuiTypography-root {
-                    font-size: 1.5rem;
-                    font-weight: bold;
-                    width: 15rem;
-                }
-            }
+        .fullscreen-calendar_resource-title {
+            margin: 2rem 1.5rem;
+            color: #ddd;
+            font-size: 2rem;
+            font-weight: bold;
+            text-align: center;
         }
     }
 

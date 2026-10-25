@@ -12,8 +12,7 @@ export default function IntervalList(props) {
             const overlapping = date.services.length > 1;
             return date.services.map((service, serviceIndex) => {
                 const slot = Calendar.getIntervalSlot(service.serviceStart, intervalLength);
-                return (service.id === props.selectedService.id || props.showOthers === true)
-                    && slot.timeUnit === timeUnit
+                return slot.timeUnit === timeUnit
                     && `${props.prefix}-${props.item}` === Calendar.getPrefix(service.serviceDate) ?
                     <Event
                         key={`event_${index}-${serviceIndex}`}
