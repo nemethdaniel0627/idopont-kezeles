@@ -1,4 +1,4 @@
-@keyframes slideInRight{
+@keyframes slideInRight {
     from {
         transform: translateX(100%);
     }
@@ -7,7 +7,7 @@
     }
 }
 
-@keyframes slideInLeft{
+@keyframes slideInLeft {
     from {
         transform: translateX(-100%);
     }
@@ -16,7 +16,7 @@
     }
 }
 
-@keyframes slideOutRight{
+@keyframes slideOutRight {
     from {
         transform: translateX(0);
     }
@@ -25,11 +25,123 @@
     }
 }
 
-@keyframes slideOutLeft{
+@keyframes slideOutLeft {
     from {
         transform: translateX(0);
     }
     to {
         transform: translateX(-100%);
+    }
+}
+
+@keyframes editServiceOpen {
+    from {
+        transform: translate(-50%, -50%) scale(0);
+        opacity: 0;
+    }
+    to {
+        transform: translate(-50%, -50%) scale(1.5);
+        opacity: 1;
+    }
+}
+
+@keyframes editServiceClose {
+    from {
+        transform: translate(-50%, -50%) scale(1.5);
+        opacity: 1;
+    }
+    to {
+        transform: translate(-50%, -50%) scale(0);
+        opacity: 0;
+    }
+}
+
+@keyframes eventDetailsOpen {
+    from {
+        transform: translate(-50%, -50%) scale(0);
+    }
+    to {
+        transform: translate(-50%, -50%) scale(1);
+    }
+}
+
+@keyframes eventDetailsClose {
+    from {
+        transform: translate(-50%, -50%) scale(1);
+    }
+    to {
+        transform: translate(-50%, -50%) scale(0);
+    }
+}
+
+@keyframes fullDaysChangeOut {
+    0% {
+        position: absolute;
+        transform: translateX(0);
+        opacity: 1;
+    }
+    100% {
+        position: absolute;
+        transform: translateX(3rem);
+        opacity: 0;
+    }
+}
+
+@keyframes fullDaysChangeIn {
+    0% {
+        position: absolute;
+        transform: translateX(3rem);
+        opacity: 0;
+    }
+    1% {
+        position: absolute;
+        transform: translateX(-2rem);
+        opacity: 0;
+    }
+    100% {
+        position: absolute;
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes detailsHidden {
+    from {
+        opacity: 1;
+    }
+    to {
+        opacity: 0;
+    }
+}
+
+@keyframes detailsAppear {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes fullscreenCalendar {
+    from {
+        width: min(80vw, 800px);
+        height: 45rem;
+    }
+
+    to {
+        height: calc(var(--mobileBrowserBar, 1vh) * 100);
+        width: 100%;
+    }
+}
+
+@keyframes exitFullscreenCalendar {
+    from {
+        height: calc(var(--mobileBrowserBar, 1vh) * 100);
+        width: 100%;
+    }
+    to {
+        width: min(80vw, 800px);
+        height: 45rem;
     }
 }

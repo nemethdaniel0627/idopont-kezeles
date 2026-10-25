@@ -2,9 +2,13 @@
     --calendar-dark: #053742;
     --calendar-light: #a2dbfa;
     --calendar-blue: #39a2db;
+    --calendar-dark-trans: #05374233;
     --calendar-grey: #e8f0f2;
     --calendar-dark-grey: #8e989b;
-    --event-colors: #222e50, #007991, #996888, #80b9a4, #bcd8c1, #4f000b, #ff9b54;
+    --event-colors: #007991, #996888, #80b9a4, #bcd8c1, #4f000b, #ff9b54;
+    --dropDownWidth: 0px;
+    --editTitleInputWidth: 0ch;
+    --intervallistWidth: -54rem;
 }
 
 * {
@@ -19,5 +23,40 @@ html {
 
 body {
     font-family: Helvetica, Arial, sans-serif;
-    height: 200vh;
+    // height: 200vh;
+}
+
+iframe {
+    display: none;
+}
+
+input::-webkit-inner-spin-button,
+input::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+input[type="number"] {
+    -moz-appearance: textfield;
+}
+
+.hidden {
+    visibility: hidden;
+    opacity: 0;
+}
+
+.text-error {
+    margin-top: 0.5rem;
+    color: #d32f2f;
+}
+
+.MuiSnackbar-root {
+    .MuiPaper-root {
+        align-items: center;
+        font-size: 1.6rem;
+
+        .MuiAlert-icon {
+            font-size: 2.5rem;
+        }
+    }
 }
