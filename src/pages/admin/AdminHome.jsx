@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { Alert, Button, Dialog, DialogActions, DialogContent, DialogTitle, FormControlLabel, Snackbar, Switch } from "@mui/material";
 import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
+import GavelIcon from '@mui/icons-material/Gavel';
 import AdminPage from "../../components/AdminPage";
 import { useSettings } from "../../auth/SettingsContext";
 import { errorMessage } from "../../modules/api";
@@ -73,9 +74,14 @@ export default function AdminHome() {
                         );
                     })}
                 </div>
-                <Button component={Link} to="/admin/felhasznalok" startIcon={<ManageAccountsIcon />} size="large">
-                    Felhasználók és jogosultságok
-                </Button>
+                <div className="admin-home_links">
+                    <Button component={Link} to="/admin/felhasznalok" startIcon={<ManageAccountsIcon />} size="large">
+                        Felhasználók és jogosultságok
+                    </Button>
+                    <Button component={Link} to="/admin/jogi-szovegek" startIcon={<GavelIcon />} size="large">
+                        Feltételek és adatkezelés
+                    </Button>
+                </div>
             </div>
             <Dialog open={turningOff !== null} onClose={() => setTurningOff(null)} maxWidth="xs">
                 <DialogTitle>{turningOff ? `${turningOff.feature} kikapcsolása` : ""}</DialogTitle>

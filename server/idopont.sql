@@ -10,6 +10,7 @@ DROP TABLE IF EXISTS "passwordResets";
 DROP TABLE IF EXISTS sessions;
 DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS settings;
+DROP TABLE IF EXISTS "legalDocuments";
 
 -- ----- Schema (scripts/setup-db.js creates only this part, on an empty database) -----
 
@@ -24,6 +25,10 @@ CREATE TABLE users (
   -- May book and create polls; new users may not until an admin allows it. Admins may anyway.
   "canBook" BOOLEAN NOT NULL DEFAULT false,
   "canPoll" BOOLEAN NOT NULL DEFAULT false,
+  -- The versions of the terms and the privacy notice the user accepted, and when (see legal.js)
+  "termsVersion" INTEGER DEFAULT NULL,
+  "privacyVersion" INTEGER DEFAULT NULL,
+  "termsAcceptedAt" TIMESTAMP WITH TIME ZONE DEFAULT NULL,
   "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
   PRIMARY KEY (id)
 );
@@ -33,6 +38,17 @@ CREATE TABLE settings (
   "key" TEXT NOT NULL,
   "value" BOOLEAN NOT NULL,
   PRIMARY KEY ("key")
+);
+
+-- The terms ("terms") and the privacy notice ("privacy"). Every saved text is kept; the newest is the current one.
+-- The version grows when users have to accept the text again. Without a row the built-in draft is version 1.
+CREATE TABLE "legalDocuments" (
+  id INTEGER NOT NULL GENERATED ALWAYS AS IDENTITY,
+  "kind" TEXT NOT NULL CHECK ("kind" IN ('terms', 'privacy')),
+  "version" INTEGER NOT NULL,
+  "body" TEXT NOT NULL,
+  "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+  PRIMARY KEY (id)
 );
 
 -- A login. The cookie holds a random token, only its SHA-256 hash is stored.
