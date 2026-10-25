@@ -11,6 +11,8 @@ DROP TABLE IF EXISTS sessions;
 DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS settings;
 
+-- ----- Schema (scripts/setup-db.js creates only this part, on an empty database) -----
+
 -- A registered user. The first admin is made with: npm run make-admin -- email@example.com
 CREATE TABLE users (
   id INTEGER NOT NULL GENERATED ALWAYS AS IDENTITY,
@@ -152,6 +154,8 @@ CREATE TABLE reservations (
 );
 
 CREATE INDEX reservations_resource ON reservations ("resourceId") WHERE "deletedAt" IS NULL;
+
+-- ----- Sample data -----
 
 INSERT INTO resources (title, "customFields", "minLengthMinutes", "maxLengthMinutes", "openFrom", "openTo", "openDays", "maxDaysAhead") VALUES
   ('Tárgyaló 1', '[{"label": "Férőhely", "value": "6 fő"}, {"label": "Emelet", "value": "2."}]',

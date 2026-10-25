@@ -8,6 +8,7 @@
     "start": "node server.js",
     "test": "node --test",
     "make-admin": "node scripts/make-admin.js",
+    "setup-db": "node scripts/setup-db.js",
     "create-test-admin": "node scripts/create-test-admin.js"
   },
   "dependencies": {
