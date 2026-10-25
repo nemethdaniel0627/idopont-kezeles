@@ -31,8 +31,7 @@ export default function App() {
   const [resources, setResources] = useState([]);
   const [resourcesLoaded, setResourcesLoaded] = useState(false);
   const { user } = useAuth();
-  const { settings } = useSettings();
-  const isAdmin = Boolean(user && user.role === "admin");
+  const { can } = useSettings();
 
   // Creates the resource, or updates it when it has an id, and returns it. Errors are left to the caller to show.
   const saveResource = async (resource) => {
@@ -56,9 +55,13 @@ export default function App() {
     return res.data.result;
   };
 
-  // Loaded again when booking is turned on or off, or an admin logs in or out: only admins see the resources
-  // while booking is off
+  // Loaded again when booking rights change: only viewers with booking rights see the resources
   useEffect(() => {
+    if (!can.booking) {
+      setResources([]);
+      setResourcesLoaded(true);
+      return;
+    }
     axios.get("/resources")
       .then(res => {
         setResources(res.data.result);
@@ -66,8 +69,8 @@ export default function App() {
       })
       .catch(err => {
         console.error(err);
-      })
-  }, [isAdmin, settings.bookingEnabled])
+      });
+  }, [can.booking, user]);
 
   useEffect(() => {
 

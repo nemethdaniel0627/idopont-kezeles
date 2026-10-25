@@ -15,8 +15,14 @@ test("with the defaults guests can book, users need their own rights", () => {
 
 test("guests can be required to log in", () => {
     const settings = { ...DEFAULTS, guestsCanBook: false };
+    assert.equal(permissions(settings, null).booking, false);
     assert.equal(permissions(settings, null).book, false);
+    assert.equal(permissions(settings, newUser).booking, false);
+    assert.equal(permissions(settings, newUser).book, false);
+    assert.equal(permissions(settings, allowedUser).booking, true);
     assert.equal(permissions(settings, allowedUser).book, true);
+    assert.equal(permissions(settings, admin).booking, true);
+    assert.equal(permissions(settings, admin).book, true);
     assert.equal(bookingDenied(settings, null).status, 401);
     assert.equal(bookingDenied(settings, newUser).status, 403);
 });

@@ -39,7 +39,7 @@ async function update(changes) {
 function permissions(settings, user) {
     const admin = Boolean(user && user.role === 'admin');
     return {
-        booking: admin || settings.bookingEnabled,
+        booking: admin || (settings.bookingEnabled && (settings.guestsCanBook || Boolean(user && user.canBook))),
         book: admin || (settings.bookingEnabled && (user ? Boolean(user.canBook) : settings.guestsCanBook)),
         polls: admin || settings.pollsEnabled,
         createPolls: admin || (settings.pollsEnabled && Boolean(user && user.canPoll)),
