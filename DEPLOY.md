@@ -111,9 +111,26 @@ gcloud projects add-iam-policy-binding <project-id> --member="serviceAccount:<pr
    terms and the privacy notice (who runs the site, contact email, hosting), and have them checked by someone
    who knows the law. The page warns while placeholders are left.
 
+## Releases: every merge into prod is a new version
+
+1. Merge `master` into `prod`.
+2. The GitHub Action `.github/workflows/release.yml` gives the release the next version (1.0.0, 1.0.1, …). It
+   writes the version into `package.json` on `prod` and `master`, and tags the commit `vX.Y.Z`.
+3. Cloud Build deploys that tag, and the footer shows the version.
+
+For this, the Cloud Build trigger must deploy **tags**, not the branch. In **Cloud Build → Triggers**, edit the
+trigger:
+- **Event:** Push new tag.
+- **Tag:** `^v[0-9]+\.[0-9]+\.[0-9]+$`.
+
+Otherwise every release would be built twice: once for the merge and once for the version commit.
+
+For a bigger step (e.g. 1.1.0 or 2.0.0), set that version in `package.json` on `master` before the merge; the
+release uses it instead of counting up.
+
 ## Later
 
-- **New version:** from the `app` folder, run
+- **New version without GitHub:** from the `app` folder, run
   `gcloud run deploy idopont --source . --region <region>`. The settings and secrets stay.
 - **Database changes** (when a version needs one, like `server/scripts/add-permissions.sql`,
   `poll-15-minute-slots.sql` or `add-gdpr.sql`; `npm run setup-db` already includes them all): run the SQL in

@@ -1,0 +1,52 @@
+# Every push to prod is a release. It gets the next version (see .github/scripts/next-version.js), written into
+# package.json on prod and on master (so later merges never conflict over it) and tagged vX.Y.Z. Cloud Run deploys
+# from these tags (DEPLOY.md), so the deployed site shows its version in the footer.
+name: Release
+
+on:
+  push:
+    branches: [prod]
+
+permissions:
+  contents: write
+
+# One release at a time, in the order of the pushes
+concurrency: release
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: prod
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Next version
+        id: version
+        run: node .github/scripts/next-version.js >> "$GITHUB_OUTPUT"
+
+      - name: Write it on prod and tag it
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          npm version "$VERSION" --no-git-tag-version --allow-same-version
+          git commit -am "Release v$VERSION" || echo "package.json already has $VERSION"
+          git tag -a "v$VERSION" -m "Release v$VERSION"
+          git push origin prod "v$VERSION"
+
+      - name: The same version on master
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          git fetch origin master
+          git checkout -B master origin/master
+          npm version "$VERSION" --no-git-tag-version --allow-same-version
+          git commit -am "Version v$VERSION (released on prod)" || echo "master already has $VERSION"
+          git push origin master
