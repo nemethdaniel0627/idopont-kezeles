@@ -75,6 +75,13 @@ test("a new poll is checked and tidied", () => {
     assert.deepEqual(toPollValues({ ...body, mode: "weekdays", weekDays: ["szerda", "hétfő", "nincs"] }, now).weekDays, ["hétfő", "szerda"]);
 });
 
+test("15-minute slots are allowed, the window and the meeting in quarter hours", () => {
+    const values = toPollValues({ ...body, slotMinutes: 15, dayStart: "09:00", dayEnd: "09:45", meetingMinutes: 45 }, now);
+    assert.equal(values.slotMinutes, 15);
+    assert.equal(values.meetingMinutes, 45);
+    assert.throws(() => toPollValues({ ...body, slotMinutes: 15, meetingMinutes: 50 }, now), /15 perc többszöröse/);
+});
+
 test("a new poll with bad settings is refused with a Hungarian message", () => {
     const refused = (changes, message) => assert.throws(() => toPollValues({ ...body, ...changes }, now), message);
     refused({ title: "" }, /Nincs megadva az egyeztetés neve/);
@@ -82,7 +89,7 @@ test("a new poll with bad settings is refused with a Hungarian message", () => {
     refused({ dates: ["2026-02-30"] }, /Hibás dátum/);
     refused({ dates: ["2026-10-31"] }, /Múltbeli nap/);
     refused({ mode: "weekdays", weekDays: [] }, /legalább egy napot/);
-    refused({ slotMinutes: 15 }, /30 vagy 60/);
+    refused({ slotMinutes: 20 }, /15, 30 vagy 60/);
     refused({ dayStart: "17:00", dayEnd: "09:00" }, /kezdete a vége előtt/);
     refused({ dayStart: "09:00", dayEnd: "09:45" }, /30 perc többszöröse/);
     refused({ meetingMinutes: 45 }, /30 perc többszöröse/);

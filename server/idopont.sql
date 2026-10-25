@@ -69,7 +69,7 @@ CREATE TABLE polls (
   -- The daily time window, divided into slots
   "dayStart" TIME NOT NULL,
   "dayEnd" TIME NOT NULL,
-  "slotMinutes" SMALLINT NOT NULL CHECK ("slotMinutes" IN (30, 60)),
+  "slotMinutes" SMALLINT NOT NULL CHECK ("slotMinutes" IN (15, 30, 60)),
   -- Only common times at least this long are a result. NULL: any length.
   "meetingMinutes" SMALLINT DEFAULT NULL,
   -- After the deadline no answers are accepted, like after closing

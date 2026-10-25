@@ -156,6 +156,7 @@ export default function PollCreate() {
                     <div>
                         <p className="admin-section_label">Idősávok hossza (lehetséges egység hossza)</p>
                         <ToggleButtonGroup exclusive color="primary" value={form.slotMinutes} onChange={changeSlot}>
+                            <ToggleButton value={15}>15 perc</ToggleButton>
                             <ToggleButton value={30}>30 perc</ToggleButton>
                             <ToggleButton value={60}>60 perc</ToggleButton>
                         </ToggleButtonGroup>

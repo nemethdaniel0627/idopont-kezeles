@@ -2,6 +2,7 @@ const database = require('./database');
 const { hashPassword, verifyPassword, createToken, hashToken } = require('./passwords');
 const { parseCookies, serializeCookie } = require('./cookies');
 const { ValidationError, HttpError } = require('./validation');
+const settings = require('./settings');
 
 const SESSION_COOKIE = 'session';
 const SESSION_DAYS = 30;
@@ -50,15 +51,18 @@ async function findByEmail(email) {
 
 const withoutHash = ({ passwordHash, ...user }) => user;
 
+// A new user gets the rights the admins set for new users (settings.newUsersCanBook / newUsersCanPoll)
 async function register(body) {
     const email = toEmail(body.email);
     const password = toPassword(body.password);
     const name = toName(body.name);
     const phone = toPhone(body.phone);
+    const current = await settings.get();
     try {
         const rows = await database.query(
-            `INSERT INTO users (email, "passwordHash", name, phone) VALUES ($1, $2, $3, $4) RETURNING ${USER_COLUMNS}`,
-            [email, await hashPassword(password), name, phone]);
+            `INSERT INTO users (email, "passwordHash", name, phone, "canBook", "canPoll") VALUES ($1, $2, $3, $4, $5, $6)
+            RETURNING ${USER_COLUMNS}`,
+            [email, await hashPassword(password), name, phone, current.newUsersCanBook, current.newUsersCanPoll]);
         return rows[0];
     } catch (err) {
         if (err.code === UNIQUE_VIOLATION) throw new ValidationError('Ezzel az e-mail címmel már regisztráltak!');

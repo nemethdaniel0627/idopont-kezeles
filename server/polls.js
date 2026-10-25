@@ -6,7 +6,7 @@ const { createToken, hashToken } = require('./passwords');
 const { daysOf, timesOf, slotsOf, computeResults, isClosed, toMinutes } = require('./pollSlots');
 
 const MAX_DATES = 31;
-const SLOT_SIZES = [30, 60];
+const SLOT_SIZES = [15, 30, 60];
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const START_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/;
 // The window may end at midnight
@@ -82,7 +82,7 @@ function toPollValues(body, now = new Date()) {
     }
 
     const slotMinutes = Number(body.slotMinutes);
-    if (!SLOT_SIZES.includes(slotMinutes)) throw new ValidationError('Az idősáv 30 vagy 60 perces lehet!');
+    if (!SLOT_SIZES.includes(slotMinutes)) throw new ValidationError('Az idősáv 15, 30 vagy 60 perces lehet!');
     if (typeof body.dayStart !== 'string' || !START_PATTERN.test(body.dayStart)
         || typeof body.dayEnd !== 'string' || !END_PATTERN.test(body.dayEnd)) {
         throw new ValidationError('Hibás napi időablak!');

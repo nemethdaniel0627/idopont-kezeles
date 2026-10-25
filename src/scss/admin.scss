@@ -371,6 +371,19 @@
         background: #f3f6fb;
     }
 
+    // The new users' switch under a right's column name
+    .users-table_new-users {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-top: 0.4rem;
+        font-size: 1.2rem;
+        font-weight: normal;
+        color: #666;
+        white-space: nowrap;
+        cursor: pointer;
+    }
+
     .users-table_sub {
         display: block;
         font-size: 1.3rem;
