@@ -4,8 +4,11 @@ export default function FullscreenEvent(props) {
 
     const [backgroundColor, setBackgorundColor] = useState("");
 
-    const openDetails = () => {
-        props.openDetails(props);
+    // Not the day's click, which would start a new booking
+    const openDetails = (event) => {
+        event.stopPropagation();
+        // The reservation's id is `id` in the details, like in the small calendar's events
+        props.openDetails({ ...props, id: props.serviceId });
     }
 
     useEffect(() => {

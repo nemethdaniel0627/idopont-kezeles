@@ -17,6 +17,7 @@ import { DatePicker, DateTimePicker, LocalizationProvider } from "@mui/lab";
 import AdapterDateFns from '@mui/lab/AdapterDateFns';
 import Calendar from "../modules/Calendar";
 import { errorMessage } from "../modules/api";
+import { describeRules } from "../modules/reservationText";
 
 const regularityOptions = [
     { value: 'never', label: 'Ne ismétlődjön' },
@@ -41,9 +42,10 @@ function defaultTimes() {
 const sameDay = (a, b) => Calendar.getPrefix(a) === Calendar.getPrefix(b);
 const dayOnly = date => new Date(date.getFullYear(), date.getMonth(), date.getDate());
 
-// The form state for a stored reservation, or the defaults for a new one
-function initialState(reservation) {
-    const times = defaultTimes();
+// The form state for a stored reservation, or for a new one the defaults with `initial` over them
+// ({ start, end, title, contactEmail, contactPhone }, each optional)
+function initialState(reservation, initial = {}) {
+    const times = { ...defaultTimes(), ...initial };
     const start = reservation ? new Date(reservation.startDate) : times.start;
     const repeats = reservation && reservation.regularityMeasure !== "never";
     let repeatEnd = "sixMonths";
@@ -55,7 +57,7 @@ function initialState(reservation) {
         repeatEndDate = new Date(reservation.endsOnDate);
     }
     return {
-        title: reservation ? reservation.title : "",
+        title: reservation ? reservation.title : initial.title || "",
         description: reservation ? reservation.description : "",
         start,
         end: reservation ? new Date(reservation.endDate) : times.end,
@@ -66,14 +68,16 @@ function initialState(reservation) {
         repeatEnd,
         repeatEndDate,
         occurrence: repeats && reservation.endsOnType === "occurrence" ? String(reservation.endsOnOccurrence) : "1",
-        contactEmail: reservation ? reservation.contactEmail : "",
-        contactPhone: reservation ? reservation.contactPhone : "",
+        contactEmail: reservation ? reservation.contactEmail : initial.contactEmail || "",
+        contactPhone: reservation ? reservation.contactPhone : initial.contactPhone || "",
     };
 }
 
 // Creates a reservation for the resource, or edits `reservation`. Repeats for at most 6 months.
-export default function ReservationForm({ resourceId, reservation, onSaved, onCancel }) {
-    const [form, setForm] = useState(() => initialState(reservation));
+// For users (not on the admin pages) `forUser` is set: a contact is required, `rules` (the resource) are shown,
+// and an edit sends along `contact`, the email or phone the user opened the reservation with.
+export default function ReservationForm({ resourceId, reservation, initial, forUser = false, rules, contact, onSaved, onCancel }) {
+    const [form, setForm] = useState(() => initialState(reservation, initial));
     const [error, setError] = useState("");
     const [saving, setSaving] = useState(false);
     const set = (field, value) => setForm(previous => ({ ...previous, [field]: value }));
@@ -94,8 +98,14 @@ export default function ReservationForm({ resourceId, reservation, onSaved, onCa
         }
     }, [form.regularity, form.repeatsEvery, form.days, form.start, validStart]);
 
+    const rulesText = rules ? describeRules(rules) : "";
+
     const save = async (event) => {
         event.preventDefault();
+        if (forUser && form.contactEmail.trim() === "" && form.contactPhone.trim() === "") {
+            setError("Adj meg e-mail címet vagy telefonszámot, ezzel tudod később módosítani vagy lemondani a foglalást!");
+            return;
+        }
         const body = {
             title: form.title,
             description: form.description,
@@ -111,16 +121,15 @@ export default function ReservationForm({ resourceId, reservation, onSaved, onCa
             endsOnOccurrence: repeats && form.repeatEnd === "occurrence" ? Number(form.occurrence) : null,
             contactEmail: form.contactEmail,
             contactPhone: form.contactPhone,
+            contact,
         };
         setSaving(true);
         setError("");
         try {
-            if (isNew) {
-                await axios.post(`/resources/${resourceId}/reservations`, body);
-            } else {
-                await axios.put(`/reservations/${reservation.id}`, body);
-            }
-            onSaved();
+            const res = isNew
+                ? await axios.post(`/resources/${resourceId}/reservations`, body)
+                : await axios.put(`/reservations/${reservation.id}`, body);
+            onSaved(res.data.result);
         } catch (err) {
             setError(errorMessage(err, "Nem sikerült menteni a foglalást!"));
             setSaving(false);
@@ -132,8 +141,10 @@ export default function ReservationForm({ resourceId, reservation, onSaved, onCa
     return (
         <form className="reservation-form" onSubmit={save}>
             <h3>{isNew ? "Új foglalás" : "Foglalás szerkesztése"}</h3>
+            {rulesText !== "" ? <p className="reservation-form_rules">Foglalható: {rulesText}</p> : <></>}
             {error !== "" ? <p className="reservation-form_error" role="alert">{error}</p> : <></>}
-            <TextField label="Foglalás neve" required value={form.title} onChange={change("title")} autoFocus />
+            <TextField label="Foglalás neve" required value={form.title} onChange={change("title")} autoFocus
+                helperText={forUser ? "A naptárban mások is ezt látják, a leírással együtt." : undefined} />
             <TextField label="Leírás" multiline minRows={2} value={form.description} onChange={change("description")} />
 
             <LocalizationProvider dateAdapter={AdapterDateFns}>
@@ -202,7 +213,9 @@ export default function ReservationForm({ resourceId, reservation, onSaved, onCa
 
             <div className="reservation-form_row">
                 <TextField label="Kapcsolattartó e-mail" type="email" value={form.contactEmail} onChange={change("contactEmail")}
-                    helperText="Csak adminok látják. Erre küldünk értesítést, ha az erőforrás megszűnik." />
+                    helperText={forUser
+                        ? "Csak az adminok látják. Ezzel (vagy a telefonszámmal) tudod később módosítani vagy lemondani a foglalást."
+                        : "Csak adminok látják. Erre küldünk értesítést, ha az erőforrás megszűnik."} />
                 <TextField label="Kapcsolattartó telefon" type="tel" value={form.contactPhone} onChange={change("contactPhone")} />
             </div>
 

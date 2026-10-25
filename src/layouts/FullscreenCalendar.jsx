@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import FullscreenExitIcon from '@mui/icons-material/FullscreenExit';
-import { IconButton, TextField } from "@mui/material";
+import { Button, IconButton, TextField, ThemeProvider } from "@mui/material";
+import AddIcon from '@mui/icons-material/Add';
 import { ArrowBackIosNew, ArrowForwardIos } from "@mui/icons-material";
 import CloseIcon from '@mui/icons-material/Close';
 import ListItem from "../components/ListItem";
@@ -9,6 +10,8 @@ import Calendar from "../modules/Calendar";
 import DatePicker from "@mui/lab/DatePicker";
 import LocalizationProvider from "@mui/lab/LocalizationProvider";
 import AdapterDateFns from '@mui/lab/AdapterDateFns';
+import { appTheme } from "../components/AuthPage";
+import { isPastDay } from "../modules/bookingTimes";
 
 export default function FullscreenCalendar(props) {
     const [year, setYear] = useState(new Date().getFullYear());
@@ -200,6 +203,13 @@ export default function FullscreenCalendar(props) {
             setMonthPickerOpen(true);
     }
 
+    // "+ Új foglalás": today in the current month, otherwise the shown month's first day that is not over yet
+    const bookShownMonth = () => {
+        const today = new Date();
+        const first = new Date(year, month, 1);
+        props.newBooking(first < today ? today : first);
+    }
+
     const monthPickerChange = (value) => {
         props.setProps('year', value.getFullYear());
         props.setProps('month', value.getMonth());
@@ -246,7 +256,13 @@ export default function FullscreenCalendar(props) {
                         </span>
 
                     </div>
-                    <div>
+                    <div className="fullscreen-calendar_header_actions">
+                        <ThemeProvider theme={appTheme}>
+                            <Button variant="contained" size="small" startIcon={<AddIcon />} onClick={bookShownMonth}
+                                className="fullscreen-calendar_new-booking" aria-label="Új foglalás">
+                                <span className="fullscreen-calendar_new-booking_text">Új foglalás</span>
+                            </Button>
+                        </ThemeProvider>
                         <IconButton size="large" onClick={exitFullScreen} className="fullscreen-calendar_exit-fullscreen">
                             <FullscreenExitIcon />
                         </IconButton>
@@ -264,11 +280,15 @@ export default function FullscreenCalendar(props) {
                             let notThisMonthDay = false;
                             if (index < 8 && item.date.getDate() > 8) notThisMonthDay = true;
                             if (index > 20 && item.date.getDate() < 8) notThisMonthDay = true;
+                            // A day that is not over yet is booked by clicking it (outside its reservations)
+                            const bookable = !isPastDay(item.date);
                             return (
                                 <div
                                     key={`fullscreen_${item.date.getDate()}_${index}`}
                                     id={`fullscreen_${item.date.getDate()}_${index}`}
-                                    className="fullscreen-calendar_days_day"
+                                    className={`fullscreen-calendar_days_day${bookable ? " bookable" : ""}`}
+                                    onClick={bookable ? () => props.newBooking(item.date) : undefined}
+                                    title={bookable ? "Foglalás erre a napra" : undefined}
                                 >
                                     <h3>
                                         {

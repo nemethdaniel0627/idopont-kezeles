@@ -144,6 +144,7 @@ app.post("/auth/password-reset/confirm", async (req, res) => {
 })
 
 const notFound = (res, message) => res.status(404).json({ error: message });
+const isAdmin = req => Boolean(req.user && req.user.role === "admin");
 const NO_RESOURCE = "Nincs ilyen erőforrás!";
 const NO_RESERVATION = "Nincs ilyen foglalás!";
 
@@ -196,20 +197,50 @@ app.get("/resources/:id/occurrences", async (req, res) => {
   }
 })
 
-app.post("/resources/:id/reservations", auth.requireAdmin, async (req, res) => {
+// Anyone can book. Admins may book outside the resource's booking rules.
+app.post("/resources/:id/reservations", async (req, res) => {
   try {
     const id = toId(req.params.id);
-    if (id === null || !await resources.exists(id)) return notFound(res, NO_RESOURCE);
-    res.status(201).json({ result: await reservations.create(id, req.body) });
+    const result = id === null ? null : await reservations.create(id, req.body, { isAdmin: isAdmin(req) });
+    if (result === null) return notFound(res, NO_RESOURCE);
+    res.status(201).json({ result });
   } catch (err) {
     sendError(res, err, "Nem sikerült menteni a foglalást!");
   }
 })
 
-app.put("/reservations/:id", auth.requireAdmin, async (req, res) => {
+// Without admin rights a reservation is opened, edited or cancelled with the email or phone number
+// given at booking ({ contact }). Wrong guesses are limited per IP and reservation.
+const contactAttempts = new AttemptLimiter(5, 15 * 60 * 1000);
+
+// Runs action(id, { isAdmin, contact }); null for an invalid id
+async function withContact(req, action) {
+  const id = toId(req.params.id);
+  if (id === null) return null;
+  if (isAdmin(req)) return action(id, { isAdmin: true });
+  const key = `${req.ip}|${id}`;
+  if (contactAttempts.isLimited(key)) throw new HttpError(429, TOO_MANY);
   try {
-    const id = toId(req.params.id);
-    const result = id === null ? null : await reservations.update(id, req.body);
+    return await action(id, { isAdmin: false, contact: req.body.contact });
+  } catch (err) {
+    if (err instanceof HttpError && err.status === 403) contactAttempts.record(key);
+    throw err;
+  }
+}
+
+app.post("/reservations/:id/access", async (req, res) => {
+  try {
+    const result = await withContact(req, (id, options) => reservations.access(id, options));
+    if (result === null) return notFound(res, NO_RESERVATION);
+    res.json({ result });
+  } catch (err) {
+    sendError(res, err, "Nem sikerült betölteni a foglalást!");
+  }
+})
+
+app.put("/reservations/:id", async (req, res) => {
+  try {
+    const result = await withContact(req, (id, options) => reservations.update(id, req.body, options));
     if (result === null) return notFound(res, NO_RESERVATION);
     res.json({ result });
   } catch (err) {
@@ -241,14 +272,14 @@ app.delete("/resources/:id", auth.requireAdmin, async (req, res) => {
   }
 })
 
-// Soft delete
-app.delete("/reservations/:id", auth.requireAdmin, async (req, res) => {
+// Soft delete; a repeating reservation is cancelled with all its occurrences
+app.delete("/reservations/:id", async (req, res) => {
   try {
-    const id = toId(req.params.id);
-    if (id === null || !await reservations.remove(id)) return notFound(res, NO_RESERVATION);
-    res.json({ result: true });
+    const result = await withContact(req, (id, options) => reservations.remove(id, options));
+    if (result === null || result === false) return notFound(res, NO_RESERVATION);
+    res.json({ result });
   } catch (err) {
-    sendError(res, err, "Nem sikerült törölni a foglalást!");
+    sendError(res, err, "Nem sikerült lemondani a foglalást!");
   }
 })
 

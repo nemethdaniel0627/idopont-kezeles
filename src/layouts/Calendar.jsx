@@ -1,13 +1,27 @@
 import React, { useEffect, useState } from "react";
 import { START_HOUR_OF_EVENTS, END_HOUR_OF_EVENTS } from "../constants.js";
 import IntervalButton from "../components/IntervalButton.jsx";
-import Loader from "../components/Loader.jsx";
 import ListItem from "../components/ListItem.jsx";
 import IntervalList from "../components/IntervalList.jsx";
 import { Fullscreen } from "@mui/icons-material";
 import CloseIcon from '@mui/icons-material/Close';
-import { IconButton } from "@mui/material";
+import { Button, IconButton, ThemeProvider } from "@mui/material";
+import AddIcon from '@mui/icons-material/Add';
 import CalendarModule from "../modules/Calendar";
+import { appTheme } from "../components/AuthPage";
+import { isPastDay } from "../modules/bookingTimes";
+
+const pad = number => String(number).padStart(2, "0");
+const hoursAndMinutes = date => `${pad(date.getHours())}:${pad(date.getMinutes())}`;
+
+// "09:00–10:30" of a reservation on `day`, "00:00"/"24:00" where it reaches over the day's start or end
+function timeOnDay(reservation, day) {
+  if (reservation.allDay) return "Egész nap";
+  const nextDay = new Date(day.getFullYear(), day.getMonth(), day.getDate() + 1);
+  const from = reservation.start < day ? "00:00" : hoursAndMinutes(reservation.start);
+  const to = reservation.end >= nextDay ? "24:00" : hoursAndMinutes(reservation.end);
+  return `${from}–${to}`;
+}
 
 
 export default function Calendar(props) {
@@ -32,6 +46,10 @@ export default function Calendar(props) {
   const [fadedOut, setFadedOut] = useState(false);
   const monthChanging = shown.year !== year || shown.month !== month;
   const shownDayName = shown.day > 0 ? dayNames[CalendarModule.getWeekdayIndex(new Date(shown.year, shown.month, shown.day))] : "";
+  // The chosen day and its reservations, listed in the left column
+  const shownDate = shown.day > 0 ? new Date(shown.year, shown.month, shown.day) : null;
+  const shownDay = shownDate ? shown.days.find(item => CalendarModule.getPrefix(item.date) === CalendarModule.getPrefix(shownDate)) : undefined;
+  const shownDayReservations = shownDay ? shownDay.services : [];
   // The 15th day of a grid is always in the month the grid is for
   const daysAreFor = (days, forYear, forMonth) => days.length > 15
     && days[15].date.getFullYear() === forYear && days[15].date.getMonth() === forMonth;
@@ -256,24 +274,27 @@ export default function Calendar(props) {
               {monthNames[shown.month]} {shown.day}
             </span>
           </h1>
-          <div className="notes">
-            <p className="addNote--wrapper">
-              <label className="addNote--text">Add note</label>
-              {/* eslint-disable-next-line*/}
-              <a href="#" title="Add note" className="addNote animate">
-                +
-              </a>
-            </p>
-            <ul className="noteList">
-              <li>
-                Headbutt a lion
-                {/* eslint-disable-next-line*/}
-                <a href="#" title="Remove note" className="removeNote animate">
-                  x
-                </a>
-                <Loader />
-              </li>
-            </ul>
+          <div className="day-bookings">
+            {shownDayReservations.length === 0
+              ? <p className="day-bookings_empty">Erre a napra nincs foglalás.</p>
+              : <ul className="day-bookings_list">
+                {shownDayReservations.map((reservation, index) =>
+                  <li key={`${reservation.id}_${index}`}>
+                    <button type="button" onClick={() => openDetails(reservation)}>
+                      <span className="day-bookings_time">{timeOnDay(reservation, shownDate)}</span>
+                      {reservation.name}
+                    </button>
+                  </li>
+                )}
+              </ul>}
+            {shownDate && !isPastDay(shownDate)
+              ? <ThemeProvider theme={appTheme}>
+                <Button variant="contained" color="inherit" startIcon={<AddIcon />} className="day-bookings_new"
+                  onClick={() => props.newBooking(shownDate)}>
+                  Foglalás erre a napra
+                </Button>
+              </ThemeProvider>
+              : <></>}
           </div>
         </div>
       </div>
@@ -403,6 +424,7 @@ export default function Calendar(props) {
                     timeUnits={minutes}
                     item={daysWindowItem}
                     openDetails={openDetails}
+                    newBooking={props.newBooking}
                   />
                   <IntervalList
                     key={`hour_list_${daysWindowItem}_30`}
@@ -412,6 +434,7 @@ export default function Calendar(props) {
                     timeUnits={halfHours}
                     item={daysWindowItem}
                     openDetails={openDetails}
+                    newBooking={props.newBooking}
                   />
                   <IntervalList
                     key={`hour_list_${daysWindowItem}_60`}
@@ -421,6 +444,7 @@ export default function Calendar(props) {
                     timeUnits={hours}
                     item={daysWindowItem}
                     openDetails={openDetails}
+                    newBooking={props.newBooking}
                   />
                 </div>
               </div>

@@ -84,6 +84,12 @@
         box-shadow: 0 0.1rem 1rem rgb(0 0 0 / 20%);
         font-size: 1.5rem;
 
+        &_actions {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
         &_month-picker {
             cursor: pointer;
             position: relative;
@@ -92,6 +98,25 @@
                 visibility: hidden;
                 position: absolute;
                 left: 0;
+            }
+        }
+    }
+
+    &_new-booking {
+        margin-right: 0.8rem;
+        white-space: nowrap;
+
+        // Only the + icon on phones, so the header fits
+        @media only screen and (max-width: 600px) {
+            min-width: 0;
+            margin-right: 0;
+
+            .MuiButton-startIcon {
+                margin: 0;
+            }
+
+            &_text {
+                display: none;
             }
         }
     }
@@ -122,6 +147,15 @@
         transform: translateX(0);
         &_day {
             background-color: var(--calendar-grey);
+
+            &.bookable {
+                cursor: pointer;
+
+                &:hover {
+                    background-color: #e3ebef;
+                }
+            }
+
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -179,6 +213,52 @@
 
         &.ghost_event {
             cursor: unset;
+        }
+    }
+}
+
+// Phones: the resource's panel above the month, both full width
+@media only screen and (max-width: 700px) {
+    .fullscreen-calendar {
+        flex-direction: column;
+        align-items: stretch;
+
+        &_right-col {
+            width: 100%;
+            height: auto;
+            flex-shrink: 0;
+            align-items: flex-start;
+            padding: 1rem 1.6rem;
+            border-radius: 1rem 1rem 0 0;
+
+            .fullscreen-calendar_resource-title {
+                margin: 0;
+                text-align: left;
+            }
+
+            .fullscreen-calendar_resource-fields {
+                flex-direction: row;
+                flex-wrap: wrap;
+                gap: 0.4rem 1.6rem;
+                padding: 0;
+                margin-top: 0.4rem;
+                font-size: 1.3rem;
+            }
+        }
+
+        &_left-col {
+            width: 100%;
+            height: auto;
+            flex: 1;
+            min-height: 0;
+        }
+
+        &_header {
+            font-size: 1.3rem;
+
+            .MuiIconButton-root {
+                padding: 0.6rem;
+            }
         }
     }
 }

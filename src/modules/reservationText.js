@@ -21,3 +21,34 @@ export function describeReservation(reservation) {
         : `eddig: ${Calendar.getDateWithFormat(new Date(reservation.endsOnDate))}`;
     return `${time}, minden ${every}${regularityUnits[reservation.regularityMeasure]}${days}, ${until}`;
 }
+
+const shortDayNames = { "hétfő": "H", "kedd": "K", "szerda": "Sze", "csütörtök": "Cs", "péntek": "P", "szombat": "Szo", "vasárnap": "V" };
+const weekOrder = Object.keys(shortDayNames);
+
+// The days as ranges where they follow each other, e.g. ["hétfő", …, "péntek", "vasárnap"] -> "H–P, V"
+function describeDays(days) {
+    const indexes = days.map(day => weekOrder.indexOf(day)).sort((a, b) => a - b);
+    const ranges = [];
+    indexes.forEach(index => {
+        const last = ranges[ranges.length - 1];
+        if (last && last[1] === index - 1) last[1] = index;
+        else ranges.push([index, index]);
+    });
+    const name = index => shortDayNames[weekOrder[index]];
+    return ranges.map(([from, to]) => from === to ? name(from) : `${name(from)}–${name(to)}`).join(", ");
+}
+
+// A resource's booking rules in one line, e.g. "H–P 08:00–18:00 · 30–240 perc · legfeljebb 60 nappal előre",
+// or "" when it has none
+export function describeRules(resource) {
+    const parts = [];
+    const when = [resource.openDays ? describeDays(resource.openDays) : "", resource.openFrom ? `${resource.openFrom}–${resource.openTo}` : ""]
+        .filter(part => part !== "").join(" ");
+    if (when !== "") parts.push(when);
+    const { minLengthMinutes: min, maxLengthMinutes: max } = resource;
+    if (min && max) parts.push(`${min}–${max} perc`);
+    else if (min) parts.push(`legalább ${min} perc`);
+    else if (max) parts.push(`legfeljebb ${max} perc`);
+    if (resource.maxDaysAhead) parts.push(`legfeljebb ${resource.maxDaysAhead} nappal előre`);
+    return parts.join(" · ");
+}
