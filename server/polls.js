@@ -230,7 +230,12 @@ async function saveAnswer(poll, body, user, now = new Date()) {
                 "userId" = COALESCE("pollAnswers"."userId", EXCLUDED."userId"), "updatedAt" = now()
             RETURNING ${ANSWER_COLUMNS}, (xmax = 0) AS created`,
             [poll.id, values.name, values.nameKey, hashToken(editKey), userId, values.contactEmail, values.contactPhone, values.slots]);
-        return { answer: fullAnswer(rows[0]), editKey: rows[0].created ? editKey : null };
+        const row = rows[0];
+        // Found by name: the stored contacts stay hidden unless the answer is the logged-in user's own,
+        // so typing someone else's name never shows their email or phone
+        const own = row.created || (user && row.userId === user.id);
+        const answer = own ? fullAnswer(row) : { ...publicAnswer(row), contactEmail: values.contactEmail, contactPhone: values.contactPhone };
+        return { answer, editKey: row.created ? editKey : null };
     } catch (err) {
         // Renaming with the edit key to a name someone else already has
         if (err.code === UNIQUE_VIOLATION) throw new ValidationError(NAME_TAKEN);
@@ -238,12 +243,18 @@ async function saveAnswer(poll, body, user, now = new Date()) {
     }
 }
 
-// The organizer (or an admin) may change these; the days and times stay, so the answers stay valid
-async function update(poll, body) {
+// The organizer (or an admin) may change these, any of them (the others stay as they are); the days and times
+// stay, so the answers stay valid
+async function update(poll, body, now = new Date()) {
+    const has = key => Boolean(body) && Object.prototype.hasOwnProperty.call(body, key);
+    if (has('answersVisible') && typeof body.answersVisible !== 'boolean') throw new ValidationError('Hibás láthatóság!');
     const rows = await database.query(
         `UPDATE polls SET title = $2, description = $3, "answersVisible" = $4, deadline = $5 WHERE id = $1 RETURNING ${COLUMNS}`,
-        [poll.id, toPollTitle(body.title), toDescription(body.description), body.answersVisible !== false,
-            toDeadline(body.deadline, new Date())]);
+        [poll.id,
+            has('title') ? toPollTitle(body.title) : poll.title,
+            has('description') ? toDescription(body.description) : poll.description,
+            has('answersVisible') ? body.answersVisible : poll.answersVisible,
+            has('deadline') ? toDeadline(body.deadline, now) : poll.deadline]);
     return rows[0];
 }
 

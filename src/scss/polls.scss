@@ -187,6 +187,8 @@ $available-hover: #cde7f6;
         background-color: $available-hover;
     }
 
+    // Marked: the slots being chosen, or the viewer's own answer when the others' are hidden
+    &_cell.marked,
     &_editing &_cell.marked {
         background-color: $available;
     }
