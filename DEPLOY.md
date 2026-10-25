@@ -107,12 +107,16 @@ gcloud projects add-iam-policy-binding <project-id> --member="serviceAccount:<pr
 
 3. Reload the app: the Admin menu appears. Add the resources, and give the users their rights on the
    Felhasználók page.
+4. **Before inviting anyone:** on **Admin → Feltételek és adatkezelés**, fill in the `[bracketed]` parts of the
+   terms and the privacy notice (who runs the site, contact email, hosting), and have them checked by someone
+   who knows the law. The page warns while placeholders are left.
 
 ## Later
 
 - **New version:** from the `app` folder, run
   `gcloud run deploy idopont --source . --region <region>`. The settings and secrets stay.
-- **Database changes** (when a version needs one, like `server/scripts/add-permissions.sql`): run the SQL in
+- **Database changes** (when a version needs one, like `server/scripts/add-permissions.sql`,
+  `poll-15-minute-slots.sql` or `add-gdpr.sql`; `npm run setup-db` already includes them all): run the SQL in
   Supabase's **SQL Editor**.
 - **Logs:** Cloud Console → Cloud Run → idopont → Logs, or
   `gcloud run services logs read idopont --region <region>`.

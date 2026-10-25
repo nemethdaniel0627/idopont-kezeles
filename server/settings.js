@@ -3,9 +3,11 @@ const { ValidationError } = require('./validation');
 
 // The site-wide switches an admin can turn on or off. A missing row means the default.
 const DEFAULTS = {
-    bookingEnabled: true,  // resource booking: the resources on the home page and their calendars
-    pollsEnabled: true,    // common time scheduling (polls)
-    guestsCanBook: true,   // booking without logging in
+    bookingEnabled: true,   // resource booking: the resources on the home page and their calendars
+    pollsEnabled: true,     // common time scheduling (polls)
+    guestsCanBook: true,    // booking without logging in
+    newUsersCanBook: false, // the rights a newly registered user starts with (admins change them per user)
+    newUsersCanPoll: false,
 };
 
 async function get() {

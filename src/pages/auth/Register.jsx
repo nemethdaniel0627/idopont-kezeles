@@ -1,14 +1,16 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Alert, Button, TextField } from "@mui/material";
+import { Alert, Button, Checkbox, FormControlLabel, TextField } from "@mui/material";
 import AuthPage from "../../components/AuthPage";
 import { useAuth } from "../../auth/AuthContext";
 import { errorMessage } from "../../modules/api";
+import LegalLink from "../../components/legal/LegalLink";
 
 export default function Register() {
     const { register } = useAuth();
     const navigate = useNavigate();
     const [form, setForm] = useState({ name: "", email: "", phone: "", password: "", passwordAgain: "" });
+    const [accepted, setAccepted] = useState(false);
     const [error, setError] = useState("");
     const [saving, setSaving] = useState(false);
 
@@ -20,10 +22,14 @@ export default function Register() {
             setError("A két jelszó nem egyezik!");
             return;
         }
+        if (!accepted) {
+            setError("A regisztrációhoz el kell fogadnod a felhasználási feltételeket és az adatkezelési tájékoztatót!");
+            return;
+        }
         setSaving(true);
         setError("");
         try {
-            await register({ name: form.name, email: form.email, phone: form.phone, password: form.password });
+            await register({ name: form.name, email: form.email, phone: form.phone, password: form.password, acceptTerms: true });
             // The home page greets new users and tells what they can do now
             navigate("/", { replace: true, state: { welcome: true } });
         } catch (err) {
@@ -44,6 +50,14 @@ export default function Register() {
                     onChange={change("password")} helperText="Legalább 8 karakter." />
                 <TextField label="Jelszó még egyszer" type="password" autoComplete="new-password" required
                     value={form.passwordAgain} onChange={change("passwordAgain")} />
+                <FormControlLabel className="auth-form_terms"
+                    control={<Checkbox checked={accepted} onChange={event => setAccepted(event.target.checked)} required
+                        inputProps={{ "aria-label": "Elfogadom a felhasználási feltételeket és az adatkezelési tájékoztatót" }} />}
+                    label={<>
+                        Elfogadom a <LegalLink kind="terms">felhasználási feltételeket</LegalLink>, és tudomásul vettem
+                        az <LegalLink kind="privacy">adatkezelési tájékoztatót</LegalLink>: az adataimat csak a foglalásokhoz
+                        és egyeztetésekhez használják, és nem adják át másnak.
+                    </>} />
                 <Button type="submit" variant="contained" size="large" disabled={saving}>Regisztráció</Button>
             </form>
             <div className="auth-links">

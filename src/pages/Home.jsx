@@ -51,10 +51,12 @@ export default function Home(props) {
     const [message, setMessage] = useState(null);
     // Shown once, right after registering
     const [welcome, setWelcome] = useState(Boolean(location.state && location.state.welcome));
+    // Shown once, right after the account is deleted
+    const [accountDeleted, setAccountDeleted] = useState(Boolean(location.state && location.state.accountDeleted));
 
     useEffect(() => {
         // The welcome is not shown again on reload or when coming back
-        if (location.state && location.state.welcome) navigate(location.pathname, { replace: true, state: null });
+        if (location.state && (location.state.welcome || location.state.accountDeleted)) navigate(location.pathname, { replace: true, state: null });
     }, [location, navigate]);
 
     // The days of the shown month's grid: whole weeks from Monday, 35 or 42 days
@@ -187,6 +189,11 @@ export default function Home(props) {
                         : <></>}
                 </header>
 
+                {accountDeleted
+                    ? <Alert severity="info" className="home_welcome" onClose={() => setAccountDeleted(false)}>
+                        A fiókodat és a személyes adataidat töröltük. A jövőbeli foglalásaidat lemondtuk.
+                    </Alert>
+                    : <></>}
                 {welcome
                     ? <Alert severity="success" className="home_welcome" onClose={() => setWelcome(false)}>
                         <AlertTitle>Üdv{user && user.name ? `, ${user.name}` : ""}! Sikeres regisztráció.</AlertTitle>

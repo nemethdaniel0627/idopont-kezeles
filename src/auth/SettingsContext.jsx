@@ -3,11 +3,11 @@ import axios from "axios";
 import { useAuth } from "./AuthContext";
 import { permissions } from "../modules/permissions";
 
-// The site-wide switches (booking, polls, guest booking) and what the current viewer may do by them
+// The site-wide switches (booking, polls, guest booking, new users' rights) and what the current viewer may do by them
 const SettingsContext = createContext(null);
 
-// Until loaded everything counts as on, so nothing is hidden and then shown again on a normal load
-const DEFAULTS = { bookingEnabled: true, pollsEnabled: true, guestsCanBook: true };
+// Until loaded the features count as on, so nothing is hidden and then shown again on a normal load
+const DEFAULTS = { bookingEnabled: true, pollsEnabled: true, guestsCanBook: true, newUsersCanBook: false, newUsersCanPoll: false };
 
 export function SettingsProvider({ children }) {
     const { user } = useAuth();

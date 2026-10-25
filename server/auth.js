@@ -2,6 +2,8 @@ const database = require('./database');
 const { hashPassword, verifyPassword, createToken, hashToken } = require('./passwords');
 const { parseCookies, serializeCookie } = require('./cookies');
 const { ValidationError, HttpError } = require('./validation');
+const settings = require('./settings');
+const legal = require('./legal');
 
 const SESSION_COOKIE = 'session';
 const SESSION_DAYS = 30;
@@ -10,7 +12,7 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_PATTERN = /^[0-9+\-()/ ]*$/;
 const UNIQUE_VIOLATION = '23505';
 
-const USER_COLUMNS = 'id, email, name, phone, role, "canBook", "canPoll"';
+const USER_COLUMNS = 'id, email, name, phone, role, "canBook", "canPoll", "termsVersion", "privacyVersion"';
 
 // Hashed once, so checking an unknown email takes as long as a wrong password
 const dummyHash = hashPassword('nem-letezo-felhasznalo');
@@ -50,15 +52,25 @@ async function findByEmail(email) {
 
 const withoutHash = ({ passwordHash, ...user }) => user;
 
+// A new user gets the rights the admins set for new users (settings.newUsersCanBook / newUsersCanPoll).
+// Registering needs accepting the terms and the privacy notice ({ acceptTerms: true }); their current versions
+// are recorded.
 async function register(body) {
     const email = toEmail(body.email);
     const password = toPassword(body.password);
     const name = toName(body.name);
     const phone = toPhone(body.phone);
+    if (body.acceptTerms !== true) {
+        throw new ValidationError('A regisztrációhoz el kell fogadnod a felhasználási feltételeket és az adatkezelési tájékoztatót!');
+    }
+    const current = await settings.get();
+    const accepted = await legal.versions();
     try {
         const rows = await database.query(
-            `INSERT INTO users (email, "passwordHash", name, phone) VALUES ($1, $2, $3, $4) RETURNING ${USER_COLUMNS}`,
-            [email, await hashPassword(password), name, phone]);
+            `INSERT INTO users (email, "passwordHash", name, phone, "canBook", "canPoll", "termsVersion", "privacyVersion", "termsAcceptedAt")
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, now()) RETURNING ${USER_COLUMNS}`,
+            [email, await hashPassword(password), name, phone, current.newUsersCanBook, current.newUsersCanPoll,
+                accepted.terms, accepted.privacy]);
         return rows[0];
     } catch (err) {
         if (err.code === UNIQUE_VIOLATION) throw new ValidationError('Ezzel az e-mail címmel már regisztráltak!');

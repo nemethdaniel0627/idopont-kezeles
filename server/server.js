@@ -10,6 +10,8 @@ const auth = require('./auth');
 const users = require('./users');
 const polls = require('./polls');
 const settings = require('./settings');
+const legal = require('./legal');
+const privacy = require('./privacy');
 const mailer = require('./mailer');
 const { AttemptLimiter } = require('./limiter');
 const { ValidationError, HttpError, toId } = require('./validation');
@@ -107,6 +109,64 @@ app.post("/auth/logout", async (req, res) => {
     res.json({ result: null });
   } catch (err) {
     sendError(res, err, "Nem sikerült a kijelentkezés!");
+  }
+})
+
+// ----- Data protection (GDPR) -----
+
+// The current versions of the terms and the privacy notice: a logged-in user who accepted older ones is asked again
+app.get("/legal", async (req, res) => {
+  try {
+    res.json({ result: await legal.versions() });
+  } catch (err) {
+    sendError(res, err, "Nem sikerült betölteni a feltételeket!");
+  }
+})
+
+app.get("/legal/:kind", async (req, res) => {
+  try {
+    if (!legal.isKind(req.params.kind)) return notFound(res, "Nincs ilyen szöveg!");
+    res.json({ result: await legal.current(req.params.kind) });
+  } catch (err) {
+    sendError(res, err, "Nem sikerült betölteni a szöveget!");
+  }
+})
+
+// { body, major }: with major the version grows and every user has to accept the text again
+app.put("/legal/:kind", auth.requireAdmin, async (req, res) => {
+  try {
+    res.json({ result: await legal.save(req.params.kind, req.body.body, req.body.major) });
+  } catch (err) {
+    sendError(res, err, "Nem sikerült menteni a szöveget!");
+  }
+})
+
+app.post("/auth/accept-terms", auth.requireUser, async (req, res) => {
+  try {
+    const accepted = await legal.accept(req.user.id);
+    res.json({ result: { ...req.user, termsVersion: accepted.terms, privacyVersion: accepted.privacy } });
+  } catch (err) {
+    sendError(res, err, "Nem sikerült menteni az elfogadást!");
+  }
+})
+
+// Everything stored about the logged-in user
+app.get("/auth/my-data", auth.requireUser, async (req, res) => {
+  try {
+    res.json({ result: await privacy.exportData(req.user) });
+  } catch (err) {
+    sendError(res, err, "Nem sikerült összegyűjteni az adataidat!");
+  }
+})
+
+// Deletes the logged-in user's account: { password }
+app.delete("/auth/account", auth.requireUser, async (req, res) => {
+  try {
+    await privacy.deleteAccount(req.user, req.body && req.body.password);
+    auth.clearSessionCookie(res);
+    res.json({ result: true });
+  } catch (err) {
+    sendError(res, err, "Nem sikerült törölni a fiókot!");
   }
 })
 
@@ -517,3 +577,10 @@ app.get("*", (req, res, next) => {
 app.listen(PORT, () => {
   console.log(`server started on port ${PORT}`);
 });
+
+// Contacts no longer needed are erased at start and then daily (see privacy.cleanup)
+const cleanUp = () => privacy.cleanup()
+  .then(erased => console.log(`cleanup: ${JSON.stringify(erased)}`))
+  .catch(err => console.error(`cleanup failed: ${err.message}`));
+cleanUp();
+setInterval(cleanUp, 24 * 60 * 60 * 1000).unref();

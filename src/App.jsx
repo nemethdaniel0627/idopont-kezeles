@@ -19,6 +19,9 @@ import ForgotPassword from "./pages/auth/ForgotPassword";
 import ResetPassword from "./pages/auth/ResetPassword";
 import Profile from "./pages/auth/Profile";
 import MyBookings from "./pages/MyBookings";
+import LegalAdmin from "./pages/admin/LegalAdmin";
+import Footer from "./components/Footer";
+import TermsUpdateDialog from "./components/legal/TermsUpdateDialog";
 import axios from "axios";
 import { useAuth } from "./auth/AuthContext";
 import { useSettings } from "./auth/SettingsContext";
@@ -96,6 +99,7 @@ export default function App() {
         <Route path="/admin/eroforrasok/:id" element={<AdminRoute><ResourcesAdmin resources={resources} resourcesLoaded={resourcesLoaded} saveResource={saveResource} removeResource={removeResource} /></AdminRoute>} />
         <Route path="/admin/egyeztetesek" element={<AdminRoute><SchedulingAdmin /></AdminRoute>} />
         <Route path="/admin/felhasznalok" element={<AdminRoute><UsersAdmin /></AdminRoute>} />
+        <Route path="/admin/jogi-szovegek" element={<AdminRoute><LegalAdmin /></AdminRoute>} />
         <Route path="/bejelentkezes" element={<Login />} />
         <Route path="/regisztracio" element={<Register />} />
         <Route path="/elfelejtett-jelszo" element={<ForgotPassword />} />
@@ -107,6 +111,8 @@ export default function App() {
         <Route path="/egyeztetes/:key" element={<PollPage />} />
         <Route path="/egyeztetes/:key/attekintes" element={<PollOverview />} />
       </Routes>
+      <Footer />
+      <TermsUpdateDialog />
     </>
   );
 }

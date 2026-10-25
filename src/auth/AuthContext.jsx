@@ -5,7 +5,7 @@ import axios from "axios";
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-    // undefined until the first check is done, then the user ({ id, email, name, phone, role }) or null
+    // undefined until the first check is done, then the user ({ id, email, name, phone, role, rights, accepted terms }) or null
     const [user, setUser] = useState(undefined);
 
     const refresh = useCallback(() => {
@@ -36,6 +36,18 @@ export function AuthProvider({ children }) {
         setUser(null);
     };
 
+    // Records that the user accepted the current terms and privacy notice
+    const acceptTerms = async () => {
+        const res = await axios.post("/auth/accept-terms");
+        setUser(res.data.result);
+    };
+
+    // Deletes the account and its personal data (the password is asked again); the user is logged out
+    const deleteAccount = async (password) => {
+        await axios.delete("/auth/account", { data: { password } });
+        setUser(null);
+    };
+
     const updateProfile = async (data) => {
         const res = await axios.put("/auth/profile", data);
         setUser(res.data.result);
@@ -43,7 +55,7 @@ export function AuthProvider({ children }) {
     };
 
     return (
-        <AuthContext.Provider value={{ user, refresh, login, register, logout, updateProfile }}>
+        <AuthContext.Provider value={{ user, refresh, login, register, logout, updateProfile, acceptTerms, deleteAccount }}>
             {children}
         </AuthContext.Provider>
     );
