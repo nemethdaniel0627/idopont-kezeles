@@ -1,0 +1,305 @@
+// The admin pages: home tiles, resources, users. One column on phones.
+.admin-page {
+    max-width: 120rem;
+    margin: 0 auto;
+    padding: 2.4rem 1.6rem 4rem;
+    font-size: 1.6rem;
+    line-height: 1.5;
+
+    &_header {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.4rem;
+        margin-bottom: 2.4rem;
+
+        h1 {
+            font-size: 3rem;
+            color: #fff;
+        }
+    }
+
+    &_intro {
+        color: #ddd;
+        margin-bottom: 1.6rem;
+    }
+}
+
+.admin-home {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2.4rem;
+
+    &_tiles {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(40rem, 100%), 1fr));
+        gap: 2.4rem;
+        width: 100%;
+        max-width: 96rem;
+    }
+
+    > .MuiButton-root {
+        color: #fff;
+    }
+}
+
+.admin-tile {
+    display: flex;
+    flex-direction: column;
+    background: #fff;
+    border-radius: 1.2rem;
+    overflow: hidden;
+    text-decoration: none;
+    color: var(--calendar-dark);
+    box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.35);
+    transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+
+    &:hover,
+    &:focus-visible {
+        transform: translateY(-0.4rem);
+        box-shadow: 0 1.2rem 2.4rem rgba(0, 0, 0, 0.45);
+    }
+
+    img {
+        width: 100%;
+        aspect-ratio: 16 / 10;
+        object-fit: cover;
+        background: #f7f9fe;
+    }
+
+    &_text {
+        padding: 1.6rem 2rem 2rem;
+        border-top: 1px solid #e3e8f2;
+
+        h2 {
+            font-size: 2.2rem;
+            margin-bottom: 0.4rem;
+        }
+
+        p {
+            color: #555;
+        }
+    }
+}
+
+.resources-admin {
+    display: grid;
+    grid-template-columns: 28rem 1fr;
+    gap: 2.4rem;
+    align-items: start;
+
+    @media only screen and (max-width: 900px) {
+        grid-template-columns: 1fr;
+    }
+
+    &_list {
+        background: #fff;
+        border-radius: 1.2rem;
+        padding: 1.6rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.8rem;
+    }
+
+    &_detail {
+        min-width: 0;
+    }
+
+    &_empty {
+        color: #ddd;
+    }
+}
+
+.resource-editor {
+    display: flex;
+    flex-direction: column;
+    gap: 2.4rem;
+}
+
+.admin-section {
+    background: #fff;
+    border-radius: 1.2rem;
+    padding: 2.4rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.6rem;
+
+    h2 {
+        font-size: 2.2rem;
+        color: var(--calendar-dark);
+    }
+
+    h3 {
+        font-size: 1.8rem;
+        color: var(--calendar-dark);
+        margin-top: 0.8rem;
+    }
+
+    &_hint {
+        color: #666;
+        margin-top: -1.2rem;
+    }
+
+    &_label {
+        color: #666;
+        margin-bottom: 0.6rem;
+    }
+
+    &_empty {
+        color: #666;
+    }
+
+    &_row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(20rem, 100%), 1fr));
+        gap: 1.6rem;
+    }
+
+    &_add {
+        align-self: flex-start;
+    }
+
+    &_actions {
+        display: flex;
+        justify-content: flex-end;
+    }
+
+    &_danger {
+        border: 1px solid #f2c2c2;
+    }
+}
+
+.custom-field {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: 1rem;
+    align-items: center;
+
+    @media only screen and (max-width: 600px) {
+        grid-template-columns: 1fr auto;
+
+        .MuiTextField-root:nth-child(2) {
+            grid-column: 1;
+        }
+    }
+}
+
+.day-toggles {
+    flex-wrap: wrap;
+}
+
+.reservation-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+
+    li {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 1rem;
+        padding: 1.2rem 1.6rem;
+        border: 1px solid #e3e8f2;
+        border-radius: 1rem;
+    }
+
+    strong {
+        font-size: 1.7rem;
+        color: var(--calendar-dark);
+    }
+
+    p {
+        color: #555;
+        word-break: break-word;
+    }
+
+    &_description {
+        font-style: italic;
+    }
+
+    &_contact {
+        font-size: 1.4rem;
+    }
+
+    &_actions {
+        display: flex;
+        flex-shrink: 0;
+    }
+}
+
+.reservation-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.6rem;
+    padding: 2rem;
+    border: 1px solid #c8d8f6;
+    border-radius: 1rem;
+    background: #f7f9fe;
+
+    h3 {
+        margin-top: 0;
+    }
+
+    &_row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(22rem, 100%), 1fr));
+        gap: 1.6rem;
+    }
+
+    &_hint {
+        color: #555;
+        margin-top: -0.8rem;
+    }
+
+    &_days {
+        flex-wrap: wrap;
+    }
+
+    &_choice {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.8rem;
+        margin-bottom: 0.8rem;
+    }
+
+    &_error {
+        color: #d32f2f;
+    }
+
+    &_actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 1rem;
+    }
+}
+
+.users-table {
+    background: #fff;
+    border-radius: 1.2rem;
+
+    .MuiTableCell-root {
+        font-size: 1.5rem;
+    }
+
+    // On phones only name, email and the switch fit
+    @media only screen and (max-width: 600px) {
+        .users-table_optional {
+            display: none;
+        }
+
+        .MuiTableCell-root {
+            padding: 1.2rem 0.8rem;
+            word-break: break-word;
+        }
+    }
+}
+
+.remove-dialog {
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+    font-size: 1.5rem;
+}

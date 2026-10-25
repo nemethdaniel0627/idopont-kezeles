@@ -7,6 +7,7 @@ const express = require('express');
 const resources = require('./resources');
 const reservations = require('./reservations');
 const auth = require('./auth');
+const users = require('./users');
 const mailer = require('./mailer');
 const { AttemptLimiter } = require('./limiter');
 const { ValidationError, HttpError, toId } = require('./validation');
@@ -213,6 +214,61 @@ app.put("/reservations/:id", auth.requireAdmin, async (req, res) => {
     res.json({ result });
   } catch (err) {
     sendError(res, err, "Nem sikerült menteni a foglalást!");
+  }
+})
+
+// How many upcoming reservations and contacts removing the resource would affect
+app.get("/resources/:id/removal-preview", auth.requireAdmin, async (req, res) => {
+  try {
+    const id = toId(req.params.id);
+    const result = id === null ? null : await resources.removalPreview(id);
+    if (result === null) return notFound(res, NO_RESOURCE);
+    res.json({ result });
+  } catch (err) {
+    sendError(res, err, "Nem sikerült betölteni a foglalásokat!");
+  }
+})
+
+// Soft delete; with { notify: true } the people with upcoming reservations get an email
+app.delete("/resources/:id", auth.requireAdmin, async (req, res) => {
+  try {
+    const id = toId(req.params.id);
+    const result = id === null ? null : await resources.remove(id, req.body && req.body.notify === true);
+    if (result === null) return notFound(res, NO_RESOURCE);
+    res.json({ result });
+  } catch (err) {
+    sendError(res, err, "Nem sikerült törölni az erőforrást!");
+  }
+})
+
+// Soft delete
+app.delete("/reservations/:id", auth.requireAdmin, async (req, res) => {
+  try {
+    const id = toId(req.params.id);
+    if (id === null || !await reservations.remove(id)) return notFound(res, NO_RESERVATION);
+    res.json({ result: true });
+  } catch (err) {
+    sendError(res, err, "Nem sikerült törölni a foglalást!");
+  }
+})
+
+app.get("/users", auth.requireAdmin, async (req, res) => {
+  try {
+    res.json({ result: await users.getAll() });
+  } catch (err) {
+    sendError(res, err, "Nem sikerült betölteni a felhasználókat!");
+  }
+})
+
+// Grants or takes away admin rights: { role: "admin" | "regular" }
+app.put("/users/:id/role", auth.requireAdmin, async (req, res) => {
+  try {
+    const id = toId(req.params.id);
+    const result = id === null ? null : await users.setRole(req.user.id, id, req.body.role);
+    if (result === null) return notFound(res, "Nincs ilyen felhasználó!");
+    res.json({ result });
+  } catch (err) {
+    sendError(res, err, "Nem sikerült menteni a jogosultságot!");
   }
 })
 

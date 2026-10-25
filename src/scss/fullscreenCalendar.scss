@@ -43,6 +43,29 @@
             font-weight: bold;
             text-align: center;
         }
+
+        .fullscreen-calendar_resource-fields {
+            list-style: none;
+            width: 100%;
+            padding: 0 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            color: #ddd;
+            font-size: 1.5rem;
+
+            li {
+                display: flex;
+                flex-direction: column;
+            }
+
+            span {
+                font-size: 1.2rem;
+                color: #9fb9c0;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+            }
+        }
     }
 
     &_left-col {

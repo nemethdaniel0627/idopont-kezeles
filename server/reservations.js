@@ -1,6 +1,7 @@
 const database = require('./database');
 const { expand, getRepeatLimit, WEEK_DAYS } = require('./recurrence');
 const { ValidationError, toPositiveSmallint, toDate, toTitle } = require('./validation');
+const { toEmail, toPhone } = require('./auth');
 
 const REGULARITY_MEASURES = ["never", "day", "week", "month"];
 // "sixMonths" is only accepted as input; it is stored as an end date at the 6-month limit
@@ -8,7 +9,7 @@ const ENDS_ON_TYPES = ["sixMonths", "onDate", "occurrence"];
 const MAX_RANGE_DAYS = 400;
 
 const COLUMNS = `id, "resourceId", title, description, "startDate", "endDate", "allDay", "regularityMeasure",
-    "regularityRepeatNumber", "regularityDays", "endsOnType", "endsOnDate", "endsOnOccurrence"`;
+    "regularityRepeatNumber", "regularityDays", "endsOnType", "endsOnDate", "endsOnOccurrence", "contactEmail", "contactPhone"`;
 
 const startOfDay = date => new Date(date.getFullYear(), date.getMonth(), date.getDate());
 
@@ -24,8 +25,12 @@ function toReservationValues(body) {
     const regularityMeasure = body.regularityMeasure || "never";
     if (!REGULARITY_MEASURES.includes(regularityMeasure)) throw new ValidationError("Hibás ismétlődés!");
 
+    // Optional; only admins see them
+    const contactEmail = typeof body.contactEmail === "string" && body.contactEmail.trim() !== "" ? toEmail(body.contactEmail) : "";
+    const contactPhone = toPhone(body.contactPhone);
+
     const values = {
-        title, description, startDate, endDate,
+        title, description, startDate, endDate, contactEmail, contactPhone,
         allDay: body.allDay === true,
         regularityMeasure,
         regularityRepeatNumber: null,
@@ -69,7 +74,7 @@ function toReservationValues(body) {
 
 const valueList = values => [values.title, values.description, values.startDate, values.endDate, values.allDay,
 values.regularityMeasure, values.regularityRepeatNumber, values.regularityDays, values.endsOnType,
-values.endsOnDate, values.endsOnOccurrence];
+values.endsOnDate, values.endsOnOccurrence, values.contactEmail, values.contactPhone];
 
 // The resource's reservations, as stored (a repeating one is a single row)
 async function listByResource(resourceId) {
@@ -102,8 +107,8 @@ async function create(resourceId, body) {
     const values = toReservationValues(body);
     const rows = await database.query(
         `INSERT INTO reservations ("resourceId", title, description, "startDate", "endDate", "allDay", "regularityMeasure",
-            "regularityRepeatNumber", "regularityDays", "endsOnType", "endsOnDate", "endsOnOccurrence")
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING ${COLUMNS}`,
+            "regularityRepeatNumber", "regularityDays", "endsOnType", "endsOnDate", "endsOnOccurrence", "contactEmail", "contactPhone")
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING ${COLUMNS}`,
         [resourceId, ...valueList(values)]);
     return rows[0];
 }
@@ -114,10 +119,17 @@ async function update(id, body) {
     const rows = await database.query(
         `UPDATE reservations SET title = $2, description = $3, "startDate" = $4, "endDate" = $5, "allDay" = $6,
             "regularityMeasure" = $7, "regularityRepeatNumber" = $8, "regularityDays" = $9, "endsOnType" = $10,
-            "endsOnDate" = $11, "endsOnOccurrence" = $12
+            "endsOnDate" = $11, "endsOnOccurrence" = $12, "contactEmail" = $13, "contactPhone" = $14
         WHERE id = $1 AND "deletedAt" IS NULL RETURNING ${COLUMNS}`,
         [id, ...valueList(values)]);
     return rows.length === 1 ? rows[0] : null;
 }
 
-module.exports = { listByResource, occurrences, create, update };
+// Soft delete: the row stays, hidden. Returns false when there is no such reservation.
+async function remove(id) {
+    const rows = await database.query(
+        `UPDATE reservations SET "deletedAt" = now() WHERE id = $1 AND "deletedAt" IS NULL RETURNING id`, [id]);
+    return rows.length === 1;
+}
+
+module.exports = { listByResource, occurrences, create, update, remove, toReservationValues };
