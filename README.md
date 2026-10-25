@@ -20,6 +20,8 @@ In another terminal
  ```
 
 and access the application at `http://localhost:3000/`
+
+To put it online (Google Cloud Run with a Supabase database), see [DEPLOY.md](DEPLOY.md).
     
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 

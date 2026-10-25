@@ -1,0 +1,11 @@
+# Not uploaded by "gcloud run deploy --source .": installed packages are installed again in the build,
+# and the local .env (passwords) never leaves this computer
+.gcloudignore
+.git
+.gitignore
+.idea
+node_modules/
+server/node_modules/
+build/
+server/.env
+*.log

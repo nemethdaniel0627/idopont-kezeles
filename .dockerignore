@@ -1,0 +1,8 @@
+# Not sent into the container build: installed packages are installed again, secrets stay local
+node_modules
+server/node_modules
+build
+.git
+.idea
+server/.env
+*.log

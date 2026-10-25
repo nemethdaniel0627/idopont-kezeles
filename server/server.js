@@ -14,6 +14,9 @@ const mailer = require('./mailer');
 const { AttemptLimiter } = require('./limiter');
 const { ValidationError, HttpError, toId } = require('./validation');
 const app = express();
+// In production (Cloud Run) the request comes through Google's proxy: req.ip and req.protocol are taken from
+// its X-Forwarded-* headers, so the login limits count each visitor, not the proxy
+if (process.env.NODE_ENV === 'production') app.set('trust proxy', 1);
 
 
 const PORT = process.env.PORT || 5000;
