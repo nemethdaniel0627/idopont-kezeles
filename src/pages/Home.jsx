@@ -217,12 +217,14 @@ export default function Home(props) {
                     </Alert>
                     : <></>}
 
-                <div className="service-grid">
-                    {props.resources.map(item =>
-                        <Szolgaltatas key={`servicekey_${item.id}`} id={`service_${item.id}`} title={item.title} serviceDatas={item}
-                            openCalendar={() => openCalendar(item)} />
-                    )}
-                </div>
+                {can.booking ? (
+                    <div className="service-grid">
+                        {props.resources.map(item =>
+                            <Szolgaltatas key={`servicekey_${item.id}`} id={`service_${item.id}`} title={item.title} serviceDatas={item}
+                                openCalendar={() => openCalendar(item)} />
+                        )}
+                    </div>
+                ) : <></>}
                 {can.booking && props.resourcesLoaded && props.resources.length === 0 ? <p className="home_empty">Még nincs foglalható erőforrás.</p> : <></>}
             </div>
 
