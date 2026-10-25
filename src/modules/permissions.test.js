@@ -7,7 +7,11 @@ const newUser = { id: 3, role: "regular", canBook: false, canPoll: false };
 
 test("guests book by the guest switch, users by their own rights", () => {
     expect(permissions(defaults, null).book).toBe(true);
+    expect(permissions(defaults, null).booking).toBe(true);
     expect(permissions({ ...defaults, guestsCanBook: false }, null).book).toBe(false);
+    expect(permissions({ ...defaults, guestsCanBook: false }, null).booking).toBe(false);
+    expect(permissions({ ...defaults, guestsCanBook: false }, newUser).booking).toBe(false);
+    expect(permissions({ ...defaults, guestsCanBook: false }, allowedUser).booking).toBe(true);
     expect(permissions(defaults, newUser)).toEqual({ booking: true, book: false, polls: true, createPolls: false });
     expect(permissions(defaults, allowedUser)).toEqual({ booking: true, book: true, polls: true, createPolls: true });
 });
