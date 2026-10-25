@@ -502,7 +502,8 @@
             height: auto;
             gap: 0.6rem;
             padding: 1rem 1.6rem;
-            border-radius: 1rem 1rem 0 0;
+            // Sharp corners: the calendar fills the whole screen
+            border-radius: 0;
 
             .fullscreen-calendar_resource-fields {
                 flex-direction: row;

@@ -68,8 +68,11 @@ export default function App() {
     };
 
     if (checkMobileBrowser()) {
-      let vh = window.innerHeight * 0.01;
-      document.documentElement.style.setProperty("--mobileBrowserBar", `${vh}px`);
+      // Measured again on every resize (rotating the phone, the browser bar showing or hiding)
+      const setBrowserBar = () => document.documentElement.style.setProperty("--mobileBrowserBar", `${window.innerHeight * 0.01}px`);
+      setBrowserBar();
+      window.addEventListener("resize", setBrowserBar);
+      return () => window.removeEventListener("resize", setBrowserBar);
     }
   }, [])
 
