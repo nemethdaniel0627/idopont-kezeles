@@ -4,7 +4,7 @@
 # 1. The React app
 FROM node:20-slim AS build
 WORKDIR /app
-COPY package.json package-lock.json ./
+COPY package.json package-lock.json .env ./
 RUN npm ci --no-audit --no-fund
 COPY public ./public
 COPY src ./src
