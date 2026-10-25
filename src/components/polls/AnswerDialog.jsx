@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Alert, Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField, ThemeProvider } from "@mui/material";
+import LegalLink from "../legal/LegalLink";
 import { appTheme } from "../AuthPage";
 
 // Before marking the times: the respondent's name, and optionally an email or phone for the organizer.
@@ -38,6 +39,9 @@ export default function AnswerDialog({ open, initial, existingNames = [], onClos
                         <TextField label="E-mail (nem kötelező)" type="email" fullWidth value={values.contactEmail} onChange={change("contactEmail")} />
                         <TextField label="Telefonszám (nem kötelező)" type="tel" fullWidth value={values.contactPhone} onChange={change("contactPhone")}
                             helperText="Az e-mail címet és a telefonszámot csak a szervező és az adminok látják." />
+                        <p className="privacy-note">
+                            A nevedet és az elérhetőségedet csak ehhez az egyeztetéshez használjuk; az elérhetőséget a lezárása után 12 hónappal töröljük. <LegalLink kind="privacy" />
+                        </p>
                     </DialogContent>
                     <DialogActions>
                         <Button onClick={onClose}>Mégse</Button>

@@ -1,0 +1,153 @@
+// The terms and the privacy notice: links, pop-up, footer, the admin editor
+
+// Looks like a link, but is a button that opens the text in a pop-up
+.legal-link {
+    display: inline;
+    padding: 0;
+    border: none;
+    background: none;
+    font: inherit;
+    color: var(--calendar-blue);
+    text-decoration: underline;
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+        color: var(--calendar-dark);
+    }
+}
+
+.legal-dialog_title.MuiDialogTitle-root {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    font-size: 2rem;
+}
+
+.legal-dialog_version {
+    margin-bottom: 1.2rem;
+    font-size: 1.3rem;
+    color: #666;
+}
+
+.legal-text {
+    font-size: 1.5rem;
+    line-height: 1.55;
+    color: #333;
+
+    h3 {
+        margin: 1.6rem 0 0.6rem;
+        font-size: 1.7rem;
+        color: var(--calendar-dark);
+
+        &:first-child {
+            margin-top: 0;
+        }
+    }
+
+    p {
+        margin-bottom: 0.8rem;
+    }
+
+    ul {
+        margin: 0 0 0.8rem;
+        padding-left: 2rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+    }
+}
+
+// On every page, under the content
+.site-footer {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.6rem 2rem;
+    margin-top: 4rem;
+    padding: 2rem 1.6rem 2.4rem;
+    border-top: 1px solid #e3e8f2;
+    font-size: 1.3rem;
+    color: #777;
+}
+
+// The register form's consent
+.auth-form_terms.MuiFormControlLabel-root {
+    align-items: flex-start;
+    margin-right: 0;
+
+    .MuiCheckbox-root {
+        margin-top: -0.6rem;
+    }
+
+    .MuiFormControlLabel-label {
+        font-size: 1.4rem;
+        line-height: 1.45;
+    }
+}
+
+.terms-update_links {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    align-items: flex-start;
+}
+
+// Under a form's contact fields
+.privacy-note {
+    margin: 0;
+    font-size: 1.3rem;
+    color: #666;
+}
+
+.profile-data {
+    h2 {
+        margin-bottom: 0;
+    }
+
+    &_consequences {
+        padding-left: 2rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+        font-size: 1.4rem;
+    }
+}
+
+.legal-admin_kinds {
+    margin-bottom: 1.6rem;
+    flex-wrap: wrap;
+}
+
+.legal-admin {
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+
+    &_toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 1.2rem;
+    }
+
+    &_editor textarea {
+        font-size: 1.4rem;
+        line-height: 1.5;
+    }
+
+    &_preview {
+        padding: 1.6rem;
+        border: 1px solid #e3e8f2;
+        border-radius: 0.6rem;
+        background: #fff;
+    }
+}
+
+.admin-home_links {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1rem 2.4rem;
+}

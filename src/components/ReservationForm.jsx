@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from "react";
 import axios from "axios";
+import LegalLink from "./legal/LegalLink";
 import {
     Button,
     Checkbox,
@@ -251,6 +252,9 @@ export default function ReservationForm({ resourceId, reservation, initial, forU
                     helperText={forUser ? undefined : "Csak adminok látják. Erre küldünk értesítést, ha az erőforrás megszűnik."} />
                 <TextField label={forUser ? "Telefonszám" : "Kapcsolattartó telefon"} type="tel" value={form.contactPhone} onChange={change("contactPhone")} />
             </div>
+            <p className="privacy-note">
+                Az elérhetőséget csak a foglalás kezeléséhez használjuk, és a foglalás után 12 hónappal töröljük. <LegalLink kind="privacy" />
+            </p>
 
             <div className="reservation-form_actions">
                 <Button onClick={onCancel} disabled={saving}>Mégse</Button>
