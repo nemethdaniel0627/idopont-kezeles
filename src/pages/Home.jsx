@@ -89,9 +89,12 @@ export default function Home(props) {
     // Shows the open resource's reservations again, after a booking, an edit or a cancel
     const reloadReservations = () => setCalendarOpenings(openings => openings + 1);
 
-    // A new booking on `day`, or at `time` when a time slot was clicked; prefilled from the profile
-    function newBooking(day, time = null) {
-        const { start, end } = suggestTimes(selectedService, day, time);
+    // A new booking on `day`, or at `time` when a time slot was clicked, until `endTime` when a range was
+    // dragged in the week view; prefilled from the profile
+    function newBooking(day, time = null, endTime = null) {
+        const suggested = suggestTimes(selectedService, day, time);
+        const start = suggested.start;
+        const end = endTime || suggested.end;
         const profile = user ? { title: user.name, contactEmail: user.email, contactPhone: user.phone } : {};
         setBooking({ initial: { start, end, ...profile } });
     }

@@ -44,3 +44,16 @@ export function layoutDay(services) {
     }
     return { allDay, timed };
 }
+
+// The time range a drag in a day column selects: from the slot it started on (`anchor`) toward the slot
+// under the pointer (`current`), both start minutes, but only as far as the slots stay free, so it never
+// runs into a closed hour or another booking. Returns { start, end } in minutes of the day.
+export function dragRange(anchor, current, isFree, slotMinutes = 30) {
+    const step = current >= anchor ? slotMinutes : -slotMinutes;
+    let reached = anchor;
+    for (let minute = anchor + step; step > 0 ? minute <= current : minute >= current; minute += step) {
+        if (!isFree(minute)) break;
+        reached = minute;
+    }
+    return { start: Math.min(anchor, reached), end: Math.max(anchor, reached) + slotMinutes };
+}

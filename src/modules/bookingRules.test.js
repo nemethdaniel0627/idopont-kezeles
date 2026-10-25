@@ -57,3 +57,13 @@ it("places a day's bookings by start and length, overlapping ones side by side",
     expect(byId[3]).toMatchObject({ start: 630, lane: 0, lanes: 1 });
     expect(byId[4]).toMatchObject({ start: 780, lane: 0, lanes: 1 });
 });
+
+it("selects the dragged range only as far as the slots are free", () => {
+    const { dragRange } = require("./weekLayout");
+    // 09:00–12:00 free, 12:00 taken
+    const free = minute => minute >= 540 && minute < 720;
+    expect(dragRange(600, 690, free)).toEqual({ start: 600, end: 720 });
+    expect(dragRange(600, 780, free)).toEqual({ start: 600, end: 720 });
+    expect(dragRange(600, 480, free)).toEqual({ start: 540, end: 630 });
+    expect(dragRange(600, 600, free)).toEqual({ start: 600, end: 630 });
+});

@@ -1,7 +1,7 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import axios from "axios";
 import { placeOccurrences, toOccurrence } from "../modules/occurrences";
-import { layoutDay } from "../modules/weekLayout";
+import { dragRange, layoutDay } from "../modules/weekLayout";
 import { dayStatus, isBookableTime, visibleHours, DAY_STATUS_TEXT } from "../modules/bookingRules";
 import { dayHeader, toTime } from "../modules/pollSlots";
 
@@ -22,10 +22,18 @@ function eventColor(id) {
 }
 
 // A week from Monday: days as columns, the hours as rows. Reservations are placed by their start and length;
-// clicking a free half hour starts a booking there, clicking a reservation shows it.
+// clicking a reservation shows it. A free half hour starts a booking: clicked, with the suggested length; or with
+// the mouse dragged down (or up) the day, from where the button went down to where it is let go, like marking
+// times in a poll. The drag stops at closed hours and other bookings. On touch screens a tap starts a booking.
+// onSlotClick(day, start, end) gets the end only after a drag.
 export default function WeekView({ resource, weekStart, reloadKey, isAdmin, onSlotClick, onEventClick }) {
     const [days, setDays] = useState(() => Array.from({ length: 7 }, (_, i) => ({ date: addDays(weekStart, i), services: [], fullscreenServices: [] })));
     const now = new Date();
+    // While dragging: { dayIndex, anchor, current }, start minutes of the first slot and the one under the pointer
+    const [drag, setDrag] = useState(null);
+    const dragRef = useRef(null);
+    dragRef.current = drag;
+    const lastPointer = useRef("mouse");
 
     useEffect(() => {
         const emptyWeek = () => Array.from({ length: 7 }, (_, i) => ({ date: addDays(weekStart, i), services: [], fullscreenServices: [] }));
@@ -46,6 +54,40 @@ export default function WeekView({ resource, weekStart, reloadKey, isAdmin, onSl
     const times = [];
     for (let minute = from; minute < to; minute += SLOT_MINUTES) times.push(minute);
     const hasAllDay = layouts.some(layout => layout.allDay.length > 0);
+
+    const timeOn = (date, minute) => new Date(date.getFullYear(), date.getMonth(), date.getDate(), Math.floor(minute / 60), minute % 60);
+    // A half hour that can start a booking and that no reservation covers
+    const isFree = (dayIndex, minute) => isBookableTime(resource, timeOn(days[dayIndex].date, minute), { isAdmin, now })
+        && !layouts[dayIndex].timed.some(item => item.start < minute + SLOT_MINUTES && item.end > minute)
+        && layouts[dayIndex].allDay.length === 0;
+    const selected = drag ? dragRange(drag.anchor, drag.current, minute => isFree(drag.dayIndex, minute), SLOT_MINUTES) : null;
+
+    // Letting go of the button ends the drag wherever the pointer is, and opens the form with the range
+    useEffect(() => {
+        const finish = () => {
+            const current = dragRef.current;
+            if (!current) return;
+            setDrag(null);
+            const date = days[current.dayIndex].date;
+            const range = dragRange(current.anchor, current.current, minute => isFree(current.dayIndex, minute), SLOT_MINUTES);
+            if (range.end - range.start === SLOT_MINUTES) onSlotClick(date, timeOn(date, range.start));
+            else onSlotClick(date, timeOn(date, range.start), timeOn(date, range.end));
+        };
+        window.addEventListener("pointerup", finish);
+        return () => window.removeEventListener("pointerup", finish);
+    });
+
+    const pointerDown = (event, dayIndex, minute) => {
+        lastPointer.current = event.pointerType;
+        if (event.pointerType !== "mouse" || event.button !== 0 || !isFree(dayIndex, minute)) return;
+        // No text selection while dragging
+        event.preventDefault();
+        setDrag({ dayIndex, anchor: minute, current: minute });
+    };
+
+    const pointerEnter = (dayIndex, minute) => {
+        if (drag && drag.dayIndex === dayIndex) setDrag({ ...drag, current: minute });
+    };
 
     return (
         <div className="week-view">
@@ -93,9 +135,13 @@ export default function WeekView({ resource, weekStart, reloadKey, isAdmin, onSl
                                 const bookable = isBookableTime(resource, time, { isAdmin, now });
                                 return (
                                     <button type="button" key={minute} className={`week-view_slot${bookable ? "" : " closed"}${minute % 60 === 0 ? " hour" : ""}`}
-                                        disabled={!bookable} onClick={() => onSlotClick(day.date, time)}
+                                        disabled={!bookable}
+                                        onPointerDown={event => pointerDown(event, index, minute)}
+                                        onPointerEnter={() => pointerEnter(index, minute)}
+                                        // A mouse is handled when its button goes up; a tap or Enter books from here
+                                        onClick={() => { if (lastPointer.current !== "mouse") onSlotClick(day.date, time); lastPointer.current = "keyboard"; }}
                                         aria-label={`${dayHeader(dayKey(day.date)).top} ${day.date.getDate()}. ${toTime(minute)} – foglalás`}
-                                        title={bookable ? `Foglalás ${toTime(minute)}-tól` : undefined} />
+                                        title={bookable ? "Kattints, vagy húzd az egeret a foglalás végéig" : undefined} />
                                 );
                             })}
                             {layouts[index].timed.map(({ service, start, end, lane, lanes }) => {
@@ -117,6 +163,14 @@ export default function WeekView({ resource, weekStart, reloadKey, isAdmin, onSl
                                     </button>
                                 );
                             })}
+                            {selected && drag.dayIndex === index
+                                ? <div className="week-view_selection" style={{
+                                    top: `${(selected.start - from) * REM_PER_MINUTE}rem`,
+                                    height: `${(selected.end - selected.start) * REM_PER_MINUTE}rem`,
+                                }}>
+                                    {toTime(selected.start)}–{toTime(selected.end)}
+                                </div>
+                                : <></>}
                             {sameDay(day.date, now) && now.getHours() * 60 + now.getMinutes() >= from && now.getHours() * 60 + now.getMinutes() < to
                                 ? <div className="week-view_now" style={{ top: `${(now.getHours() * 60 + now.getMinutes() - from) * REM_PER_MINUTE}rem` }} />
                                 : <></>}

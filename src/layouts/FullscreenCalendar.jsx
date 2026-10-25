@@ -216,7 +216,7 @@ export default function FullscreenCalendar(props) {
                 <p className="fullscreen-calendar_hint">
                     {view === "month"
                         ? "Kattints egy napra: megnyílik a hete, ahol egy szabad időpontra kattintva foglalhatsz."
-                        : "Kattints egy szabad időpontra a foglaláshoz, vagy egy foglalásra a részleteiért."}
+                        : "Kattints egy szabad időpontra, vagy húzd végig rajta az egeret a foglalás teljes idején. Egy foglalásra kattintva látod a részleteit."}
                 </p>
             </div>
             <div className="fullscreen-calendar_left-col">
