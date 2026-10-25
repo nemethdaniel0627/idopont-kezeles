@@ -11,6 +11,8 @@ You need:
   (`gcloud`). Docker is not needed: Google builds the container.
 
 The commands below are for PowerShell. Replace everything in `<angle brackets>`.
+If PowerShell says `npm.ps1 cannot be loaded because running scripts is disabled`, type `npm.cmd`
+instead of `npm` (and `gcloud.cmd` instead of `gcloud`); there is no need to change the execution policy.
 
 ## 1. Supabase: the database
 
