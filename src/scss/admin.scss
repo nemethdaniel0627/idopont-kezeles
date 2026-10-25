@@ -353,3 +353,36 @@
         }
     }
 }
+
+// ----- Phones -----
+@media only screen and (max-width: 600px) {
+    // The admin home's pictures slimmer, so all three choices are seen at once
+    .admin-tile img {
+        aspect-ratio: 16 / 6;
+    }
+
+    // The resource list, or the chosen resource with a way back: not both stacked
+    .resources-admin.has-detail .resources-admin_list {
+        display: none;
+    }
+
+    // Nothing to save: no bar taking the screen
+    .resource-editor_bar.clean {
+        display: none;
+    }
+}
+
+.resources-admin_back {
+    display: none !important;
+}
+
+@media only screen and (max-width: 900px) {
+    .resources-admin_back {
+        display: inline-flex !important;
+        margin-bottom: 0.8rem;
+    }
+
+    .resources-admin.has-detail .resources-admin_list {
+        display: none;
+    }
+}

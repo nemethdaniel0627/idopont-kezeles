@@ -14,8 +14,7 @@ import {
     ToggleButton,
     ToggleButtonGroup
 } from "@mui/material";
-import { DatePicker, DateTimePicker, LocalizationProvider } from "@mui/lab";
-import AdapterDateFns from '@mui/lab/AdapterDateFns';
+import { DateTimeField, HuLocalizationProvider } from "./HuPickers";
 import Calendar from "../modules/Calendar";
 import { errorMessage } from "../modules/api";
 import { describeRules } from "../modules/reservationText";
@@ -172,26 +171,22 @@ export default function ReservationForm({ resourceId, reservation, initial, forU
                 helperText={forUser ? "Ezt mások is látják a naptárban, pl. Csapatmegbeszélés." : undefined} />
             <TextField label="Leírás" multiline minRows={2} value={form.description} onChange={change("description")} />
 
-            <LocalizationProvider dateAdapter={AdapterDateFns}>
+            <HuLocalizationProvider>
                 <div className="reservation-form_row">
                     {form.allDay
                         ? <>
-                            <DatePicker label="Első nap" value={form.start} inputFormat="yyyy-MM-dd"
-                                onChange={changeStart} shouldDisableDate={unavailableDay}
-                                renderInput={params => <TextField {...params} error={timeError} />} />
-                            <DatePicker label="Utolsó nap" value={form.end} inputFormat="yyyy-MM-dd"
-                                onChange={value => set("end", value)} shouldDisableDate={unavailableDay}
-                                renderInput={params => <TextField {...params} error={timeError}
-                                    helperText={timeError ? "Az utolsó nap ne legyen az első előtt." : undefined} />} />
+                            <DateTimeField withTime={false} label="Első nap" value={form.start}
+                                onChange={changeStart} shouldDisableDate={unavailableDay} error={timeError} />
+                            <DateTimeField withTime={false} label="Utolsó nap" value={form.end}
+                                onChange={value => set("end", value)} shouldDisableDate={unavailableDay} error={timeError}
+                                helperText={timeError ? "Az utolsó nap ne legyen az első előtt." : undefined} />
                         </>
                         : <>
-                            <DateTimePicker label="Kezdés" value={form.start} ampm={false} inputFormat="yyyy-MM-dd HH:mm"
-                                onChange={changeStart} shouldDisableDate={unavailableDay}
-                                renderInput={params => <TextField {...params} error={timeError} />} />
-                            <DateTimePicker label="Befejezés" value={form.end} ampm={false} inputFormat="yyyy-MM-dd HH:mm"
-                                onChange={value => set("end", value)} shouldDisableDate={unavailableDay}
-                                renderInput={params => <TextField {...params} error={timeError}
-                                    helperText={timeError ? "A befejezés a kezdés után legyen." : undefined} />} />
+                            <DateTimeField label="Kezdés" value={form.start}
+                                onChange={changeStart} shouldDisableDate={unavailableDay} error={timeError} />
+                            <DateTimeField label="Befejezés" value={form.end}
+                                onChange={value => set("end", value)} shouldDisableDate={unavailableDay} error={timeError}
+                                helperText={timeError ? "A befejezés a kezdés után legyen." : undefined} />
                         </>
                     }
                 </div>
@@ -230,10 +225,9 @@ export default function ReservationForm({ resourceId, reservation, initial, forU
                             <FormControlLabel value="sixMonths" control={<Radio />} label="6 hónap után" />
                             <div className="reservation-form_choice">
                                 <FormControlLabel value="onDate" control={<Radio />} label="Ezen a napon:" />
-                                <DatePicker value={form.repeatEndDate} inputFormat="yyyy-MM-dd" disabled={form.repeatEnd !== "onDate"}
-                                    minDate={validStart ? form.start : undefined} maxDate={repeatLimit}
-                                    onChange={value => set("repeatEndDate", value)}
-                                    renderInput={params => <TextField {...params} size="small" />} />
+                                <DateTimeField withTime={false} value={form.repeatEndDate} disabled={form.repeatEnd !== "onDate"}
+                                    minDate={validStart ? form.start : undefined} maxDate={repeatLimit} size="small"
+                                    onChange={value => set("repeatEndDate", value)} />
                             </div>
                             <div className="reservation-form_choice">
                                 <FormControlLabel value="occurrence" control={<Radio />} label="Ennyi alkalom után:" />
@@ -244,7 +238,7 @@ export default function ReservationForm({ resourceId, reservation, initial, forU
                     </FormControl>
                     : <></>}
                 </> : <></>}
-            </LocalizationProvider>
+            </HuLocalizationProvider>
 
             {forUser
                 ? <div className="reservation-form_contact-head">

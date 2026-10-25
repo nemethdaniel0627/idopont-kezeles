@@ -75,3 +75,32 @@ input[type="number"] {
     font-size: 1.5rem;
     color: #555;
 }
+
+// ----- Phones -----
+@media only screen and (max-width: 600px) {
+    // Text links under the login and registration forms: big enough to tap
+    .auth-page a {
+        display: inline-block;
+        padding: 0.8rem 0;
+    }
+}
+
+// Table headers never break a word ("Válasz")
+.MuiTableCell-head {
+    white-space: nowrap;
+}
+
+// A button's shorter label for phones: "label-long" shows elsewhere, "label-short" on phones
+.label-short {
+    display: none;
+}
+
+@media only screen and (max-width: 600px) {
+    .label-long {
+        display: none;
+    }
+
+    .label-short {
+        display: inline;
+    }
+}

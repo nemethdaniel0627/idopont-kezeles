@@ -7,8 +7,7 @@ import FullscreenEvent from "../components/FullscreenEvent";
 import WeekView from "../components/WeekView";
 import Calendar from "../modules/Calendar";
 import DatePicker from "@mui/lab/DatePicker";
-import LocalizationProvider from "@mui/lab/LocalizationProvider";
-import AdapterDateFns from '@mui/lab/AdapterDateFns';
+import { HuLocalizationProvider, pickerTexts } from "../components/HuPickers";
 import { appTheme } from "../components/AuthPage";
 import { dayStatus, DAY_STATUS_TEXT } from "../modules/bookingRules";
 import { rulesParts } from "../modules/reservationText";
@@ -186,11 +185,16 @@ export default function FullscreenCalendar(props) {
         }
     }
 
-    // "+ Új foglalás": today in the current month or week, otherwise the first day shown that is not over yet
+    // "+ Új foglalás": the first bookable day from what is shown (or from today, if that is later), so the form
+    // doesn't open on a closed day
     const bookShown = () => {
         const today = new Date();
-        const first = view === "week" ? weekStart : new Date(year, month, 1);
-        props.newBooking(first < today ? today : first);
+        const shownFirst = view === "week" ? weekStart : new Date(year, month, 1);
+        let day = shownFirst < today ? new Date(today.getFullYear(), today.getMonth(), today.getDate()) : shownFirst;
+        for (let i = 0; i < 31 && dayStatus(resource, day, { isAdmin: props.isAdmin }) !== "open"; i++) {
+            day = new Date(day.getFullYear(), day.getMonth(), day.getDate() + 1);
+        }
+        props.newBooking(day);
     }
 
     const monthPickerChange = (value) => {
@@ -217,6 +221,9 @@ export default function FullscreenCalendar(props) {
                         </dl>
                         : <p>Bármikor foglalható.</p>}
                 </section>
+                <p className="fullscreen-calendar_hint-short">
+                    {view === "month" ? "Koppints egy napra a hetéért." : "Koppints egy szabad időpontra a foglaláshoz."}
+                </p>
                 <p className="fullscreen-calendar_hint">
                     {view === "month"
                         ? "Kattints egy napra: megnyílik a hete, ahol egy szabad időpontra kattintva foglalhatsz."
@@ -244,8 +251,10 @@ export default function FullscreenCalendar(props) {
                                     {year}. {monthName}
                                     <ArrowDropDown />
                                 </button>
-                                <LocalizationProvider dateAdapter={AdapterDateFns}>
+                                <HuLocalizationProvider>
                                     <DatePicker
+                                        {...pickerTexts}
+                                        toolbarTitle="Hónap választása"
                                         value={monthPickerValue}
                                         onChange={monthPickerChange}
                                         onClose={() => setMonthPickerOpen(false)}
@@ -256,7 +265,7 @@ export default function FullscreenCalendar(props) {
                                         open={monthPickerOpen}
                                         renderInput={(params) => <TextField {...params} />}
                                     />
-                                </LocalizationProvider>
+                                </HuLocalizationProvider>
                             </span>
                             : <span className="fullscreen-calendar_header_week">{weekLabel(weekStart)}</span>}
                     </div>

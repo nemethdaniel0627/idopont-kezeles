@@ -40,6 +40,7 @@ export default function ContactDialog({ request, onClose, onAccess }) {
                         <p>Add meg az e-mail címet vagy a telefonszámot, amelyet a(z) „{request ? request.title : ""}” foglalásakor megadtál.</p>
                         {error !== "" ? <p className="contact-dialog_error" role="alert">{error}</p> : <></>}
                         <TextField label="E-mail cím vagy telefonszám" value={contact} required autoFocus fullWidth
+                            inputProps={{ autoCapitalize: "none", autoCorrect: "off", spellCheck: false }}
                             onChange={event => setContact(event.target.value)} />
                     </DialogContent>
                     <DialogActions>

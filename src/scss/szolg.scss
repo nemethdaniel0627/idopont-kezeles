@@ -127,3 +127,14 @@
         letter-spacing: 0.03em;
     }
 }
+
+// Phones: a slimmer picture, so more than one resource fits on the screen
+@media only screen and (max-width: 600px) {
+    .service_img {
+        aspect-ratio: 16 / 5;
+    }
+
+    .home_intro h1 {
+        font-size: 2.6rem;
+    }
+}

@@ -51,7 +51,7 @@ export default function ResourcesAdmin({ resources, resourcesLoaded, saveResourc
 
     return (
         <AdminPage title="Erőforrások" back={{ to: "/admin", label: "Adminisztráció" }}>
-            <div className="resources-admin">
+            <div className={`resources-admin${isNew || selected ? " has-detail" : ""}`}>
                 <div className="resources-admin_list">
                     <Button component={Link} to="/admin/eroforrasok/uj" variant="contained" startIcon={<AddIcon />}
                         onClick={event => leaveTo(event, "/admin/eroforrasok/uj")}>Új erőforrás</Button>
@@ -66,7 +66,13 @@ export default function ResourcesAdmin({ resources, resourcesLoaded, saveResourc
                         )}
                     </List>
                 </div>
-                <div className="resources-admin_detail">{detail}</div>
+                <div className="resources-admin_detail">
+                    {isNew || selected
+                        ? <Button component={Link} to="/admin/eroforrasok" className="resources-admin_back"
+                            onClick={event => leaveTo(event, "/admin/eroforrasok")}>‹ Összes erőforrás</Button>
+                        : <></>}
+                    {detail}
+                </div>
             </div>
             <Dialog open={pendingPath !== null} onClose={() => setPendingPath(null)} maxWidth="xs">
                 <DialogTitle>Nem mentett módosítások</DialogTitle>

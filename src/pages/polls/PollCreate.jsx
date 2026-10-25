@@ -6,8 +6,7 @@ import {
     TextField, ToggleButton, ToggleButtonGroup
 } from "@mui/material";
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import { DateTimePicker, LocalizationProvider } from "@mui/lab";
-import AdapterDateFns from '@mui/lab/AdapterDateFns';
+import { DateTimeField, HuLocalizationProvider } from "../../components/HuPickers";
 import AdminPage from "../../components/AdminPage";
 import DayPicker from "../../components/polls/DayPicker";
 import { errorMessage } from "../../modules/api";
@@ -159,11 +158,10 @@ export default function PollCreate() {
                     <FormControlLabel label="Határidő a válaszokra"
                         control={<Checkbox checked={form.hasDeadline} onChange={() => set("hasDeadline", !form.hasDeadline)} />} />
                     {form.hasDeadline
-                        ? <LocalizationProvider dateAdapter={AdapterDateFns}>
-                            <DateTimePicker label="Határidő" value={form.deadline} ampm={false} inputFormat="yyyy-MM-dd HH:mm"
-                                disablePast onChange={value => set("deadline", value)}
-                                renderInput={params => <TextField {...params} helperText="Utána már nem lehet válaszolni." />} />
-                        </LocalizationProvider>
+                        ? <HuLocalizationProvider>
+                            <DateTimeField label="Határidő" value={form.deadline} disablePast onChange={value => set("deadline", value)}
+                                helperText="Utána már nem lehet válaszolni." />
+                        </HuLocalizationProvider>
                         : <></>}
                     <FormControlLabel label="Mindenki láthatja a válaszokat és az eredményt"
                         control={<Checkbox checked={form.answersVisible} onChange={() => set("answersVisible", !form.answersVisible)} />} />

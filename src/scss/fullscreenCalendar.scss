@@ -604,3 +604,16 @@
 .week-view_slot:not(:disabled) {
     user-select: none;
 }
+
+// The how-to in one short line, only on phones (where the longer one is hidden)
+.fullscreen-calendar_hint-short {
+    display: none;
+}
+
+@media only screen and (max-width: 700px) {
+    .fullscreen-calendar_hint-short {
+        display: block;
+        font-size: 1.3rem;
+        color: #b9cdd2;
+    }
+}

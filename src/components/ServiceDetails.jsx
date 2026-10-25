@@ -45,6 +45,29 @@ export default function ServiceDetails(props) {
         }
     }
 
+    // Escape or a tap outside closes the details (a tap on another booking opens that one instead)
+    useEffect(() => {
+        const isOpen = () => {
+            const dialog = document.querySelector(".event-details");
+            return dialog && dialog.hasAttribute("open") && !dialog.hasAttribute("closing");
+        };
+        const onKey = event => {
+            if (event.key === "Escape" && isOpen()) closeEventDetails();
+        };
+        const onPointer = event => {
+            if (!isOpen()) return;
+            const target = event.target;
+            if (target.closest(".event-details, .week-view_event, .fullscreen-calendar_event, .MuiDialog-root")) return;
+            closeEventDetails();
+        };
+        document.addEventListener("keydown", onKey);
+        document.addEventListener("pointerdown", onPointer);
+        return () => {
+            document.removeEventListener("keydown", onKey);
+            document.removeEventListener("pointerdown", onPointer);
+        };
+    });
+
     // Closes the details, then opens the edit form or the cancel confirmation ("edit" or "cancel")
     const change = (action) => {
         const current = props.serviceDetails;

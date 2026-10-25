@@ -193,7 +193,7 @@ export default function Home(props) {
                             openCalendar={() => openCalendar(item)} />
                     )}
                 </div>
-                {props.resources.length === 0 ? <p className="home_empty">Még nincs foglalható erőforrás.</p> : <></>}
+                {props.resourcesLoaded && props.resources.length === 0 ? <p className="home_empty">Még nincs foglalható erőforrás.</p> : <></>}
             </div>
 
             <FullscreenCalendar

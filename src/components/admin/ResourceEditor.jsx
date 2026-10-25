@@ -133,7 +133,7 @@ export default function ResourceEditor({ resource, saveResource, removeResource,
                     </ToggleButtonGroup>
                 </div>
 
-                <div className={`resource-editor_bar${dirty ? " dirty" : ""}`}>
+                <div className={`resource-editor_bar${dirty ? " dirty" : ""}${!dirty && !isNew ? " clean" : ""}`}>
                     <span role="status">{dirty ? "Nem mentett módosítások" : isNew ? "" : "Minden módosítás elmentve"}</span>
                     {dirty && !isNew ? <Button onClick={() => setForm(stored)} disabled={saving}>Elvetés</Button> : <></>}
                     <Button type="submit" variant="contained" size="large" disabled={saving || (!dirty && !isNew)}>{isNew ? "Létrehozás" : "Mentés"}</Button>

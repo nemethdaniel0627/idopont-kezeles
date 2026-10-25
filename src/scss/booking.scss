@@ -158,3 +158,21 @@
         gap: 0.4rem;
     }
 }
+
+// Phones: the form's buttons stay at the bottom of the screen, however long the form is
+@media only screen and (max-width: 600px) {
+    // The dialog's paper scrolls; its content must not be a scroll box of its own, or the buttons stick to that
+    .booking-dialog.MuiDialogContent-root {
+        overflow-y: visible;
+    }
+
+    .booking-dialog .reservation-form_actions {
+        position: sticky;
+        bottom: 0;
+        z-index: 2;
+        margin: 0 -2.4rem -2rem;
+        padding: 1.2rem 2.4rem;
+        background: #fff;
+        border-top: 1px solid #e3e8f2;
+    }
+}

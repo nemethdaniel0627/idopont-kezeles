@@ -77,7 +77,7 @@ export default function App() {
     <>
       <Nav />
       <Routes>
-        <Route path="/" element={<Home resources={resources} />} />
+        <Route path="/" element={<Home resources={resources} resourcesLoaded={resourcesLoaded} />} />
         <Route path="/admin" element={<AdminRoute><AdminHome /></AdminRoute>} />
         <Route path="/admin/eroforrasok" element={<AdminRoute><ResourcesAdmin resources={resources} resourcesLoaded={resourcesLoaded} saveResource={saveResource} removeResource={removeResource} /></AdminRoute>} />
         <Route path="/admin/eroforrasok/:id" element={<AdminRoute><ResourcesAdmin resources={resources} resourcesLoaded={resourcesLoaded} saveResource={saveResource} removeResource={removeResource} /></AdminRoute>} />

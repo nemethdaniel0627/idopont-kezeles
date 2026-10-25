@@ -191,6 +191,17 @@ export default function PollPage() {
         setSaving(false);
     };
 
+    // The phone's share sheet when the browser has one (most phones), copying the link otherwise
+    const canShare = typeof navigator.share === "function";
+    const share = async (text, title) => {
+        if (!canShare) return copy(text, "A linket a vágólapra másoltuk.");
+        try {
+            await navigator.share({ title, url: text });
+        } catch (err) {
+            // Closing the share sheet is not an error
+        }
+    };
+
     const copy = async (text, done) => {
         try {
             await navigator.clipboard.writeText(text);
@@ -242,8 +253,8 @@ export default function PollPage() {
         <Button variant="outlined" color="inherit" startIcon={<InsightsIcon />} component={Link} to={`/egyeztetes/${key}/attekintes`}>
             Áttekintés
         </Button>
-        <Button variant="contained" startIcon={<LinkIcon />} onClick={() => copy(pollLink, "A linket a vágólapra másoltuk.")}>
-            Link másolása
+        <Button variant="contained" startIcon={<LinkIcon />} onClick={() => share(pollLink, poll.title)}>
+            {canShare ? "Megosztás" : "Link másolása"}
         </Button>
         {data.canManage
             ? <Button variant="outlined" color="inherit" endIcon={<MoreVertIcon />} onClick={event => setMenuAnchor(event.currentTarget)}
@@ -273,7 +284,7 @@ export default function PollPage() {
                         <div className="poll-answers_link">
                             <TextField size="small" fullWidth value={pollLink} InputProps={{ readOnly: true }} onFocus={event => event.target.select()}
                                 inputProps={{ "aria-label": "Az egyeztetés linkje" }} />
-                            <Button variant="contained" startIcon={<LinkIcon />} onClick={() => copy(pollLink, "A linket a vágólapra másoltuk.")}>Másolás</Button>
+                            <Button variant="contained" startIcon={<LinkIcon />} onClick={() => share(pollLink, poll.title)}>{canShare ? "Megosztás" : "Másolás"}</Button>
                         </div>
                     </Alert>
                     : <></>}
@@ -310,15 +321,21 @@ export default function PollPage() {
                     {editing
                         ? <div className="poll-answers_editing" role="status">
                             <p><strong>{respondent.name}</strong>, jelöld be, mikor érsz rá!</p>
-                            <p className="admin-section_hint">
-                                Egérrel húzva több idősávot is kijelölhetsz vagy törölhetsz; érintőképernyőn koppints az idősávokra.
+                            <p className="admin-section_hint poll-answers_hint-mouse">
+                                Egérrel húzva több idősávot is kijelölhetsz vagy törölhetsz.
                                 A nap nevére kattintva az egész napot kijelölöd vagy törlöd.
                             </p>
+                            <p className="admin-section_hint poll-answers_hint-touch">Koppints az idősávokra, vagy a nap nevére az egész naphoz.</p>
                             {saveError !== "" ? <p className="reservation-form_error" role="alert">{saveError}</p> : <></>}
                             <div className="poll-answers_editing-actions">
                                 <Button onClick={() => setEditing(false)} disabled={saving}>Mégse</Button>
-                                <Button onClick={() => setDialogOpen(true)} disabled={saving}>Név, e-mail, telefon</Button>
-                                <Button variant="contained" onClick={() => save()} disabled={saving}>Mentés ({selected.size} sáv)</Button>
+                                {/* Shorter labels on phones, so the three buttons fit in one row */}
+                                <Button onClick={() => setDialogOpen(true)} disabled={saving} aria-label="Név, e-mail, telefon">
+                                    <span className="label-long">Név, e-mail, telefon</span><span className="label-short">Adataim</span>
+                                </Button>
+                                <Button variant="contained" onClick={() => save()} disabled={saving} aria-label={`Mentés (${selected.size} sáv)`}>
+                                    <span className="label-long">Mentés ({selected.size} sáv)</span><span className="label-short">Mentés ({selected.size})</span>
+                                </Button>
                             </div>
                         </div>
                         : <></>}
