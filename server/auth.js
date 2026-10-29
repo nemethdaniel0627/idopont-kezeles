@@ -4,6 +4,7 @@ const { parseCookies, serializeCookie } = require('./cookies');
 const { ValidationError, HttpError } = require('./validation');
 const settings = require('./settings');
 const legal = require('./legal');
+const { encrypt, decryptRow, lookupHash, ENCRYPTED_COLUMNS } = require('./encryption');
 
 const SESSION_COOKIE = 'session';
 const SESSION_DAYS = 30;
@@ -45,10 +46,18 @@ function toPhone(value) {
 
 // ----- Users -----
 
+// A user row as stored, with the personal data decrypted
+const toUser = row => (row ? decryptRow(row, ENCRYPTED_COLUMNS.users) : null);
+
+// By the email's lookup hash; a user saved before encryption (no hash yet) by the plain email
 async function findByEmail(email) {
-    const rows = await database.query(`SELECT ${USER_COLUMNS}, "passwordHash" FROM users WHERE email = $1`, [email]);
-    return rows[0] || null;
+    const rows = await database.query(
+        `SELECT ${USER_COLUMNS}, "passwordHash" FROM users WHERE "emailHash" = $1 OR ("emailHash" IS NULL AND email = $2)`,
+        [lookupHash(email), email]);
+    return toUser(rows[0]);
 }
+
+const EMAIL_TAKEN = 'Ezzel az e-mail címmel már regisztráltak!';
 
 const withoutHash = ({ passwordHash, ...user }) => user;
 
@@ -63,17 +72,19 @@ async function register(body) {
     if (body.acceptTerms !== true) {
         throw new ValidationError('A regisztrációhoz el kell fogadnod a felhasználási feltételeket és az adatkezelési tájékoztatót!');
     }
+    if (await findByEmail(email)) throw new ValidationError(EMAIL_TAKEN);
     const current = await settings.get();
     const accepted = await legal.versions();
     try {
         const rows = await database.query(
-            `INSERT INTO users (email, "passwordHash", name, phone, "canBook", "canPoll", "termsVersion", "privacyVersion", "termsAcceptedAt")
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, now()) RETURNING ${USER_COLUMNS}`,
-            [email, await hashPassword(password), name, phone, current.newUsersCanBook, current.newUsersCanPoll,
-                accepted.terms, accepted.privacy]);
-        return rows[0];
+            `INSERT INTO users (email, "emailHash", "passwordHash", name, phone, "canBook", "canPoll", "termsVersion", "privacyVersion",
+                "termsAcceptedAt")
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, now()) RETURNING ${USER_COLUMNS}`,
+            [encrypt(email), lookupHash(email), await hashPassword(password), encrypt(name), encrypt(phone),
+                current.newUsersCanBook, current.newUsersCanPoll, accepted.terms, accepted.privacy]);
+        return toUser(rows[0]);
     } catch (err) {
-        if (err.code === UNIQUE_VIOLATION) throw new ValidationError('Ezzel az e-mail címmel már regisztráltak!');
+        if (err.code === UNIQUE_VIOLATION) throw new ValidationError(EMAIL_TAKEN);
         throw err;
     }
 }
@@ -92,13 +103,15 @@ async function updateProfile(userId, body) {
     const email = toEmail(body.email);
     const name = toName(body.name);
     const phone = toPhone(body.phone);
+    const other = await findByEmail(email);
+    if (other && other.id !== userId) throw new ValidationError(EMAIL_TAKEN);
     try {
         const rows = await database.query(
-            `UPDATE users SET email = $2, name = $3, phone = $4 WHERE id = $1 RETURNING ${USER_COLUMNS}`,
-            [userId, email, name, phone]);
-        return rows[0];
+            `UPDATE users SET email = $2, "emailHash" = $3, name = $4, phone = $5 WHERE id = $1 RETURNING ${USER_COLUMNS}`,
+            [userId, encrypt(email), lookupHash(email), encrypt(name), encrypt(phone)]);
+        return toUser(rows[0]);
     } catch (err) {
-        if (err.code === UNIQUE_VIOLATION) throw new ValidationError('Ezzel az e-mail címmel már regisztráltak!');
+        if (err.code === UNIQUE_VIOLATION) throw new ValidationError(EMAIL_TAKEN);
         throw err;
     }
 }
@@ -135,7 +148,7 @@ async function userForSession(token) {
         JOIN users ON users.id = sessions."userId"
         WHERE sessions."tokenHash" = $1 AND sessions."expiresAt" > now()`,
         [hashToken(token)]);
-    return rows[0] || null;
+    return toUser(rows[0]);
 }
 
 async function deleteSession(token) {
@@ -214,7 +227,7 @@ function requireAdmin(req, res, next) {
 }
 
 module.exports = {
-    toEmail, toPassword, toName, toPhone,
+    toEmail, toPassword, toName, toPhone, toUser,
     register, login, updateProfile, changePassword,
     createSession, deleteSession, setSessionCookie, clearSessionCookie,
     createPasswordReset, confirmPasswordReset,

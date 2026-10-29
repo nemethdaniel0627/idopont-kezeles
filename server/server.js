@@ -12,6 +12,11 @@ const polls = require('./polls');
 const settings = require('./settings');
 const legal = require('./legal');
 const privacy = require('./privacy');
+const encryption = require('./encryption');
+const { encryptStored } = require('./encryptStored');
+
+// Personal data is stored encrypted: without the key (DATA_ENCRYPTION_KEY) the server must not start
+encryption.checkKey();
 const mailer = require('./mailer');
 const { AttemptLimiter } = require('./limiter');
 const { ValidationError, HttpError, toId } = require('./validation');
@@ -574,9 +579,13 @@ app.get("*", (req, res, next) => {
   res.sendFile(path.join(buildPath, "index.html"));
 })
 
-app.listen(PORT, () => {
-  console.log(`server started on port ${PORT}`);
-});
+// Personal data saved before encryption is encrypted before the first request (see encryptStored.js)
+encryptStored()
+  .then(changed => console.log(`encrypted stored data: ${JSON.stringify(changed)}`))
+  .catch(err => console.error(`encrypting stored data failed: ${err.message}`))
+  .finally(() => app.listen(PORT, () => {
+    console.log(`server started on port ${PORT}`);
+  }));
 
 // Contacts no longer needed are erased at start and then daily (see privacy.cleanup)
 const cleanUp = () => privacy.cleanup()

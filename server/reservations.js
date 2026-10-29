@@ -4,6 +4,7 @@ const { ValidationError, HttpError, toPositiveSmallint, toDate, toTitle } = requ
 const { toEmail, toPhone } = require('./auth');
 const resources = require('./resources');
 const { checkRules, checkConflicts, isOwner, matchesContact } = require('./booking');
+const { encrypt, decryptRow, lookupHash, ENCRYPTED_COLUMNS } = require('./encryption');
 
 const REGULARITY_MEASURES = ["never", "day", "week", "month"];
 // "sixMonths" is only accepted as input; it is stored as an end date at the 6-month limit
@@ -12,6 +13,9 @@ const MAX_RANGE_DAYS = 400;
 
 const COLUMNS = `id, "resourceId", title, description, "startDate", "endDate", "allDay", "regularityMeasure",
     "regularityRepeatNumber", "regularityDays", "endsOnType", "endsOnDate", "endsOnOccurrence", "contactEmail", "contactPhone", "userId"`;
+
+// A reservation row as stored, with the personal data (title, description, contacts) decrypted
+const toReservation = row => (row ? decryptRow(row, ENCRYPTED_COLUMNS.reservations) : null);
 
 const startOfDay = date => new Date(date.getFullYear(), date.getMonth(), date.getDate());
 
@@ -74,15 +78,17 @@ function toReservationValues(body) {
     return values;
 }
 
-const valueList = values => [values.title, values.description, values.startDate, values.endDate, values.allDay,
+// The values to store, the personal data encrypted, and the contact email's lookup hash last
+const valueList = values => [encrypt(values.title), encrypt(values.description), values.startDate, values.endDate, values.allDay,
 values.regularityMeasure, values.regularityRepeatNumber, values.regularityDays, values.endsOnType,
-values.endsOnDate, values.endsOnOccurrence, values.contactEmail, values.contactPhone];
+values.endsOnDate, values.endsOnOccurrence, encrypt(values.contactEmail), encrypt(values.contactPhone), lookupHash(values.contactEmail)];
 
 // The resource's reservations, as stored (a repeating one is a single row)
 async function listByResource(resourceId) {
-    return database.query(
+    const rows = await database.query(
         `SELECT ${COLUMNS} FROM reservations WHERE "resourceId" = $1 AND "deletedAt" IS NULL ORDER BY "startDate", id`,
         [resourceId]);
+    return rows.map(toReservation);
 }
 
 // Every occurrence of the resource's reservations that overlaps [from, to), ordered by start. `mine` marks the
@@ -108,14 +114,17 @@ async function occurrences(resourceId, fromValue, toValue, user = null) {
 }
 
 // The user's bookings that still have an occurrence from now on, with their resource and next occurrence,
-// the soonest first. Booked while logged in, or with the account's email.
+// the soonest first. Booked while logged in, or with the account's email (found by its lookup hash; a booking
+// saved before encryption by the plain email).
 async function listMine(user, now = new Date()) {
     const rows = await database.query(
         `SELECT ${COLUMNS}, (SELECT title FROM resources WHERE id = "resourceId") AS "resourceTitle" FROM reservations
-        WHERE "deletedAt" IS NULL AND ("userId" = $1 OR "contactEmail" = $2)
+        WHERE "deletedAt" IS NULL
+            AND ("userId" = $1 OR "contactEmailHash" = $2 OR ("contactEmailHash" IS NULL AND "contactEmail" = $3))
             AND "resourceId" IN (SELECT id FROM resources WHERE "deletedAt" IS NULL)`,
-        [user.id, user.email]);
+        [user.id, lookupHash(user.email), user.email]);
     return rows
+        .map(toReservation)
         .map(reservation => ({ reservation, next: expand(reservation, now)[0] }))
         .filter(item => item.next !== undefined)
         .sort((a, b) => a.next.start - b.next.start)
@@ -134,7 +143,7 @@ async function checkBooking(client, resource, values, { isAdmin, ignoreId = null
     if (!isAdmin) checkRules(resource, values.allDay, newOccurrences, new Date(), { ignorePast: ignoreId !== null });
     const existing = await client.query(
         `SELECT ${COLUMNS} FROM reservations WHERE "resourceId" = $1 AND "deletedAt" IS NULL`, [resource.id]);
-    checkConflicts(newOccurrences, existing.rows, ignoreId);
+    checkConflicts(newOccurrences, existing.rows.map(toReservation), ignoreId);
 }
 
 // Admins, the booking's owner, and whoever gives its contact may open, change or cancel it
@@ -148,7 +157,7 @@ async function lockReservation(client, id, options) {
         `SELECT id FROM resources WHERE id = (SELECT "resourceId" FROM reservations WHERE id = $1) FOR UPDATE`, [id]);
     if (locked.rows.length === 0) return null;
     const rows = await client.query(`SELECT ${COLUMNS} FROM reservations WHERE id = $1 AND "deletedAt" IS NULL`, [id]);
-    const reservation = rows.rows[0] || null;
+    const reservation = toReservation(rows.rows[0]);
     if (reservation !== null && !mayChange(reservation, options)) throw new HttpError(403, WRONG_CONTACT);
     return reservation;
 }
@@ -163,10 +172,10 @@ async function create(resourceId, body, { isAdmin, user = null }) {
         const rows = await client.query(
             `INSERT INTO reservations ("resourceId", title, description, "startDate", "endDate", "allDay", "regularityMeasure",
                 "regularityRepeatNumber", "regularityDays", "endsOnType", "endsOnDate", "endsOnOccurrence", "contactEmail", "contactPhone",
-                "userId")
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING ${COLUMNS}`,
+                "contactEmailHash", "userId")
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) RETURNING ${COLUMNS}`,
             [resourceId, ...valueList(values), user ? user.id : null]);
-        return rows.rows[0];
+        return toReservation(rows.rows[0]);
     });
 }
 
@@ -174,8 +183,9 @@ async function create(resourceId, body, { isAdmin, user = null }) {
 async function access(id, options) {
     const rows = await database.query(`SELECT ${COLUMNS} FROM reservations WHERE id = $1 AND "deletedAt" IS NULL`, [id]);
     if (rows.length === 0) return null;
-    if (!mayChange(rows[0], options)) throw new HttpError(403, WRONG_CONTACT);
-    return rows[0];
+    const reservation = toReservation(rows[0]);
+    if (!mayChange(reservation, options)) throw new HttpError(403, WRONG_CONTACT);
+    return reservation;
 }
 
 // Returns null when there is no such reservation
@@ -192,10 +202,10 @@ async function update(id, body, options) {
         const rows = await client.query(
             `UPDATE reservations SET title = $2, description = $3, "startDate" = $4, "endDate" = $5, "allDay" = $6,
                 "regularityMeasure" = $7, "regularityRepeatNumber" = $8, "regularityDays" = $9, "endsOnType" = $10,
-                "endsOnDate" = $11, "endsOnOccurrence" = $12, "contactEmail" = $13, "contactPhone" = $14
+                "endsOnDate" = $11, "endsOnOccurrence" = $12, "contactEmail" = $13, "contactPhone" = $14, "contactEmailHash" = $15
             WHERE id = $1 RETURNING ${COLUMNS}`,
             [id, ...valueList(values)]);
-        return rows.rows[0];
+        return toReservation(rows.rows[0]);
     });
 }
 

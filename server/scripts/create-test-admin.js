@@ -6,6 +6,7 @@ require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 const database = require('../database');
 const { toEmail, toPassword } = require('../auth');
 const { hashPassword } = require('../passwords');
+const { encrypt, lookupHash } = require('../encryption');
 
 const DEFAULT_EMAIL = 'admin@example.hu';
 const DEFAULT_PASSWORD = 'admin1234';
@@ -19,11 +20,12 @@ const DEFAULT_PASSWORD = 'admin1234';
     const email = toEmail(process.env.TEST_ADMIN_EMAIL || DEFAULT_EMAIL);
     const password = toPassword(process.env.TEST_ADMIN_PASSWORD || DEFAULT_PASSWORD);
     const rows = await database.query(
-        `INSERT INTO users (email, "passwordHash", name, role) VALUES ($1, $2, 'Teszt Admin', 'admin')
-         ON CONFLICT (email) DO UPDATE SET "passwordHash" = EXCLUDED."passwordHash", role = 'admin'
-         RETURNING email, (xmax = 0) AS created`,
-        [email, await hashPassword(password)]);
-    const { email: savedEmail, created } = rows[0];
+        `INSERT INTO users (email, "emailHash", "passwordHash", name, role) VALUES ($1, $2, $3, $4, 'admin')
+         ON CONFLICT ("emailHash") DO UPDATE SET "passwordHash" = EXCLUDED."passwordHash", role = 'admin'
+         RETURNING (xmax = 0) AS created`,
+        [encrypt(email), lookupHash(email), await hashPassword(password), encrypt('Teszt Admin')]);
+    const savedEmail = email;
+    const { created } = rows[0];
     console.log(created
         ? `Created the test admin ${savedEmail}. Log in with the password from TEST_ADMIN_PASSWORD (.env.example).`
         : `${savedEmail} was already there: its password is reset and it is an admin.`);
