@@ -1,6 +1,6 @@
 {
   "name": "idopont-kezeles-web",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "private": true,
   "dependencies": {
     "@babel/plugin-transform-react-jsx-source": "^7.16.7",
