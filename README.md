@@ -41,6 +41,11 @@ Browser (React SPA)  ──HTTP/JSON, session cookie──▶  Express server  �
   - `src/modules/bookingRules.js` repeats `server/booking.js`;
   - `src/modules/permissions.js` repeats `server/settings.js`;
   - `src/modules/pollSlots.js` repeats `server/pollSlots.js`.
+- **Encrypted personal data:** names, emails, phones, and booking and poll texts are stored encrypted with
+  AES-256-GCM (`server/encryption.js`). The key is `DATA_ENCRYPTION_KEY`, kept outside the database, so a leaked
+  database login or backup shows none of it. Lookups (login by email, a user's bookings, one answer per name) use
+  keyed hashes stored next to the values. Data stored before encryption is encrypted when the server starts
+  (`server/encryptStored.js`).
 - **Sessions:** a random token in an HttpOnly cookie; only its SHA-256 hash is stored (`sessions` table).
   Passwords are hashed with scrypt.
 - **Times:** reservations are stored as timestamps. Repetitions are expanded on the server in Europe/Budapest
@@ -104,7 +109,7 @@ You need Node.js and a PostgreSQL database. On Node 17 or later the React toolin
 # The server (terminal 1)
 cd server
 npm install
-cp .env.example .env         # then fill in your PostgreSQL connection
+cp .env.example .env         # then fill in your PostgreSQL connection, and DATA_ENCRYPTION_KEY (npm run make-key)
 psql -f idopont.sql           # tables + sample data, in the database from .env (it starts over every time)
 npm run create-test-admin     # an admin for local testing (TEST_ADMIN_EMAIL / TEST_ADMIN_PASSWORD in .env)
 npm start                     # http://localhost:5000
@@ -126,6 +131,7 @@ Instead of the dev server you can also build once (`npm run build`), and open th
 | `server/` | `npm test` | Server unit tests (`node --test`) |
 | `server/` | `npm run setup-db` | Creates the tables on an **empty** database, without sample data (refuses otherwise) |
 | `server/` | `npm run make-admin -- email` | Makes a registered user an admin |
+| `server/` | `npm run make-key` | Prints a new random `DATA_ENCRYPTION_KEY` |
 
 ### Configuration (`server/.env`, see `.env.example`)
 
@@ -133,6 +139,7 @@ Instead of the dev server you can also build once (`npm run build`), and open th
 |---|---|
 | `PGHOST`, `PGPORT`, `PGDATABASE`, `PGUSER`, `PGPASSWORD` | The database connection |
 | `PGSSLCA` / `PGSSLMODE`, `PGPOOL_MAX` | SSL for a hosted database (Supabase's CA certificate); connections per instance |
+| `DATA_ENCRYPTION_KEY` | **Required.** The key of the stored personal data, made with `npm run make-key`. Keep a copy safe: without it the data can't be read |
 | `APP_URL` | The public address, used in emailed links |
 | `MAIL_TRANSPORT` | How emails are sent; only `console` exists |
 | `NODE_ENV=production` | Secure cookies, trusting Google's proxy |

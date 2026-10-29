@@ -1,4 +1,5 @@
 const database = require('./database');
+const { decrypt } = require('./encryption');
 const mailer = require('./mailer');
 const { expand, WEEK_DAYS } = require('./recurrence');
 const { ValidationError, toTitle } = require('./validation');
@@ -122,9 +123,9 @@ async function upcomingReservations(resourceId) {
     const upcoming = rows.filter(reservation => expand(reservation, now).length > 0);
     const byEmail = new Map();
     upcoming.forEach(reservation => {
-        const email = reservation.contactEmail.trim().toLowerCase();
+        const email = decrypt(reservation.contactEmail).trim().toLowerCase();
         if (email === '') return;
-        byEmail.set(email, [...(byEmail.get(email) || []), reservation.title]);
+        byEmail.set(email, [...(byEmail.get(email) || []), decrypt(reservation.title)]);
     });
     return { count: upcoming.length, byEmail };
 }

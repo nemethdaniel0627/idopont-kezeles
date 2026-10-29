@@ -1,6 +1,7 @@
 const database = require('./database');
 const { verifyPassword } = require('./passwords');
 const { ValidationError } = require('./validation');
+const { encrypt, decrypt, decryptRow, lookupHash, ENCRYPTED_COLUMNS } = require('./encryption');
 
 // The user's data rights (GDPR): everything stored about them, deleting the account, and erasing contact
 // details that are no longer needed.
@@ -13,28 +14,34 @@ const RETENTION_MONTHS = 12;
 const LAST_END = `(CASE WHEN "regularityMeasure" = 'never' THEN "endDate"
     ELSE LEAST(COALESCE("endsOnDate", 'infinity'), "startDate" + interval '6 months') + ("endDate" - "startDate") END)`;
 
-// A booking is the user's when they made it logged in, or gave their account's email as its contact
-const OWN_RESERVATION = `("userId" = $1 OR "contactEmail" = $2)`;
+// A booking (or a poll answer) is the user's when they made it logged in, or gave their account's email as its
+// contact: found by the email's lookup hash, or by the plain email when saved before encryption.
+// The parameters are [user.id, lookupHash(user.email), user.email].
+const OWN = `("userId" = $1 OR "contactEmailHash" = $2 OR ("contactEmailHash" IS NULL AND "contactEmail" = $3))`;
+const OWN_ANSWER = `(a."userId" = $1 OR a."contactEmailHash" = $2 OR (a."contactEmailHash" IS NULL AND a."contactEmail" = $3))`;
+const ownParams = user => [user.id, lookupHash(user.email), user.email];
 
 // Everything stored about the user, as one object for them to download
 async function exportData(user) {
-    const [account] = await database.query(
+    const [account] = (await database.query(
         `SELECT name, email, phone, role, "canBook", "canPoll", "createdAt", "termsVersion", "privacyVersion", "termsAcceptedAt"
-        FROM users WHERE id = $1`, [user.id]);
-    const bookings = await database.query(
+        FROM users WHERE id = $1`, [user.id])).map(row => decryptRow(row, ENCRYPTED_COLUMNS.users));
+    const bookings = (await database.query(
         `SELECT (SELECT title FROM resources WHERE id = r."resourceId") AS resource, title, description, "startDate", "endDate",
             "allDay", "regularityMeasure", "regularityRepeatNumber", "regularityDays", "endsOnType", "endsOnDate",
             "endsOnOccurrence", "contactEmail", "contactPhone", "createdAt", "deletedAt" AS "cancelledAt"
-        FROM reservations r WHERE ${OWN_RESERVATION} ORDER BY "startDate"`, [user.id, user.email]);
-    const polls = await database.query(
+        FROM reservations r WHERE ${OWN} ORDER BY "startDate"`, ownParams(user)))
+        .map(row => decryptRow(row, ENCRYPTED_COLUMNS.reservations));
+    const polls = (await database.query(
         `SELECT title, description, mode, dates, "weekDays", to_char("dayStart", 'HH24:MI') AS "dayStart",
             to_char("dayEnd", 'HH24:MI') AS "dayEnd", "slotMinutes", deadline, "createdAt", "closedAt", "deletedAt",
             (SELECT count(*)::int FROM "pollAnswers" a WHERE a."pollId" = p.id) AS "answerCount"
-        FROM polls p WHERE "organizerId" = $1 ORDER BY "createdAt"`, [user.id]);
-    const pollAnswers = await database.query(
+        FROM polls p WHERE "organizerId" = $1 ORDER BY "createdAt"`, [user.id])).map(row => decryptRow(row, ENCRYPTED_COLUMNS.polls));
+    const pollAnswers = (await database.query(
         `SELECT p.title AS poll, a.name, a."contactEmail", a."contactPhone", a.slots, a."createdAt", a."updatedAt"
         FROM "pollAnswers" a JOIN polls p ON p.id = a."pollId"
-        WHERE a."userId" = $1 OR a."contactEmail" = $2 ORDER BY a."createdAt"`, [user.id, user.email]);
+        WHERE ${OWN_ANSWER} ORDER BY a."createdAt"`, ownParams(user)))
+        .map(row => ({ ...decryptRow(row, ENCRYPTED_COLUMNS.pollAnswers), poll: decrypt(row.poll) }));
     const logins = await database.query(
         `SELECT "createdAt", "expiresAt" FROM sessions WHERE "userId" = $1 AND "expiresAt" > now() ORDER BY "createdAt"`, [user.id]);
     return { exportedAt: new Date().toISOString(), account, bookings, polls, pollAnswers, logins };
@@ -55,17 +62,23 @@ async function deleteAccount(user, password) {
     }
     await database.transaction(async client => {
         await client.query(
-            `UPDATE reservations SET "deletedAt" = now() WHERE "deletedAt" IS NULL AND ${OWN_RESERVATION} AND ${LAST_END} > now()`,
-            [user.id, user.email]);
-        // A booking named after the user (the form suggests the name) gets a neutral name
+            `UPDATE reservations SET "deletedAt" = now() WHERE "deletedAt" IS NULL AND ${OWN} AND ${LAST_END} > now()`,
+            ownParams(user));
+        // A booking named after the user (the form suggests the name) gets a neutral name. The titles are
+        // encrypted, so they are compared here, not in the database.
+        const own = await client.query(`SELECT id, title FROM reservations WHERE ${OWN}`, ownParams(user));
+        const name = (user.name || '').trim().toLowerCase();
+        const namedAfter = own.rows.filter(row => name !== '' && decrypt(row.title).trim().toLowerCase() === name).map(row => row.id);
+        if (namedAfter.length) {
+            await client.query(`UPDATE reservations SET title = $2 WHERE id = ANY($1)`, [namedAfter, encrypt('Foglalás')]);
+        }
         await client.query(
-            `UPDATE reservations SET "userId" = NULL, "contactEmail" = '', "contactPhone" = '',
-                title = CASE WHEN $3 <> '' AND lower(btrim(title)) = lower($3) THEN 'Foglalás' ELSE title END
-            WHERE ${OWN_RESERVATION}`, [user.id, user.email, user.name || '']);
+            `UPDATE reservations SET "userId" = NULL, "contactEmail" = '', "contactPhone" = '', "contactEmailHash" = NULL
+            WHERE id = ANY($1)`, [own.rows.map(row => row.id)]);
         await client.query(`DELETE FROM polls WHERE "organizerId" = $1`, [user.id]);
         await client.query(
-            `UPDATE "pollAnswers" SET "userId" = NULL, "contactEmail" = '', "contactPhone" = '' WHERE "userId" = $1 OR "contactEmail" = $2`,
-            [user.id, user.email]);
+            `UPDATE "pollAnswers" SET "userId" = NULL, "contactEmail" = '', "contactPhone" = '', "contactEmailHash" = NULL
+            WHERE ${OWN}`, ownParams(user));
         // The logins and password reset links go with the user
         await client.query(`DELETE FROM users WHERE id = $1`, [user.id]);
     });
@@ -74,13 +87,13 @@ async function deleteAccount(user, password) {
 // Erases the contacts that are no longer needed, and expired logins and reset links. Returns what it erased.
 async function cleanup() {
     const reservations = await database.query(
-        `UPDATE reservations SET "contactEmail" = '', "contactPhone" = ''
+        `UPDATE reservations SET "contactEmail" = '', "contactPhone" = '', "contactEmailHash" = NULL
         WHERE ("contactEmail" <> '' OR "contactPhone" <> '') AND ${LAST_END} < now() - $1 * interval '1 month'
         RETURNING id`, [RETENTION_MONTHS]);
     // A poll is over at the latest of its closing, deadline and last day; an answer is kept at least as long
     // after its last change (for polls of weekdays that never close)
     const answers = await database.query(
-        `UPDATE "pollAnswers" a SET "contactEmail" = '', "contactPhone" = '' FROM polls p
+        `UPDATE "pollAnswers" a SET "contactEmail" = '', "contactPhone" = '', "contactEmailHash" = NULL FROM polls p
         WHERE p.id = a."pollId" AND (a."contactEmail" <> '' OR a."contactPhone" <> '')
             AND GREATEST(p."closedAt", p.deadline, ((SELECT max(d) FROM unnest(p.dates) AS d)::date + 1)::timestamptz, a."updatedAt")
                 < now() - $1 * interval '1 month'
