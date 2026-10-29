@@ -113,12 +113,32 @@ Every response is `{ result }` or `{ error }`, where `error` is a Hungarian mess
    `components/Nav.jsx` if it needs one.
 3. Put the styles in the matching `src/scss/*.scss`, or a new file `@use`-d in `styles.scss`.
 
-**New personal data** (a field holding a name, email, phone, …): handle it in all of these:
+**New personal data** (a field holding a name, email, phone, or free text a user types): it must be stored
+encrypted.
+- Add the column to `ENCRYPTED_COLUMNS` in `server/encryption.js`, so `encryptStored.js` covers old rows too.
+- Write it with `encrypt(value)`, and read rows through the module's `to…` helper, which uses `decryptRow`.
+- If it is ever searched or matched, store `lookupHash(value)` in a `…Hash` column and query that.
+  `WHERE column = $1` on an encrypted column never matches.
+
+Also handle it in all of these:
 - `server/privacy.js`: `exportData`, `deleteAccount` and, if it should expire, `cleanup`;
 - the privacy notice draft in `server/legalDefaults.js`;
 - the admin's saved text, which needs a note in the PR asking them to update it.
 
 ## Traps
+
+- **Encrypted columns:**
+  - users `email/name/phone`;
+  - reservations `title/description/contactEmail/contactPhone`;
+  - polls `title/description`;
+  - pollAnswers `name/contactEmail/contactPhone`.
+
+  SQL can't filter, sort or compare them (`LIKE`, `lower()`, `ORDER BY title`): do it in JS after
+  decrypting, or use the lookup hashes (`"emailHash"`, `"contactEmailHash"`, `"nameKey"`). Empty values stay `''`, so
+  `"contactEmail" <> ''` still works. Values without the `enc:v1:` prefix are plain text saved before
+  encryption: `decrypt()` returns them as they are.
+- **The key:** the server refuses to start without `DATA_ENCRYPTION_KEY`, so put one in `server/.env` with
+  `npm run make-key`. Changing the key makes the stored data unreadable: there is no re-encryption yet.
 
 - **Node 17+ builds:** CRA 3 needs `NODE_OPTIONS=--openssl-legacy-provider`. `CI=true npm run build` turns lint
   warnings, such as unused variables, into errors. Build before you call it done.

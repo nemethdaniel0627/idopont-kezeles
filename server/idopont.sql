@@ -1,4 +1,7 @@
 -- Creates the tables with sample data. Running it again starts over from the sample data.
+-- Personal data (names, emails, phones, booking and poll texts) is stored encrypted by the server (encryption.js);
+-- the "...Hash" columns are keyed hashes for looking a value up. The sample data below is plain text: the server
+-- encrypts it when it starts.
 -- The sample reservations are placed relative to the current week, so they are always near today.
 DROP TABLE IF EXISTS "pollAnswers";
 DROP TABLE IF EXISTS polls;
@@ -17,7 +20,9 @@ DROP TABLE IF EXISTS "legalDocuments";
 -- A registered user. The first admin is made with: npm run make-admin -- email@example.com
 CREATE TABLE users (
   id INTEGER NOT NULL GENERATED ALWAYS AS IDENTITY,
-  "email" TEXT NOT NULL UNIQUE CHECK ("email" = lower("email")),
+  -- Encrypted, like name and phone; "emailHash" finds the user by email and keeps emails unique
+  "email" TEXT NOT NULL,
+  "emailHash" TEXT DEFAULT NULL UNIQUE,
   "passwordHash" TEXT NOT NULL,
   "name" TEXT NOT NULL DEFAULT '',
   "phone" TEXT NOT NULL DEFAULT '',
@@ -104,13 +109,15 @@ CREATE TABLE "pollAnswers" (
   id INTEGER NOT NULL GENERATED ALWAYS AS IDENTITY,
   "pollId" INTEGER NOT NULL REFERENCES polls(id) ON DELETE CASCADE,
   "name" TEXT NOT NULL,
-  -- The name trimmed and lower-cased, so "Anna" and " anna " are the same respondent
+  -- The lookup hash of the name, case and spaces ignored, so "Anna" and " anna " are the same respondent
   "nameKey" TEXT NOT NULL,
   -- SHA-256 of the private edit key; the key itself is given to the respondent once
   "editKeyHash" TEXT NOT NULL,
   "userId" INTEGER DEFAULT NULL REFERENCES users(id) ON DELETE SET NULL,
   "contactEmail" TEXT NOT NULL DEFAULT '',
   "contactPhone" TEXT NOT NULL DEFAULT '',
+  -- The lookup hash of the contact email, to find a user's answers
+  "contactEmailHash" TEXT DEFAULT NULL,
   -- The available slots, e.g. "2026-11-03 09:30" or "kedd 09:30"
   "slots" TEXT[] NOT NULL DEFAULT '{}',
   "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
@@ -160,6 +167,8 @@ CREATE TABLE reservations (
   -- Only admins see these; used to notify the person if the resource is removed
   "contactEmail" TEXT NOT NULL DEFAULT '',
   "contactPhone" TEXT NOT NULL DEFAULT '',
+  -- The lookup hash of the contact email, to find a user's bookings
+  "contactEmailHash" TEXT DEFAULT NULL,
   -- Who booked it, when they were logged in; they change or cancel it without giving the contact again
   "userId" INTEGER DEFAULT NULL REFERENCES users(id) ON DELETE SET NULL,
   "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
@@ -170,6 +179,7 @@ CREATE TABLE reservations (
 );
 
 CREATE INDEX reservations_resource ON reservations ("resourceId") WHERE "deletedAt" IS NULL;
+CREATE INDEX reservations_contact_email ON reservations ("contactEmailHash");
 
 -- ----- Sample data -----
 

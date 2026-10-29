@@ -62,6 +62,10 @@ Store the database password and the certificate as secrets, so they are not in t
   ```powershell
   gcloud secrets create idopont-db-ca --data-file="<path to>\prod-ca-2021.crt"
   ```
+- **The data key** (personal data is stored encrypted with it; see `server/encryption.js`). Make a key with
+  `npm.cmd run make-key` in `app\server`, then in the Console create the secret `idopont-data-key` with that
+  value. **Keep a copy somewhere safe, e.g. a password manager.** Without the key the stored names, emails and
+  phones can't be read, and a new key can't read the old data. Never change it on a running site.
 
 Let the service read the secrets. It runs as the project's default compute account:
 
@@ -76,7 +80,7 @@ From the `app` folder (where the `Dockerfile` is):
 
 ```powershell
 cd C:\Users\dnemeth\idopont-kezeles\app
-gcloud run deploy idopont --source . --region <region> --allow-unauthenticated --max-instances 2 --set-env-vars "PGHOST=<pooler host>,PGPORT=5432,PGDATABASE=postgres,PGUSER=postgres.<project-ref>,PGPOOL_MAX=5,MAIL_TRANSPORT=console" --set-secrets "PGPASSWORD=idopont-db-password:latest,PGSSLCA=idopont-db-ca:latest"
+gcloud run deploy idopont --source . --region <region> --allow-unauthenticated --max-instances 2 --set-env-vars "PGHOST=<pooler host>,PGPORT=5432,PGDATABASE=postgres,PGUSER=postgres.<project-ref>,PGPOOL_MAX=5,MAIL_TRANSPORT=console" --set-secrets "PGPASSWORD=idopont-db-password:latest,PGSSLCA=idopont-db-ca:latest,DATA_ENCRYPTION_KEY=idopont-data-key:latest"
 ```
 
 - The first run asks to create an Artifact Registry repository for the images: answer yes.
@@ -132,6 +136,15 @@ release uses it instead of counting up.
 
 - **New version without GitHub:** from the `app` folder, run
   `gcloud run deploy idopont --source . --region <region>`. The settings and secrets stay.
+- **Data key on an existing service** (the version that started encrypting personal data):
+  1. Create the `idopont-data-key` secret as in step 2.
+  2. Run `server/scripts/encrypt-personal-data.sql` in the SQL Editor.
+  3. Add the secret to the service as the environment variable `DATA_ENCRYPTION_KEY` (Edit & deploy new revision
+     → Variables & Secrets).
+  4. Deploy.
+
+  Without the key the new version refuses to start, and Cloud Run keeps the old one running. When it starts, it
+  encrypts the data stored so far.
 - **Database changes** (when a version needs one, like `server/scripts/add-permissions.sql`,
   `poll-15-minute-slots.sql` or `add-gdpr.sql`; `npm run setup-db` already includes them all): run the SQL in
   Supabase's **SQL Editor**.

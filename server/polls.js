@@ -4,6 +4,11 @@ const { ValidationError, HttpError, toTitle } = require('./validation');
 const { toEmail, toPhone } = require('./auth');
 const { createToken, hashToken } = require('./passwords');
 const { daysOf, timesOf, slotsOf, computeResults, isClosed, toMinutes } = require('./pollSlots');
+const { encrypt, decrypt, decryptRow, lookupHash, ENCRYPTED_COLUMNS } = require('./encryption');
+
+// Rows as stored, with the personal data decrypted
+const toPoll = row => (row ? decryptRow(row, ENCRYPTED_COLUMNS.polls) : null);
+const toAnswer = row => (row ? decryptRow(row, ENCRYPTED_COLUMNS.pollAnswers) : null);
 
 const MAX_DATES = 31;
 const SLOT_SIZES = [15, 30, 60];
@@ -141,17 +146,17 @@ async function create(userId, body) {
         `INSERT INTO polls ("publicKey", "organizerId", title, description, mode, dates, "weekDays", "dayStart", "dayEnd",
             "slotMinutes", "meetingMinutes", deadline, "timeZone", "answersVisible")
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING ${COLUMNS}`,
-        [createToken(), userId, values.title, values.description, values.mode, values.dates, values.weekDays,
+        [createToken(), userId, encrypt(values.title), encrypt(values.description), values.mode, values.dates, values.weekDays,
             values.dayStart, values.dayEnd, values.slotMinutes, values.meetingMinutes, values.deadline, values.timeZone,
             values.answersVisible]);
-    return rows[0];
+    return toPoll(rows[0]);
 }
 
 // The poll behind a link, or null (also for a removed poll)
 async function getByKey(key) {
     if (typeof key !== 'string' || key.length > 100) return null;
     const rows = await database.query(`SELECT ${COLUMNS} FROM polls WHERE "publicKey" = $1 AND "deletedAt" IS NULL`, [key]);
-    return rows[0] || null;
+    return toPoll(rows[0]);
 }
 
 const canManage = (poll, user) => Boolean(user && (user.id === poll.organizerId || user.role === 'admin'));
@@ -168,14 +173,14 @@ function publicPoll(poll, organizerName) {
 // The poll page's data for this viewer. Answers and the result only when they are visible to everyone,
 // or the viewer is the organizer or an admin; contacts only for them.
 async function view(poll, user, now = new Date()) {
-    const answers = await database.query(
-        `SELECT ${ANSWER_COLUMNS} FROM "pollAnswers" WHERE "pollId" = $1 ORDER BY "createdAt", id`, [poll.id]);
+    const answers = (await database.query(
+        `SELECT ${ANSWER_COLUMNS} FROM "pollAnswers" WHERE "pollId" = $1 ORDER BY "createdAt", id`, [poll.id])).map(toAnswer);
     const organizer = await database.query(`SELECT name FROM users WHERE id = $1`, [poll.organizerId]);
     const manage = canManage(poll, user);
     const visible = poll.answersVisible || manage;
     const mine = user ? answers.find(answer => answer.userId === user.id) : undefined;
     return {
-        poll: publicPoll(poll, organizer.length ? organizer[0].name : ''),
+        poll: publicPoll(poll, organizer.length ? decrypt(organizer[0].name) : ''),
         days: daysOf(poll),
         times: timesOf(poll),
         closed: isClosed(poll, now),
@@ -193,7 +198,7 @@ async function answerByKey(poll, editKey) {
     if (typeof editKey !== 'string' || editKey === '') return null;
     const rows = await database.query(
         `SELECT ${ANSWER_COLUMNS} FROM "pollAnswers" WHERE "pollId" = $1 AND "editKeyHash" = $2`, [poll.id, hashToken(editKey)]);
-    return rows.length ? fullAnswer(rows[0]) : null;
+    return rows.length ? fullAnswer(toAnswer(rows[0])) : null;
 }
 
 const CLOSED = 'Ez az egyeztetés lezárult, már nem lehet válaszolni.';
@@ -207,30 +212,41 @@ async function saveAnswer(poll, body, user, now = new Date()) {
     if (isClosed(poll, now)) throw new HttpError(409, CLOSED);
     const values = toAnswerValues(poll, body);
     const userId = user ? user.id : null;
+    // As stored: the name and contacts encrypted, the name and the email also as lookup hashes
+    const stored = {
+        name: encrypt(values.name),
+        nameKey: lookupHash(values.name),
+        contactEmail: encrypt(values.contactEmail),
+        contactPhone: encrypt(values.contactPhone),
+        contactEmailHash: lookupHash(values.contactEmail),
+    };
 
     try {
         if (typeof body.editKey === 'string' && body.editKey !== '') {
             const rows = await database.query(
                 `UPDATE "pollAnswers" SET name = $3, "nameKey" = $4, slots = $5, "contactEmail" = $6, "contactPhone" = $7,
-                    "userId" = COALESCE("userId", $8), "updatedAt" = now()
+                    "userId" = COALESCE("userId", $8), "contactEmailHash" = $9, "updatedAt" = now()
                 WHERE "pollId" = $1 AND "editKeyHash" = $2 RETURNING ${ANSWER_COLUMNS}`,
-                [poll.id, hashToken(body.editKey), values.name, values.nameKey, values.slots, values.contactEmail,
-                    values.contactPhone, userId]);
-            if (rows.length) return { answer: fullAnswer(rows[0]), editKey: null };
+                [poll.id, hashToken(body.editKey), stored.name, stored.nameKey, values.slots, stored.contactEmail,
+                    stored.contactPhone, userId, stored.contactEmailHash]);
+            if (rows.length) return { answer: fullAnswer(toAnswer(rows[0])), editKey: null };
             // An unknown key (e.g. from another browser's storage): go on by name
         }
 
         const editKey = createToken();
         const rows = await database.query(
-            `INSERT INTO "pollAnswers" ("pollId", name, "nameKey", "editKeyHash", "userId", "contactEmail", "contactPhone", slots)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            `INSERT INTO "pollAnswers" ("pollId", name, "nameKey", "editKeyHash", "userId", "contactEmail", "contactPhone", slots,
+                "contactEmailHash")
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
             ON CONFLICT ("pollId", "nameKey") DO UPDATE SET slots = EXCLUDED.slots,
                 "contactEmail" = CASE WHEN EXCLUDED."contactEmail" = '' THEN "pollAnswers"."contactEmail" ELSE EXCLUDED."contactEmail" END,
                 "contactPhone" = CASE WHEN EXCLUDED."contactPhone" = '' THEN "pollAnswers"."contactPhone" ELSE EXCLUDED."contactPhone" END,
+                "contactEmailHash" = CASE WHEN EXCLUDED."contactEmail" = '' THEN "pollAnswers"."contactEmailHash" ELSE EXCLUDED."contactEmailHash" END,
                 "userId" = COALESCE("pollAnswers"."userId", EXCLUDED."userId"), "updatedAt" = now()
             RETURNING ${ANSWER_COLUMNS}, (xmax = 0) AS created`,
-            [poll.id, values.name, values.nameKey, hashToken(editKey), userId, values.contactEmail, values.contactPhone, values.slots]);
-        const row = rows[0];
+            [poll.id, stored.name, stored.nameKey, hashToken(editKey), userId, stored.contactEmail, stored.contactPhone, values.slots,
+                stored.contactEmailHash]);
+        const row = toAnswer(rows[0]);
         // Found by name: the stored contacts stay hidden unless the answer is the logged-in user's own,
         // so typing someone else's name never shows their email or phone
         const own = row.created || (user && row.userId === user.id);
@@ -251,17 +267,17 @@ async function update(poll, body, now = new Date()) {
     const rows = await database.query(
         `UPDATE polls SET title = $2, description = $3, "answersVisible" = $4, deadline = $5 WHERE id = $1 RETURNING ${COLUMNS}`,
         [poll.id,
-            has('title') ? toPollTitle(body.title) : poll.title,
-            has('description') ? toDescription(body.description) : poll.description,
+            encrypt(has('title') ? toPollTitle(body.title) : poll.title),
+            encrypt(has('description') ? toDescription(body.description) : poll.description),
             has('answersVisible') ? body.answersVisible : poll.answersVisible,
             has('deadline') ? toDeadline(body.deadline, now) : poll.deadline]);
-    return rows[0];
+    return toPoll(rows[0]);
 }
 
 async function close(poll) {
     const rows = await database.query(
         `UPDATE polls SET "closedAt" = COALESCE("closedAt", now()) WHERE id = $1 RETURNING ${COLUMNS}`, [poll.id]);
-    return rows[0];
+    return toPoll(rows[0]);
 }
 
 // Soft delete: the poll and its answers stay, hidden
@@ -277,14 +293,16 @@ const withStatus = now => poll => ({ ...poll, closed: isClosed(poll, now) });
 async function listByOrganizer(userId, now = new Date()) {
     const rows = await database.query(
         `SELECT ${LIST_COLUMNS} FROM polls p WHERE p."organizerId" = $1 AND p."deletedAt" IS NULL ORDER BY p."createdAt" DESC`, [userId]);
-    return rows.map(withStatus(now));
+    return rows.map(toPoll).map(withStatus(now));
 }
 
 async function listAll(now = new Date()) {
     const rows = await database.query(
         `SELECT ${LIST_COLUMNS}, u.email AS "organizerEmail", u.name AS "organizerName"
         FROM polls p JOIN users u ON u.id = p."organizerId" WHERE p."deletedAt" IS NULL ORDER BY p."createdAt" DESC`);
-    return rows.map(withStatus(now));
+    return rows.map(toPoll)
+        .map(poll => ({ ...poll, organizerEmail: decrypt(poll.organizerEmail), organizerName: decrypt(poll.organizerName) }))
+        .map(withStatus(now));
 }
 
 module.exports = {

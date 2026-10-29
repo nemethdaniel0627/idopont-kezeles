@@ -9,6 +9,7 @@
     "test": "node --test",
     "make-admin": "node scripts/make-admin.js",
     "setup-db": "node scripts/setup-db.js",
+    "make-key": "node -e \"console.log(require('crypto').randomBytes(32).toString('base64'))\"",
     "create-test-admin": "node scripts/create-test-admin.js"
   },
   "dependencies": {
